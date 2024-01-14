@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\..\..\delete-me\bamtk\submodules\bam.base\bam.base\bam.base.csproj" />
+      <ProjectReference Include="..\..\..\..\..\delete-me\bamtk\submodules\bam.configuration\bam.configuration\bam.configuration.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="NewFolder\" />
+    </ItemGroup>
+
+</Project>

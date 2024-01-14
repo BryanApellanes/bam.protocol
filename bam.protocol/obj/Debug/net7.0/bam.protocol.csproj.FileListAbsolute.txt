@@ -1,0 +1,5 @@
+D:\src\repos\bamtk\submodules\bam.protocol\bam.protocol\obj\Debug\net7.0\bam.protocol.csproj.AssemblyReference.cache
+D:\src\repos\bamtk\submodules\bam.protocol\bam.protocol\obj\Debug\net7.0\bam.protocol.GeneratedMSBuildEditorConfig.editorconfig
+D:\src\repos\bamtk\submodules\bam.protocol\bam.protocol\obj\Debug\net7.0\bam.protocol.AssemblyInfoInputs.cache
+D:\src\repos\bamtk\submodules\bam.protocol\bam.protocol\obj\Debug\net7.0\bam.protocol.AssemblyInfo.cs
+D:\src\repos\bamtk\submodules\bam.protocol\bam.protocol\obj\Debug\net7.0\bam.protocol.csproj.CoreCompileInputs.cache
