@@ -1,5 +1,4 @@
 using Bam.Net.Logging;
-using CsQuery.EquationParser.Implementation.Functions;
 
 namespace Bam.Protocol.Server;
 
@@ -12,27 +11,27 @@ public abstract class BamResponseProvider : IBamResponseProvider
     
     private  IBamAuthorizationCalculator AuthorizationCalculator { get; set; } 
     
-    public IBamResponse CreateResponse(IBamContext context)
+    public IBamResponse CreateResponse(IBamServerContext serverContext)
     {
-        BamAuthorizationCalculation authorizationCalculation = AuthorizationCalculator.CalculateAuthorization(context);
+        BamAuthorizationCalculation authorizationCalculation = AuthorizationCalculator.CalculateAuthorization(serverContext);
         switch (authorizationCalculation.Access)
         {
             case BamAccess.Read:
-                return CreateReadResponse(context);
+                return CreateReadResponse(serverContext);
                 break;
             case BamAccess.Write:
-                return CreateWriteResponse(context);
+                return CreateWriteResponse(serverContext);
             default:
             case BamAccess.Denied:
-                LogAccessDenied(context);
-                return CreateDeniedResponse(context);
+                LogAccessDenied(serverContext);
+                return CreateDeniedResponse(serverContext);
                 break;
         }
     }
 
-    public abstract IBamResponse CreateDeniedResponse(IBamContext context);
-    public abstract IBamResponse CreateReadResponse(IBamContext context);
-    public abstract IBamResponse CreateWriteResponse(IBamContext context);
+    public abstract IBamResponse CreateDeniedResponse(IBamServerContext serverContext);
+    public abstract IBamResponse CreateReadResponse(IBamServerContext serverContext);
+    public abstract IBamResponse CreateWriteResponse(IBamServerContext serverContext);
 
-    public abstract void LogAccessDenied(IBamContext context);
+    public abstract void LogAccessDenied(IBamServerContext serverContext);
 }

@@ -2,7 +2,7 @@ namespace Bam.Protocol.Server;
 
 public class BamSessionStateProvider : IBamSessionStateProvider
 {
-    public IBamSessionState GetSession(IBamContext context)
+    public IBamSessionState GetSession(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }

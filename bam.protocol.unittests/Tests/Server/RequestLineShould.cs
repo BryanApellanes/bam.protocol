@@ -1,11 +1,16 @@
 using Bam.Net;
-using Bam.Net.Testing.Unit;
+using Bam.Net.CoreServices;
 using Bam.Protocol.Server;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 
-public class RequestLineShould
+public class RequestLineShould : UnitTestMenuContainer
 {
+    public RequestLineShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+    {
+    }
+    
     [UnitTest]
     public void ParseInputData()
     {
@@ -17,7 +22,6 @@ public class RequestLineShould
 
         bamRequestLine.Method.ShouldBeEqualTo(HttpMethods.POST);
         bamRequestLine.RequestUri.ShouldBeEqualTo(uri);
-        
         
         bamRequestLine.ProtocolVersion.ShouldBeEqualTo(protocolVersion);
     }

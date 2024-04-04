@@ -2,7 +2,7 @@ namespace Bam.Protocol.Server;
 
 public class BamRequestProcessor : IBamRequestProcessor
 {
-    public void ProcessRequestContext(IBamContext context)
+    public void ProcessRequestContext(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }

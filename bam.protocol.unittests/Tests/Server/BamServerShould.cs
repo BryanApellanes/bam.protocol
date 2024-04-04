@@ -1,11 +1,17 @@
 using Bam.Net;
-using Bam.Net.Testing.Unit;
+using Bam.Net.CoreServices;
 using Bam.Protocol.Server;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 
-public class BamServerShould
+[UnitTestMenu("BamServer should")]
+public class BamServerShould : UnitTestMenuContainer
 {
+    public BamServerShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+    {
+    }
+    
     [UnitTest]
     public void FireServerStartAndStopEvents()
     {

@@ -6,22 +6,22 @@ public class DefaultBamResponseProvider : BamResponseProvider
     {
     }
 
-    public override IBamResponse CreateDeniedResponse(IBamContext context)
+    public override IBamResponse CreateDeniedResponse(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }
 
-    public override IBamResponse CreateReadResponse(IBamContext context)
+    public override IBamResponse CreateReadResponse(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }
 
-    public override IBamResponse CreateWriteResponse(IBamContext context)
+    public override IBamResponse CreateWriteResponse(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }
 
-    public override void LogAccessDenied(IBamContext context)
+    public override void LogAccessDenied(IBamServerContext serverContext)
     {
         throw new NotImplementedException();
     }

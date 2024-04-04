@@ -13,7 +13,7 @@ using Bam.Net.Server;
 
 namespace Bam.Protocol.Server
 {
-    public class BamServer: Loggable, IConfigurable, IDisposable
+    public class BamServer: Loggable, IManagedServer, IConfigurable, IDisposable
     {
         private bool _stopRequested;
         public const int DefaultHttpPort = 443;
@@ -64,6 +64,8 @@ namespace Bam.Protocol.Server
         /// Gets or sets the name of this server to aide in identifying the process in logs.
         /// </summary>
         public string ServerName { get; set; }
+
+        public HostBinding DefaultHostBinding { get; }
 
         public HashSet<HostBinding> HostBindings { get; }
         
@@ -162,6 +164,11 @@ namespace Bam.Protocol.Server
             FireEvent(Stopped);
         }
 
+        public void TryStop()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Start()
         {
             try
@@ -205,22 +212,22 @@ namespace Bam.Protocol.Server
                     MemoryStream stream = new MemoryStream(data);
                     FireEvent(CreateContextStarted, new BamServerEventArgs());
                         
-                    IBamContext context = ContextProvider.CreateContext(stream, requestId);
-                    context.RequestProtocol = NetworkProtocols.Udp;
-                    FireEvent(ResolveUserStarted, new BamServerEventArgs(context));
-                    context.User = UserResolver.ResolveUser(context.BamRequest);
-                    FireEvent(ResolveUserComplete, new BamServerEventArgs(context));
-                    FireEvent(AuthorizeRequestStarted, new BamServerEventArgs(context));
-                    context.AuthorizationCalculation = AuthorizationCalculator.CalculateAuthorization(context);
-                    FireEvent(AuthorizeRequestComplete, new BamServerEventArgs(context));
-                    FireEvent(ResolveSessionStateStarted, new BamServerEventArgs(context));
-                    context.SessionState = SessionStateProvider.GetSession(context);
-                    FireEvent(ResolveSessionStateComplete, new BamServerEventArgs(context));
-                    FireEvent(CreateResponseStarted, new BamServerEventArgs(context));
-                    context.BamResponse = ResponseProvider.CreateResponse(context);
-                    FireEvent(CreateResponseComplete, new BamServerEventArgs(context));
+                    IBamServerContext serverContext = ContextProvider.CreateContext(stream, requestId);
+                    serverContext.RequestProtocol = NetworkProtocols.Udp;
+                    FireEvent(ResolveUserStarted, new BamServerEventArgs(serverContext));
+                    serverContext.User = UserResolver.ResolveUser(serverContext.BamRequest);
+                    FireEvent(ResolveUserComplete, new BamServerEventArgs(serverContext));
+                    FireEvent(AuthorizeRequestStarted, new BamServerEventArgs(serverContext));
+                    serverContext.AuthorizationCalculation = AuthorizationCalculator.CalculateAuthorization(serverContext);
+                    FireEvent(AuthorizeRequestComplete, new BamServerEventArgs(serverContext));
+                    FireEvent(ResolveSessionStateStarted, new BamServerEventArgs(serverContext));
+                    serverContext.SessionState = SessionStateProvider.GetSession(serverContext);
+                    FireEvent(ResolveSessionStateComplete, new BamServerEventArgs(serverContext));
+                    FireEvent(CreateResponseStarted, new BamServerEventArgs(serverContext));
+                    serverContext.BamResponse = ResponseProvider.CreateResponse(serverContext);
+                    FireEvent(CreateResponseComplete, new BamServerEventArgs(serverContext));
                         
-                    FireEvent(CreateContextComplete, new BamServerEventArgs(context));
+                    FireEvent(CreateContextComplete, new BamServerEventArgs(serverContext));
                 });
             }
         }
@@ -259,21 +266,21 @@ namespace Bam.Protocol.Server
                         NetworkStream stream = client.GetStream();
                         FireEvent(CreateContextStarted, new BamServerEventArgs(client));
                         
-                        IBamContext context = ContextProvider.CreateContext(stream, requestId);
-                        context.RequestProtocol = NetworkProtocols.Tcp;
-                        FireEvent(ResolveUserStarted, new BamServerEventArgs(client, context));
-                        context.User = UserResolver.ResolveUser(context.BamRequest);
-                        FireEvent(ResolveUserComplete, new BamServerEventArgs(client, context));
-                        FireEvent(AuthorizeRequestStarted, new BamServerEventArgs(client, context));
-                        context.AuthorizationCalculation = AuthorizationCalculator.CalculateAuthorization(context);
-                        FireEvent(AuthorizeRequestComplete, new BamServerEventArgs(client, context));
-                        FireEvent(ResolveSessionStateStarted, new BamServerEventArgs(client, context));
-                        context.SessionState = SessionStateProvider.GetSession(context);
-                        FireEvent(ResolveSessionStateComplete, new BamServerEventArgs(client, context));
-                        FireEvent(CreateResponseStarted, new BamServerEventArgs(client, context));
-                        context.BamResponse = ResponseProvider.CreateResponse(context);
-                        FireEvent(CreateResponseComplete, new BamServerEventArgs(client, context));
-                        FireEvent(CreateContextComplete, new BamServerEventArgs(client, context));
+                        IBamServerContext serverContext = ContextProvider.CreateContext(stream, requestId);
+                        serverContext.RequestProtocol = NetworkProtocols.Tcp;
+                        FireEvent(ResolveUserStarted, new BamServerEventArgs(client, serverContext));
+                        serverContext.User = UserResolver.ResolveUser(serverContext.BamRequest);
+                        FireEvent(ResolveUserComplete, new BamServerEventArgs(client, serverContext));
+                        FireEvent(AuthorizeRequestStarted, new BamServerEventArgs(client, serverContext));
+                        serverContext.AuthorizationCalculation = AuthorizationCalculator.CalculateAuthorization(serverContext);
+                        FireEvent(AuthorizeRequestComplete, new BamServerEventArgs(client, serverContext));
+                        FireEvent(ResolveSessionStateStarted, new BamServerEventArgs(client, serverContext));
+                        serverContext.SessionState = SessionStateProvider.GetSession(serverContext);
+                        FireEvent(ResolveSessionStateComplete, new BamServerEventArgs(client, serverContext));
+                        FireEvent(CreateResponseStarted, new BamServerEventArgs(client, serverContext));
+                        serverContext.BamResponse = ResponseProvider.CreateResponse(serverContext);
+                        FireEvent(CreateResponseComplete, new BamServerEventArgs(client, serverContext));
+                        FireEvent(CreateContextComplete, new BamServerEventArgs(client, serverContext));
                     }
                 }
                 catch (Exception ex)

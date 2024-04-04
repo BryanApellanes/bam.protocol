@@ -2,14 +2,17 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>bamserver.unittests</RootNamespace>
+        <TargetFrameworks>net7.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\bamserver\bamserver.csproj" />
+      <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
+      <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />
+      <ProjectReference Include="..\..\bam.testing\bam.testing\bam.testing.csproj" />
+      <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
     </ItemGroup>
 
 </Project>

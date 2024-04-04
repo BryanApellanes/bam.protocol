@@ -1,13 +1,21 @@
+using Bam.Console;
 using Bam.Net;
 using Bam.Net.CommandLine;
-using Bam.Net.Testing.Unit;
+using Bam.Net.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Protocol.Server;
+using bam.testing;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 
-public class BamClientShould
+[UnitTestMenu("BamClient should", "bcls")]
+public class BamClientShould : UnitTestMenuContainer
 {
+    public BamClientShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+    {
+    }
+    
     [UnitTest]
     public void CreateHttpRequestBuilder()
     {

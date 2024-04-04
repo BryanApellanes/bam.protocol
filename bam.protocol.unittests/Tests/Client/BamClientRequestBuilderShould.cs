@@ -1,10 +1,14 @@
+
+
 using Bam.Net;
-using Bam.Net.Testing.Unit;
+using Bam.Net.CoreServices;
 using Bam.Protocol.Client;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 
-public class BamClientRequestBuilderShould
+[UnitTestMenu("BamClientRequestBuilder should")]
+public class BamClientRequestBuilderShould 
 {
     [UnitTest]
     public void CreateHttpRequestFromBuilder()
@@ -50,4 +54,8 @@ public class BamClientRequestBuilderShould
         request.ProtocolVersion.ShouldBeEqualTo("2.0");
         request.Content.ShouldBeNull();
     }
+
+    /*public BamClientRequestBuilderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+    {
+    }*/
 }

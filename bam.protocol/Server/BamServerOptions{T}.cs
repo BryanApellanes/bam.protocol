@@ -1,14 +1,15 @@
+using Bam.Net.CoreServices;
 using Bam.Net.Services;
 
 namespace Bam.Protocol.Server;
 
 public class BamServerOptions<T> :BamServerOptions where T: BamCommunicationHandler, new()
 {
-    public BamServerOptions() : base(ApplicationServiceRegistry.ForProcess())
+    /*public BamServerOptions() : base(ApplicationServiceRegistry.ForProcess())
     {
-    }
+    }*/
 
-    public BamServerOptions(ApplicationServiceRegistry componentRegistry): base(componentRegistry)
+    public BamServerOptions(ServiceRegistry componentRegistry): base(componentRegistry)
     {
     }
 

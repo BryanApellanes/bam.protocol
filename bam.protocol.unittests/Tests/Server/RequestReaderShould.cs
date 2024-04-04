@@ -1,12 +1,17 @@
 using System.Text;
 using Bam.Net;
-using Bam.Net.Testing.Unit;
+using Bam.Net.CoreServices;
 using Bam.Protocol.Server;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 
-public class RequestReaderShould
+public class RequestReaderShould : UnitTestMenuContainer
 {
+    public RequestReaderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+    {
+    }
+    
     [UnitTest]
     public void ReadLineFromStream()
     {
@@ -43,4 +48,5 @@ X-Bam-Test: another header value
         bamRequest.Headers.ContainsKey("content-type").ShouldBeTrue();
         bamRequest.Headers.ContainsKey("accept").ShouldBeTrue();
     }
+
 }

@@ -20,10 +20,10 @@ public class BamContextProvider : Loggable, IBamContextProvider
     [Verbosity(VerbosityLevel.Information, MessageFormat = $"EventName={nameof(ResolveUserStarted)};LoggableIdentifier: {{LoggableIdentifier}}")]
     public event EventHandler ResolveUserStarted;
     
-    public IBamContext CreateContext(Stream stream, string requestId)
+    public IBamServerContext CreateContext(Stream stream, string requestId)
     {
         IBamRequest request = RequestReader.ReadRequest(stream);
-        return new BamContext
+        return new BamServerContext
         {
             RequestId = requestId,
             BamRequest = request,

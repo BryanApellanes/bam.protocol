@@ -1,6 +1,11 @@
 ﻿
+using Bam.Console;
 using Bam.Net;
-
-CommandLineTool.TryWritePid();
-CommandLineTool.AddConfigurationSwitches();
-CommandLineTool.ExecuteMainOrInteractive(args);
+[Serializable]
+class Program 
+{
+    static void Main(string[] args)
+    {
+        BamConsoleContext.Main(args);
+    }
+}

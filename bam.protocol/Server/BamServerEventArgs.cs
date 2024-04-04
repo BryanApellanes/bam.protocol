@@ -9,20 +9,20 @@ public class BamServerEventArgs : EventArgs
     {
     }
 
-    public BamServerEventArgs(IBamContext context)
+    public BamServerEventArgs(IBamServerContext serverContext)
     {
-        this.Context = context;
+        this.ServerContext = serverContext;
     }
     
-    public BamServerEventArgs(TcpClient client, IBamContext context = null)
+    public BamServerEventArgs(TcpClient client, IBamServerContext serverContext = null)
     {
         this.LocalEndpoint = client?.Client?.LocalEndPoint?.ToString();
         this.RemoteEndpoint = client?.Client?.RemoteEndPoint?.ToString();
-        this.Context = context;
+        this.ServerContext = serverContext;
     }
 
     public BamServer Server { get; set; }
-    public IBamContext Context { get; internal set; }
+    public IBamServerContext ServerContext { get; internal set; }
     public string LocalEndpoint { get; private set; }
     public string RemoteEndpoint { get; private set; }
 }

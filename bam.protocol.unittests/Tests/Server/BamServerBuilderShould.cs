@@ -1,8 +1,8 @@
 using Bam.Net;
 using Bam.Net.Server;
-using Bam.Net.Testing.Unit;
 using Bam.Protocol.Server;
 using System.Net;
+using Bam.Testing;
 
 namespace Bam.Protocol.Tests;
 

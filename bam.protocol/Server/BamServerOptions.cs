@@ -14,7 +14,7 @@ public class BamServerOptions
     {
     }
 
-    public BamServerOptions(ServiceRegistry componentRegistry)
+    public BamServerOptions(ServiceRegistry componentRegistry) /* TODO fix this */
     {
         this.RequestBufferSize = 5000;
         this.Logger = Log.Default;
@@ -45,7 +45,7 @@ public class BamServerOptions
         {
             if (_tcpPort <= 0 || UseNameBasedPort)
             {
-                _tcpPort = BamPlatform.GetUnprivilegedPortForName(ServerName);
+                _tcpPort = ServerName.ToHashIntBetween(HashAlgorithms.SHA256, 1024, 65535);
             }
 
             return _tcpPort;

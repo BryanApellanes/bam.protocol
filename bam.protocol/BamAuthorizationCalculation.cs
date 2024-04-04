@@ -4,13 +4,13 @@ namespace Bam.Protocol;
 
 public class BamAuthorizationCalculation : IBamAuthorizationCalculation
 {
-    public BamAuthorizationCalculation(IBamContext context, BamAccess access)
+    public BamAuthorizationCalculation(IBamServerContext context, BamAccess access)
     {
         this.Context = context;
         this.Access = access;
     }
     
-    private IBamContext Context { get; set; }
+    private IBamServerContext Context { get; set; }
     
     public string[] Messages { get; internal set; }
     public BamAccess Access { get; internal set; }
