@@ -1,25 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj": {}
+    "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj": {}
   },
   "projects": {
-    "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
       "version": "2.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj",
         "projectName": "bam.base",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -29,6 +28,8 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -96,26 +97,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj",
         "projectName": "bam.commandline",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -125,23 +125,25 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -171,26 +173,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj",
         "projectName": "bam.configuration",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -200,14 +201,16 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               }
             }
           }
@@ -237,26 +240,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj",
         "projectName": "bam.console",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -266,17 +268,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj"
               }
             }
           }
@@ -306,26 +310,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj",
         "projectName": "bam.data.repositories",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -335,23 +338,25 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj"
               }
             }
           }
@@ -381,26 +386,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj",
         "projectName": "bam.data.schema",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\bam.data.schema.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.schema\\bam.data.schema\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -410,32 +414,34 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -465,26 +471,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj",
         "projectName": "bam.data.firebird",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\bam.data.firebird.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.firebird\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -494,17 +499,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -540,26 +547,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj",
         "projectName": "bam.data.mssql",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\bam.data.mssql.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mssql\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -569,17 +575,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -615,26 +623,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj",
         "projectName": "bam.data.mysql",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\bam.data.mysql.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.mysql\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -644,17 +651,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -690,26 +699,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj",
         "projectName": "bam.data.oracle",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\bam.data.oracle.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.oracle\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -719,17 +727,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -765,26 +775,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj",
         "projectName": "bam.data.postgres",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\bam.data.postgres.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data.postgres\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -794,17 +803,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -840,26 +851,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj",
         "projectName": "bam.data",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -869,17 +879,19 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
               }
             }
           }
@@ -923,26 +935,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj",
         "projectName": "bam.encryption",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -952,23 +963,25 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj"
               }
             }
           }
@@ -1004,26 +1017,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj",
         "projectName": "bam.logging",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\bam.logging.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.logging\\bam.logging\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1033,14 +1045,16 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               }
             }
           }
@@ -1080,27 +1094,26 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj",
         "projectName": "bam.protocol.unittests",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\bam.protocol.unittests.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol.unittests\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1110,23 +1123,24 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.encryption\\bam.encryption\\bam.encryption.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj"
               }
             }
           }
@@ -1156,26 +1170,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj",
         "projectName": "bam.protocol",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\bam.protocol.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.protocol\\bam.protocol\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1185,17 +1198,22 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
+              },
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
               }
             }
           }
@@ -1225,27 +1243,26 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj",
         "projectName": "bam.shell",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1255,14 +1272,15 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               }
             }
           }
@@ -1292,26 +1310,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj",
         "projectName": "bam.storage",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\bam.storage.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.storage\\bam.storage\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1321,14 +1338,16 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               }
             }
           }
@@ -1358,26 +1377,25 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj": {
+    "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj",
+        "projectUniqueName": "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj",
         "projectName": "bam.testing",
-        "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj",
-        "packagesPath": "C:\\bam\\nuget\\global",
-        "outputPath": "C:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\obj\\",
+        "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\bam.testing.csproj",
+        "packagesPath": "C:\\Users\\bryan\\.nuget\\packages\\",
+        "outputPath": "D:\\src\\repos\\bamtk\\submodules\\bam.testing\\bam.testing\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
-          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet",
-          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+          "C:\\Program Files (x86)\\Microsoft\\Xamarin\\NuGet"
         ],
         "configFilePaths": [
-          "C:\\Users\\bryan.THREEHEADZ\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Xamarin.Offline.config"
@@ -1387,26 +1405,28 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "C:\\Users\\bryan\\.bam\\build\\nupkg\\Debug": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net7.0": {
             "targetAlias": "net7.0",
             "projectReferences": {
-              "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.commandline\\bam.commandline\\bam.commandline.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.console\\bam.console\\bam.console.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.data.repositories\\bam.data.repositories\\bam.data.repositories.csproj"
               },
-              "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
-                "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj"
+              "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj": {
+                "projectPath": "D:\\src\\repos\\bamtk\\submodules\\bam.shell\\bam.shell\\bam.shell.csproj"
               }
             }
           }
@@ -1436,7 +1456,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.407\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.400\\RuntimeIdentifierGraph.json"
         }
       }
     }
