@@ -9,6 +9,7 @@
       "bam.protocol/1.0.0": {
         "dependencies": {
           "bam.base": "2.0.0",
+          "bam.configuration": "1.0.0",
           "bam.data": "1.0.0"
         },
         "runtime": {

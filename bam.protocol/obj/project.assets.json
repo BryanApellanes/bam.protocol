@@ -7918,6 +7918,7 @@
   "projectFileDependencyGroups": {
     "net7.0": [
       "bam.base >= 2.0.0",
+      "bam.configuration >= 1.0.0",
       "bam.data >= 1.0.0"
     ]
   },
@@ -7960,6 +7961,9 @@
           "projectReferences": {
             "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj": {
               "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.base\\bam.base\\bam.base.csproj"
+            },
+            "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj": {
+              "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.configuration\\bam.configuration\\bam.configuration.csproj"
             },
             "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj": {
               "projectPath": "C:\\src\\repos\\bamtk\\submodules\\bam.data\\bam.data\\bam.data.csproj"
