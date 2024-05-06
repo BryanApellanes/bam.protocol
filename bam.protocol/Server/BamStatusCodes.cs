@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Bam.Protocol.Server;
 
 public class BamStatusCodes

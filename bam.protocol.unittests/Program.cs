@@ -1,4 +1,5 @@
 ﻿
+using System;
 using Bam.Console;
 using Bam.Net;
 [Serializable]

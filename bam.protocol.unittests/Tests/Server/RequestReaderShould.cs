@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using Bam.Net;
 using Bam.Net.CoreServices;

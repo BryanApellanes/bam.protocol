@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Net;
 using Bam.Net.CoreServices;
 using Bam.Net.Server;

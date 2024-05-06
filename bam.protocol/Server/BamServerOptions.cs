@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net;
 using Bam.Net;
 using Bam.Net.CoreServices;

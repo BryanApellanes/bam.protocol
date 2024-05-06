@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.Sockets;
 using Bam.Net;
 using Bam.Net.Web;

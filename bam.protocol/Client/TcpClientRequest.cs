@@ -1,3 +1,4 @@
+using System;
 using Bam.Net.Server;
 using Bam.Protocol.Server;
 

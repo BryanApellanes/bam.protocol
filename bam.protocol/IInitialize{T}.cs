@@ -1,3 +1,5 @@
+using System;
+
 namespace Bam.Protocol;
 
 public interface IInitialize<T>: IInitialize
