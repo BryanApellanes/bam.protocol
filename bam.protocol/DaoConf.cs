@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bam.Net.Data;
-using Bam.Net.Logging;
+using Bam.Data;
+using Bam.Logging;
 using System.IO;
 using System.Configuration;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public class DaoConf
     {

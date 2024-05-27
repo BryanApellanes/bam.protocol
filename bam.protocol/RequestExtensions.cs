@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
-using Bam.Net.ServiceProxy;
+using Bam.ServiceProxy;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public static class RequestExtensions
     {

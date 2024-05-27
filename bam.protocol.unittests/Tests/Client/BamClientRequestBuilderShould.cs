@@ -1,7 +1,7 @@
 
 
-using Bam.Net;
-using Bam.Net.CoreServices;
+using Bam;
+using Bam.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Testing;
 

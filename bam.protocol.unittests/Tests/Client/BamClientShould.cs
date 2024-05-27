@@ -1,8 +1,8 @@
 using System;
 using Bam.Console;
-using Bam.Net;
-using Bam.Net.CommandLine;
-using Bam.Net.CoreServices;
+using Bam;
+using Bam.CommandLine;
+using Bam.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Protocol.Server;
 using bam.testing;

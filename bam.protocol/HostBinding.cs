@@ -1,8 +1,8 @@
 ﻿/*
 	Copyright © Bryan Apellanes 2015  
 */
-using Bam.Net.Configuration;
-using Bam.Net.ServiceProxy;
+using Bam.Configuration;
+using Bam.ServiceProxy;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public class HostBinding
     {

@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Bam.Net.ServiceProxy;
+using Bam.ServiceProxy;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     /// <summary>
     /// The delegate used to define responder events

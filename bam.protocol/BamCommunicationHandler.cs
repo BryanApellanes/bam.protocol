@@ -1,6 +1,6 @@
 using System.Net;
-using Bam.Net.CoreServices;
-using Bam.Net.Services;
+using Bam.CoreServices;
+using Bam.Services;
 using Bam.Protocol.Server;
 
 namespace Bam.Protocol;

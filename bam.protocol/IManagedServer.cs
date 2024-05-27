@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public interface IManagedServer
     {

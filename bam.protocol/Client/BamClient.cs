@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Sockets;
-using Bam.Net;
-using Bam.Net.Web;
-using Bam.Net.Server;
+using Bam;
+using Bam.Web;
+using Bam.Server;
 using Bam.Protocol.Server;
 
 namespace Bam.Protocol.Client;
@@ -131,8 +131,8 @@ public class BamClient : IBamClient
     {
         HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethods[request.HttpMethod], request.GetUrl(TcpBaseAddress.ToString()));
         requestMessage.Headers.Add(Headers.ProcessMode, ProcessMode.Current.Mode.ToString());
-        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, Bam.Net.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.LocalIdentifier);
-        requestMessage.Headers.Add(Headers.ProcessDescriptor, Bam.Net.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.Current.ToString());
+        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.LocalIdentifier);
+        requestMessage.Headers.Add(Headers.ProcessDescriptor, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.Current.ToString());
         return requestMessage;
     }
 }

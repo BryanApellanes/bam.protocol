@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Bam.Net;
+using Bam;
 
 namespace Bam.Protocol.Server;
 

@@ -11,11 +11,11 @@ using System.Text;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Bam.Net.Logging;
-using Bam.Net.Configuration;
-using Bam.Net;
-using Bam.Net.CoreServices.ApplicationRegistration.Data;
-using Bam.Net.Server;
+using Bam.Logging;
+using Bam.Configuration;
+using Bam;
+using Bam.CoreServices.ApplicationRegistration.Data;
+using Bam.Server;
 
 namespace Bam.Protocol.Server
 {

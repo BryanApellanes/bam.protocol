@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Bam.Net.ServiceProxy;
+using Bam.ServiceProxy;
 using Bam.Protocol;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public interface IHttpResponder: IInitialize
     {

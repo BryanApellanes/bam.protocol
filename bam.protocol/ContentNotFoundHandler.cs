@@ -1,5 +1,5 @@
-using Bam.Net.Server;
-using Bam.Net.ServiceProxy;
+using Bam.Server;
+using Bam.ServiceProxy;
 
 namespace Bam.Protocol
 {

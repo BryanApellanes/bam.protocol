@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Net;
-using Bam.Net.Server;
+using Bam.Server;
 
 namespace Bam.Protocol.Server;
 

@@ -1,6 +1,6 @@
 using System;
 using System.Text;
-using Bam.Net;
+using Bam;
 
 namespace Bam.Protocol.Server;
 

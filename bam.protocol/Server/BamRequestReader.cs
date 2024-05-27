@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Bam.Net;
+using Bam;
 
 namespace Bam.Protocol.Server;
 

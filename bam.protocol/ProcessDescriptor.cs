@@ -7,13 +7,13 @@ using System.Net.Mime;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Bam.Net.Data.Repositories;
+using Bam.Data.Repositories;
 using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
 using Newtonsoft.Json;
-//using Bam.Net.CoreServices.ApplicationRegistration.Data.Dao.Repository;
+//using Bam.CoreServices.ApplicationRegistration.Data.Dao.Repository;
 
-namespace Bam.Net.CoreServices.ApplicationRegistration.Data
+namespace Bam.CoreServices.ApplicationRegistration.Data
 {
     [Serializable]
     public class ProcessDescriptor : KeyedAuditRepoData

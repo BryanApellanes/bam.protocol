@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 using System.Net;
-using Bam.Net.CoreServices;
-using Bam.Net.Server;
-using Bam.Net.Services;
+using Bam.CoreServices;
+using Bam.Server;
+using Bam.Services;
 
 namespace Bam.Protocol.Server;
 

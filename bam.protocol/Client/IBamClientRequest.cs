@@ -1,5 +1,5 @@
 using System;
-using Bam.Net.Server;
+using Bam.Server;
 using Bam.Protocol.Server;
 
 namespace Bam.Protocol.Client;

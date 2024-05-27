@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Net;
-using Bam.Net;
-using Bam.Net.CoreServices;
-using Bam.Net.Incubation;
-using Bam.Net.Logging;
-using Bam.Net.Server;
-using Bam.Net.Services;
+using Bam;
+using Bam.CoreServices;
+using Bam.Incubation;
+using Bam.Logging;
+using Bam.Server;
+using Bam.Services;
 
 namespace Bam.Protocol.Server;
 

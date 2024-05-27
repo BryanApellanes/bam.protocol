@@ -1,7 +1,7 @@
 ﻿
 using System;
 using Bam.Console;
-using Bam.Net;
+using Bam;
 [Serializable]
 class Program 
 {

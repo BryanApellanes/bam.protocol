@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Bam.Protocol;
 
-namespace Bam.Net.Server
+namespace Bam.Server
 {
     public class ManagedServerHostBinding : HostBinding
     {

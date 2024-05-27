@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Bam.Net.Logging;
+using Bam.Logging;
 
 namespace Bam.Protocol.Server;
 

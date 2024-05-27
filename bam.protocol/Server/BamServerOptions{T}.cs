@@ -1,5 +1,5 @@
-using Bam.Net.CoreServices;
-using Bam.Net.Services;
+using Bam.CoreServices;
+using Bam.Services;
 
 namespace Bam.Protocol.Server;
 
