@@ -6,7 +6,7 @@ using Bam.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Protocol.Server;
 using bam.testing;
-using Bam.Testing;
+using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 

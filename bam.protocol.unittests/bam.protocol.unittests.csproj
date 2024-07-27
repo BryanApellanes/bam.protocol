@@ -11,7 +11,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
       <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />
-      <ProjectReference Include="..\..\bam.testing\bam.testing\bam.testing.csproj" />
+      <ProjectReference Include="..\..\bam.test\bam.test\bam.test.csproj" />
       <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
     </ItemGroup>
 

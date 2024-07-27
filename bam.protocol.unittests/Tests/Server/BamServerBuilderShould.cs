@@ -4,7 +4,7 @@ using Bam;
 using Bam.Server;
 using Bam.Protocol.Server;
 using System.Net;
-using Bam.Testing;
+using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 

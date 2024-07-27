@@ -3,7 +3,7 @@
 using Bam;
 using Bam.CoreServices;
 using Bam.Protocol.Client;
-using Bam.Testing;
+using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 
