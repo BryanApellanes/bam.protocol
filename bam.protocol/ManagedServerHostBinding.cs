@@ -37,7 +37,7 @@ namespace Bam.Server
 
         string _serverName;
         /// <summary>
-        /// Gets or sets the server name.  Not to be confused with the hostname, the ServerName is an identifier assigned to the server for programatic reference.
+        /// Gets or sets the server name.  Not to be confused with the hostname, the ServerName is an identifier assigned to the server for programmatic reference.
         /// </summary>
         public string ServerName
         {
