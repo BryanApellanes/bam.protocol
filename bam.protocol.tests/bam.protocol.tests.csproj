@@ -15,4 +15,9 @@
       <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Tests\Integration\" />
+      <Folder Include="Tests\Unit\" />
+    </ItemGroup>
+
 </Project>
