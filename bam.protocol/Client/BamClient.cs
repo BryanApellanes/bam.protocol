@@ -11,11 +11,11 @@ namespace Bam.Protocol.Client;
 
 public class BamClient : IBamClient
 {
-    public static HostBinding DefaultTcpBaseAddress = new BamHostBinding("localhost", BamServer.DefaultTcpPort);
+    public static readonly HostBinding DefaultTcpBaseAddress = new BamHostBinding("localhost", BamServer.DefaultTcpPort);
 
-    public static HostBinding DefaultHttpBaseAddress = new HostBinding("localhost", BamServer.DefaultHttpPort);
+    public static readonly HostBinding DefaultHttpBaseAddress = new HostBinding("localhost", BamServer.DefaultHttpPort);
 
-    public static HostBinding DefaultUdpBaseAddress = new BamHostBinding("localhost", BamServer.DefaultUdpPort);
+    public static readonly HostBinding DefaultUdpBaseAddress = new BamHostBinding("localhost", BamServer.DefaultUdpPort);
     
     public BamClient() : this(DefaultHttpBaseAddress, DefaultTcpBaseAddress, DefaultUdpBaseAddress)
     {
