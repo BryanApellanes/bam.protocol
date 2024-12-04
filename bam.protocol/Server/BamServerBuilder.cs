@@ -18,13 +18,7 @@ public class BamServerBuilder
         _serverEventHandlers = new BamServerEventHandlers();
         _requestEventHandlers = new BamRequestEventHandlers();
         _options = new BamServerOptions();
-        _applicationServiceRegistry = null; // TODO: fix this //ServiceRegistry.ForProcess();
-    }
-
-    public BamServerBuilder(ServiceRegistry applicationServiceRegistry)
-    {
-        _options = new BamServerOptions();
-        _applicationServiceRegistry = applicationServiceRegistry;
+        _applicationServiceRegistry = new ServiceRegistry();
     }
 
     internal int TcpPort()
@@ -55,29 +49,10 @@ public class BamServerBuilder
         _options.UdpIPAddress = IPAddress.Parse(ipAddress);
         return this;
     }
-    
-    public BamServerBuilder TcpIPAddress(IPAddress ipAddress)
-    {
-        _options.TcpIPAddress = ipAddress;
-        return this;
-    }
-
-    public BamServerBuilder UdpIPAddress(IPAddress ipAddress)
-    {
-        _options.UdpIPAddress = ipAddress;
-        return this;
-    }
 
     public BamServerBuilder ServerName(string name)
     {
         _options.ServerName = name;
-        return this;
-    }
-
-    public BamServerBuilder HostBindings(params HostBinding[] hostBindings)
-    {
-        _options.HostBindings.Clear();
-        _options.HostBindings.AddRange(hostBindings.Select(hb => new BamHostBinding(this, hb)));
         return this;
     }
     
@@ -87,15 +62,19 @@ public class BamServerBuilder
         return this;
     }
 
-    public BamServerBuilder UseNameBasedPort()
+    public BamServerBuilder UseNameBasedPort(bool value = true)
     {
-        _options.UseNameBasedPort = true;
+        _options.UseNameBasedPort = value;
         return this;
     }
     
-    public BamServerBuilder Use<I, T>(T instance)
+    public BamServerBuilder ForApplicationComponentUse<I, T>(T instance)
     {
-        For<I>().Use(instance);
+        if (instance == null)
+        {
+            return this;
+        }
+        ForApplicationComponent<I>().Use(instance);
         return this;
     }
 
@@ -149,13 +128,13 @@ public class BamServerBuilder
     
     public BamServerBuilder OnResolveUserStarted(EventHandler<BamServerEventArgs> handler)
     {
-        this._requestEventHandlers.ResolveUserStartedHandlers.Add(new BamEventListener(nameof(BamServer.ResolveUserStarted), handler));
+        this._requestEventHandlers.ResolveUserStartedHandlers.Add(new BamEventListener(nameof(BamServer.ResolveActorStarted), handler));
         return this;
     }
     
     public BamServerBuilder OnResolveUserComplete(EventHandler<BamServerEventArgs> handler)
     {
-        this._requestEventHandlers.ResolveUserCompleteHandlers.Add(new BamEventListener(nameof(BamServer.ResolveUserComplete), handler));
+        this._requestEventHandlers.ResolveUserCompleteHandlers.Add(new BamEventListener(nameof(BamServer.ResolveActorComplete), handler));
         return this;
     }
     
@@ -195,14 +174,14 @@ public class BamServerBuilder
         return this;
     }
     
-    public FluentServiceRegistryContext<I> For<I>()
+    public FluentServiceRegistryContext<I> ForApplicationComponent<I>()
     {
         return _applicationServiceRegistry.For<I>();
     }
 
     public BamServer Build()
     {
-        _options.ComponentRegistry = _applicationServiceRegistry;
+        _options.ComponentRegistry.CombineWith(_applicationServiceRegistry); 
         _options.ServerEventHandlers = _serverEventHandlers;
         _options.RequestEventHandlers = _requestEventHandlers;
         return new BamServer(_options);

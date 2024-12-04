@@ -25,7 +25,7 @@ namespace Bam.Server
 
         public override int GetHashCode()
         {
-            return this.GetHashCode("Host", "AppName");
+            return this.GetHashCode(Host, AppName);
         }
 
         public override bool Equals(object obj)

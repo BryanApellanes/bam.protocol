@@ -12,5 +12,9 @@ public class BamServerInfo
     public string TcpIPAddress { get; internal set; }
     public string UdpIPAddress { get; internal set; }
     
-    public HashSet<HostBinding> HostBindings { get; internal set; }
+    public HostBinding HttpHostBinding
+    {
+        get;
+        set;
+    }
 }

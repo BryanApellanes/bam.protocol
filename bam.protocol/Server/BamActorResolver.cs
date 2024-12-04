@@ -2,9 +2,9 @@ using System;
 
 namespace Bam.Protocol.Server;
 
-public class BamUserResolver : IBamUserResolver
+public class BamActorResolver : IBamActorResolver
 {
-    public IBamUser ResolveUser(IBamRequest request)
+    public IBamActor ResolveActor(IBamRequest request)
     {
         throw new NotImplementedException();
     }

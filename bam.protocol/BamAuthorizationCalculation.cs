@@ -16,5 +16,5 @@ public class BamAuthorizationCalculation : IBamAuthorizationCalculation
     public BamAccess Access { get; internal set; }
     public IBamRequest Request => Context.BamRequest;
     public IBamResponse Response => Context.BamResponse;
-    public IBamUser User => Context.User;
+    public IBamActor Actor => Context.Actor;
 }

@@ -2,7 +2,7 @@ namespace Bam.Protocol.Client;
 
 public class UdpBamClientRequestBuilder : BamClientRequestBuilder
 {
-    public UdpBamClientRequestBuilder() : base()
+    public UdpBamClientRequestBuilder()
     {
         _options.Host = new BamHostBinding();
         _options.Method = HttpMethods.PUT;

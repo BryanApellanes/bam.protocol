@@ -3,8 +3,10 @@ using Bam.Console;
 using Bam;
 using Bam.CommandLine;
 using Bam.CoreServices;
+using Bam.Data.Objects;
 using Bam.Protocol.Client;
 using Bam.Protocol.Server;
+using Bam.Server;
 using bam.testing;
 using Bam.Test;
 
@@ -20,7 +22,7 @@ public class BamClientShould : UnitTestMenuContainer
     [UnitTest]
     public void CreateHttpRequestBuilder()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Http);
         
         requestBuilder.ShouldBeInstanceOfType<HttpBamClientRequestBuilder>();
@@ -29,7 +31,7 @@ public class BamClientShould : UnitTestMenuContainer
     [UnitTest]
     public void CreateTcpRequestBuilder()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Tcp);
         
         requestBuilder.ShouldBeInstanceOfType<TcpBamClientRequestBuilder>();
@@ -38,16 +40,16 @@ public class BamClientShould : UnitTestMenuContainer
     [UnitTest]
     public void CreateUdpRequestBuilder()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Udp);
         
         requestBuilder.ShouldBeInstanceOfType<UdpBamClientRequestBuilder>();
     }
 
     [UnitTest]
-    public void CreateHttpRequestFromClient()
+    public void CreateHttpRequest()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string httpPath = "/test/http/path/";
         IBamClientRequest request = client.CreateHttpRequest(httpPath);
         request.ShouldBeInstanceOfType<HttpClientRequest>();
@@ -61,9 +63,9 @@ public class BamClientShould : UnitTestMenuContainer
     }
     
     [UnitTest]
-    public void CreateTcpRequestFromClient()
+    public void CreateTcpRequest()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string tcpPath = "/test/tcp/path";
         IBamClientRequest request = client.CreateTcpRequest(tcpPath);
         request.ShouldBeInstanceOfType<TcpClientRequest>();
@@ -77,9 +79,9 @@ public class BamClientShould : UnitTestMenuContainer
     }
     
     [UnitTest]
-    public void CreateUdpRequestFromClient()
+    public void CreateUdpRequest()
     {
-        BamClient client = new BamClient();
+        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string udpPath = "/test/udp/path";
         object content = "The content";
         IBamClientRequest request = client.CreateUdpRequest(udpPath, content);
@@ -94,17 +96,19 @@ public class BamClientShould : UnitTestMenuContainer
     }
     
     [UnitTest]
-    public void ReceiveHttpResponse()
+    public async Task ReceiveHttpResponse()
     {
         BamServer server = new BamServer();
+        //server.DefaultHostBinding = new HostBinding("127.0.0.1", 8080) { Ssl = false };
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
         server.Start();
 
-        BamClient client = new BamClient();
-        
-        
-        
+        BamClient client = new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding);
+        string httpPath = "/test/http/path/";
+        IBamClientRequest request = client.CreateTcpRequest(httpPath);
+        IBamClientResponse response = await client.ReceiveTcpResponseAsync((TcpClientRequest)request);
+        Message.PrintLine(response.StatusCode.ToString());
         server.Stop();
     }
 }

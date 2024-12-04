@@ -5,21 +5,18 @@ namespace Bam.Protocol.Server;
 
 public class BamServerOptions<T> :BamServerOptions where T: BamCommunicationHandler, new()
 {
-    /*public BamServerOptions() : base(ApplicationServiceRegistry.ForProcess())
+    public BamServerOptions()
     {
-    }*/
-
-    public BamServerOptions(ServiceRegistry componentRegistry): base(componentRegistry)
-    {
+        this.ComponentRegistry = new ServiceRegistry();
+        this.Initialize();
     }
 
-    private IBamCommunicationHandler _communicationHandler;
-    public virtual IBamCommunicationHandler GetCommunicationHandler(bool reinit = false)
+    private IBamCommunicationHandler? _communicationHandler;
+    public override IBamCommunicationHandler? GetCommunicationHandler(bool reinit = false)
     {
         if (_communicationHandler == null || reinit)
         {
-            T bamCommunicationHandler = new T();
-            bamCommunicationHandler.Initialize(ComponentRegistry);
+            T bamCommunicationHandler = ComponentRegistry.Get<T>();
             _communicationHandler = bamCommunicationHandler;
         }
 

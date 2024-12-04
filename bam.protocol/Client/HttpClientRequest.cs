@@ -4,7 +4,7 @@ using Bam.Protocol.Server;
 
 namespace Bam.Protocol.Client;
 
-public class HttpClientRequest : IBamClientRequest
+public class HttpClientRequest : BamClientRequest
 {
     public HttpClientRequest()
     {
@@ -23,20 +23,4 @@ public class HttpClientRequest : IBamClientRequest
         this.Host = options.Host;
     }
 
-    public HostBinding Host { get; set; }
-    public string Path { get; set; }
-    public string QueryString { get; set; }
-    public HttpMethods HttpMethod { get; set; }
-    public string ProtocolVersion { get; set; }
-    public string Protocol { get; set; }
-    public object Content { get; set; }
-    public Uri GetUrl(string baseAddress)
-    {
-        throw new NotImplementedException();
-    }
-
-    public BamRequestLine GetRequestLine()
-    {
-        throw new NotImplementedException();
-    }
 }

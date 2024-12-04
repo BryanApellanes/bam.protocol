@@ -2,11 +2,12 @@ namespace Bam.Protocol.Client;
 
 public class TcpBamClientRequestBuilder : BamClientRequestBuilder
 {
-    public TcpBamClientRequestBuilder() : base()
+    public TcpBamClientRequestBuilder()
     {
         _options.Host = new BamHostBinding();
         _options.Method = HttpMethods.POST;
     }
+    
     public override IBamClientRequest Build()
     {
         return new TcpClientRequest()

@@ -14,7 +14,7 @@ public interface IBamClientRequest
     string Protocol { get; set; }
     object Content { get; set; }
 
-    Uri GetUrl(string baseAddress);
-
+    Uri GetUrl();
+    Uri GetUrl(IBamClient client);
     BamRequestLine GetRequestLine();
 }

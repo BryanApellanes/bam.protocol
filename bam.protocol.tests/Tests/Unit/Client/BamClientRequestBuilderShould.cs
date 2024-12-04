@@ -1,6 +1,7 @@
 
 
 using Bam;
+using Bam.Console;
 using Bam.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Test;
@@ -8,8 +9,10 @@ using Bam.Test;
 namespace Bam.Protocol.Tests;
 
 [UnitTestMenu("BamClientRequestBuilder should")]
-public class BamClientRequestBuilderShould 
+public class BamClientRequestBuilderShould : UnitTestMenuContainer
 {
+    
+
     [UnitTest]
     public void CreateHttpRequestFromBuilder()
     {

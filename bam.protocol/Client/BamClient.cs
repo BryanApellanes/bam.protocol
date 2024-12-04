@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Text;
 using Bam;
 using Bam.Web;
 using Bam.Server;
 using Bam.Protocol.Server;
+using Org.BouncyCastle.Utilities;
 
 namespace Bam.Protocol.Client;
 
@@ -17,22 +19,23 @@ public class BamClient : IBamClient
 
     public static readonly HostBinding DefaultUdpBaseAddress = new BamHostBinding("localhost", BamServer.DefaultUdpPort);
     
-    public BamClient() : this(DefaultHttpBaseAddress, DefaultTcpBaseAddress, DefaultUdpBaseAddress)
+    public BamClient(IObjectEncoderDecoder objectEncoderDecoder) : this(objectEncoderDecoder, DefaultHttpBaseAddress, DefaultTcpBaseAddress, DefaultUdpBaseAddress)
     {
     }
 
-    public BamClient(HostBinding httpBaseAddress) : this(httpBaseAddress, DefaultTcpBaseAddress, DefaultUdpBaseAddress)
+    public BamClient(IObjectEncoderDecoder objectEncoderDecoder, HostBinding httpBaseAddress) : this(objectEncoderDecoder, httpBaseAddress, DefaultTcpBaseAddress, DefaultUdpBaseAddress)
     {
     }
 
-    public BamClient(HostBinding httpBaseAddress, HostBinding tcpBaseAddress) : this(httpBaseAddress, tcpBaseAddress, DefaultUdpBaseAddress)
+    public BamClient(IObjectEncoderDecoder objectEncoderDecoder, HostBinding httpBaseAddress, HostBinding tcpBaseAddress) : this(objectEncoderDecoder, httpBaseAddress, tcpBaseAddress, DefaultUdpBaseAddress)
     {
     }
     
-    public BamClient(HostBinding httpBaseAddress, HostBinding tcpBaseAddress, HostBinding udpBaseAddress)
+    public BamClient(IObjectEncoderDecoder objectEncoderDecoder,HostBinding httpBaseAddress, HostBinding tcpBaseAddress, HostBinding udpBaseAddress)
     {
+        this.ObjectEncoderDecoder = objectEncoderDecoder;
         this.HttpBaseAddress = httpBaseAddress;
-        this.TcpBaseAddress = tcpBaseAddress;
+        this.BaseAddress = tcpBaseAddress;
         this.UdpBaseAddress = udpBaseAddress;
         this.Initialize();
     }
@@ -88,8 +91,10 @@ public class BamClient : IBamClient
         set;
     }
     
+    private IObjectEncoderDecoder ObjectEncoderDecoder { get; }
+    
     public HostBinding HttpBaseAddress { get; set; }
-    public HostBinding TcpBaseAddress { get; set; }
+    public HostBinding BaseAddress { get; set; }
     public HostBinding UdpBaseAddress { get; set; }
 
     public IBamClientRequest CreateHttpRequest(string path)
@@ -103,7 +108,7 @@ public class BamClient : IBamClient
     public IBamClientRequest CreateTcpRequest(string path)
     {
         return CreateRequestBuilder(BamClientProtocols.Tcp)
-            .BaseAddress(TcpBaseAddress)
+            .BaseAddress(BaseAddress)
             .Path(path)
             .Build();
     }
@@ -122,14 +127,61 @@ public class BamClient : IBamClient
         return RequestBuilders[protocol]();
     }
 
-    public IBamClientResponse ReceiveResponse(IBamClientRequest request)
+    public async Task<IBamClientResponse> ReceiveResponseAsync(IBamClientRequest request)
     {
-        throw new NotImplementedException();
+        // TODO: determine if the request is an http request, tcp request or udp request
+        // See https://github.com/BryanApellanes/Bam.Net/blob/e6f1132b6eedb4fd1372011ce945fdaf775cf588/legacy/Bam.Net.Server/Streaming/StreamingClient.cs#L12
+        // and https://github.com/BryanApellanes/Bam.Net/blob/e6f1132b6eedb4fd1372011ce945fdaf775cf588/legacy/Bam.Net.Server/Streaming/StreamingServer.cs#L19
+        HttpRequestMessage requestMessage = CreateHttpRequestMessage(request);
+        HttpClient client = new HttpClient();
+        HttpResponseMessage responseMessage = await client.SendAsync(requestMessage);
+        return new BamClientResponse(responseMessage);
     }
 
+    public async Task<IBamClientResponse> ReceiveTcpResponseAsync(TcpClientRequest request)
+    {
+        TcpClient client = new TcpClient(BaseAddress.HostName, BaseAddress.Port);
+        NetworkStream stream = client.GetStream();
+        byte[] data = CreateRequestData(request);
+        stream.Write(data, 0, data.Length);
+        byte[] readBuffer = new byte[client.Available];
+        string response = string.Empty;
+        while (stream.Read(readBuffer, 0,  readBuffer.Length) != 0)
+        {
+            response = Encoding.UTF8.GetString(readBuffer);
+        }
+
+        return new BamClientResponse(response);
+    }
+
+    private byte[] CreateRequestData(TcpClientRequest request)
+    {
+        StringBuilder data = new StringBuilder();
+        data.AppendLine(request.GetRequestLine().ToString());
+        if (request.Headers?.Count > 0)
+        {
+            foreach (KeyValuePair<string, string> keyValuePair in request.Headers)
+            {
+                data.AppendLine($"{keyValuePair.Key}: {keyValuePair.Value}");
+            }
+        }
+
+        if (request.Content != null)
+        {
+            IObjectEncoding encoding = ObjectEncoderDecoder.Encode(request.Content);
+            string content = encoding.Encoding.GetString(encoding.Value);
+            data.AppendLine();
+            data.AppendLine(content);
+        }
+
+        return Encoding.UTF8.GetBytes(data.ToString());
+    }
+    
+    
+    
     private HttpRequestMessage CreateHttpRequestMessage(IBamClientRequest request)
     {
-        HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethods[request.HttpMethod], request.GetUrl(TcpBaseAddress.ToString()));
+        HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethods[request.HttpMethod], request.GetUrl(this));
         requestMessage.Headers.Add(Headers.ProcessMode, ProcessMode.Current.Mode.ToString());
         requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.LocalIdentifier);
         requestMessage.Headers.Add(Headers.ProcessDescriptor, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.Current.ToString());

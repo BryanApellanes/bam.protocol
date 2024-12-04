@@ -2,7 +2,7 @@ using System.Security.Principal;
 
 namespace Bam.Protocol.Server;
 
-public interface IBamUser
+public interface IBamActor
 {
     string UserName { get; set; }
     IPrincipal GetPrincipal();

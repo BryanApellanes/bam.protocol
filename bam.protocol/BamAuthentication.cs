@@ -7,7 +7,7 @@ public class BamAuthentication
     public bool Success { get; }
     public string[] Messages { get; }
 
-    public IBamUser User { get; }
+    public IBamActor Actor { get; }
     
     public IBamRequest Request { get; }
 }

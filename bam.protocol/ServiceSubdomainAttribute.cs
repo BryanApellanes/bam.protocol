@@ -18,8 +18,8 @@ namespace Bam.ServiceProxy
         {
             Subdomain = subdomain;
         }
-        public string Subdomain { get; set; }
-        public override bool Equals(object obj)
+        public string Subdomain { get; }
+        public override bool Equals(object? obj)
         {
             if (obj is ServiceSubdomainAttribute a)
             {

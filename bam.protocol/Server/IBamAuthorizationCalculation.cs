@@ -6,5 +6,5 @@ public interface IBamAuthorizationCalculation
     BamAccess Access { get; }
     IBamRequest Request { get; }
     IBamResponse Response { get; }
-    IBamUser User { get; }
+    IBamActor Actor { get; }
 }

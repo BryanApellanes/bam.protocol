@@ -8,7 +8,8 @@ using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 
-public class BamServerBuilderShould
+[UnitTestMenu("BamServer builder should")]
+public class BamServerBuilderShould : UnitTestMenuContainer
 {    
     [UnitTest]
     public void BuildServer()
@@ -33,7 +34,6 @@ public class BamServerBuilderShould
             .ServerName(serverName)
             .TcpIPAddress(tcpIpAddress)
             .UdpIPAddress(udpIpAddress)
-            .HostBindings(new HostBinding(testHost1), new HostBinding(testHost2))
             .Build();
 
         BamServerInfo info = server.GetInfo();
@@ -42,11 +42,6 @@ public class BamServerBuilderShould
         info.UdpPort.ShouldBeEqualTo(testUdpPort);
         info.TcpIPAddress.ShouldBeEqualTo(IPAddress.Parse(tcpIpAddress).ToString());
         info.UdpIPAddress.ShouldBeEqualTo(IPAddress.Parse(udpIpAddress).ToString());
-        List<int> hostBindingPorts = info.HostBindings.Select(hb => hb.Port).ToList();
-        hostBindingPorts.Count.ShouldBeEqualTo(2);
-        hostBindingPorts.Each(port => port.ShouldBeEqualTo(testTcpPort));
-        List<string> hostBindings = info.HostBindings.Select(hb => hb.HostName).ToList();
-        hostBindings.Contains(testHost1).ShouldBeTrue();
-        hostBindings.Contains(testHost2).ShouldBeTrue();
+        info.HttpHostBinding.ShouldEqual(server.HttpHostBinding);
     }
 }

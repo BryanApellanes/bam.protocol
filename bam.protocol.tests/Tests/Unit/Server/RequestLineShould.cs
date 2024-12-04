@@ -5,6 +5,7 @@ using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 
+[UnitTestMenu("Request line should")]
 public class RequestLineShould : UnitTestMenuContainer
 {
     public RequestLineShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)

@@ -7,6 +7,7 @@ using Bam.Test;
 
 namespace Bam.Protocol.Tests;
 
+[UnitTestMenu("Request reader should")]
 public class RequestReaderShould : UnitTestMenuContainer
 {
     public RequestReaderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)

@@ -8,19 +8,19 @@ public class BamHostBinding : HostBinding
     public BamHostBinding()
     {
         Protocol = "bam";
-        Port = BamServer.DefaultTcpPort;
+        _port = BamServer.DefaultTcpPort;
     }
 
     public BamHostBinding(string host, int port = BamServer.DefaultTcpPort) : base(host, port)
     {
         Protocol = "bam";
-        Port = port;
+        _port = port;
     }
 
     public BamHostBinding(BamServerBuilder builder, HostBinding hostBinding)
     {
         Protocol = "bam";
-        Port = builder.TcpPort();
+        _port = builder.TcpPort();
         HostName = hostBinding.HostName;
     }
     

@@ -23,7 +23,8 @@ public class BamServerEventArgs : EventArgs
     }
 
     public BamServer Server { get; set; }
+    public byte[] UdpData { get; set; }
     public IBamServerContext ServerContext { get; internal set; }
-    public string LocalEndpoint { get; private set; }
-    public string RemoteEndpoint { get; private set; }
+    public string? LocalEndpoint { get; private set; }
+    public string? RemoteEndpoint { get; private set; }
 }

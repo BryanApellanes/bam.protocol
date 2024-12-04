@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Sockets;
 using System.Text;
 using Bam;
 
@@ -16,6 +17,22 @@ public class BamRequestReader : IBamRequestReader
 
     public int BufferSize => Options.RequestBufferSize;
 
+    public IBamRequest ReadRequest(TcpClient client)
+    {
+        IBamRequest request = ReceiveRequest(client);
+        return request;
+    }
+
+    private IBamRequest ReceiveRequest(TcpClient client)
+    {
+        NetworkStream stream = client.GetStream();
+        byte[] readBuffer = new byte[client.Available];
+        stream.Read(readBuffer, 0, readBuffer.Length);
+        string request = Encoding.UTF8.GetString(readBuffer);
+
+        return new BamRequest(){Content = request};
+    }
+    
     public virtual IBamRequest ReadRequest(Stream stream)
     {
         BamRequestLine line = ReadRequestLine(stream);
@@ -69,7 +86,7 @@ public class BamRequestReader : IBamRequestReader
         {
             bytesRead = stream.Read(buffer, totalBytesRead, 1);
             byte[] currentBuffer = buffer.Trim();
-            if (currentBuffer.TailEquals("\r\n"))
+            if (currentBuffer.TailEquals("\n"))
             {
                 break;
             }

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bam.Protocol.Server;
 
 namespace Bam.Server
 {
@@ -20,15 +21,11 @@ namespace Bam.Server
         public HostBinding()
         {
             this.HostName = "localhost";
-            this.Port = 8080;
+            this._port = BamServer.DefaultTcpPort;
             this.Ssl = true;
         }
 
         public HostBinding(int port) : this("localhost", port)
-        {
-        }
-
-        public HostBinding(string hostName) : this(hostName, 8080)
         {
         }
 
@@ -37,15 +34,21 @@ namespace Bam.Server
         /// </summary>
         /// <param name="hostName"></param>
         /// <param name="port"></param>
-        public HostBinding(string hostName, int port)
+        public HostBinding(string hostName, int port = 8080)
         {
             this.HostName = hostName;
-            this.Port = port;
+            this._port = port;
             this.Ssl = true;
         }
 
-        public string HostName { get; set; }
-        public virtual int Port { get; set; }
+        public string HostName { get; protected set; }
+        protected int _port;
+
+        public virtual int Port
+        {
+            get => _port;
+            set => _port = value;
+        }
 
         public bool Ssl { get; set; }
 
@@ -55,13 +58,14 @@ namespace Bam.Server
             return $"{protocol}{HostName}:{Port}/";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is HostBinding compareTo)
             {
                 return compareTo.ToString().Equals(this.ToString());
             }
-            return base.Equals(obj);
+
+            return false;
         }
 
         public override int GetHashCode()

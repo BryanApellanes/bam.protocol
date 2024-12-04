@@ -24,10 +24,7 @@ namespace Bam.Server
         IManagedServer _server;
         protected internal IManagedServer Server
         {
-            get
-            {
-                return _server;
-            }
+            get => _server;
             set
             {
                 _server = value;
@@ -41,22 +38,13 @@ namespace Bam.Server
         /// </summary>
         public string ServerName
         {
-            get
-            {
-                return Server?.ServerName ?? _serverName;
-            }
-            set
-            {
-                _serverName = value;
-            }
+            get => Server?.ServerName ?? _serverName;
+            set => _serverName = value;
         }
 
         public override int Port
         {
-            get
-            {
-                return ServerName.GetUnprivilegedPortForName();
-            }
+            get => ServerName.GetUnprivilegedPortForName();
             set
             {
                 // always use derived port
