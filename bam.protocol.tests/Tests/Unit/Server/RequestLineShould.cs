@@ -1,6 +1,6 @@
-using Bam;
-using Bam.CoreServices;
+using Bam.DependencyInjection;
 using Bam.Protocol.Server;
+using Bam.Services;
 using Bam.Test;
 
 namespace Bam.Protocol.Tests;

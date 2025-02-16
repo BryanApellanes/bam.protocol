@@ -1,8 +1,3 @@
-
-
-using Bam;
-using Bam.Console;
-using Bam.CoreServices;
 using Bam.Protocol.Client;
 using Bam.Test;
 

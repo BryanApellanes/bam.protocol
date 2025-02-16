@@ -2,19 +2,11 @@
 	Copyright © Bryan Apellanes 2015  
 */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Bam.Logging;
 using Bam.Configuration;
-using Bam;
-using Bam.CoreServices.ApplicationRegistration.Data;
 using Bam.Server;
 
 namespace Bam.Protocol.Server

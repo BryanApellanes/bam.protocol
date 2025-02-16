@@ -1,4 +1,3 @@
-using System.IO;
 using Bam.Protocol.Server;
 
 namespace Bam.Protocol.Tests;

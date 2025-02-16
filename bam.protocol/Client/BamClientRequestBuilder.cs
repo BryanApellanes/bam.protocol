@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Bam.Server;
 
 namespace Bam.Protocol.Client;

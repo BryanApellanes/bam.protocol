@@ -1,17 +1,10 @@
 /*
 	Copyright © Bryan Apellanes 2015  
 */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 using System.Net;
-using System.Threading;
-using Bam;
 using Bam.Logging;
-using System.Threading.Tasks;
 using System.Collections.Concurrent;
-using Bam.Server;
 
 namespace Bam.Server
 {

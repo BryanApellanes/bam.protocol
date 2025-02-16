@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using Bam;
-using Bam.Server;
 using Bam.Protocol.Server;
 using System.Net;
 using Bam.Test;

@@ -1,12 +1,9 @@
-using System;
 using Bam.Console;
-using Bam;
-using Bam.CommandLine;
-using Bam.CoreServices;
 using Bam.Data.Objects;
+using Bam.DependencyInjection;
 using Bam.Protocol.Client;
 using Bam.Protocol.Server;
-using Bam.Server;
+using Bam.Services;
 using bam.testing;
 using Bam.Test;
 

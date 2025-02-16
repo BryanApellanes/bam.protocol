@@ -1,5 +1,3 @@
-using Bam;
-
 namespace Bam.Protocol;
 
 public static class StringExtensions

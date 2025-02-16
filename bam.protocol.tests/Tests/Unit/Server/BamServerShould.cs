@@ -1,9 +1,9 @@
 using System.Text;
-using Bam;
 using Bam.Console;
-using Bam.CoreServices;
+using Bam.DependencyInjection;
 using Bam.Protocol.Server;
 using Bam.Server;
+using Bam.Services;
 using Bam.Test;
 
 namespace Bam.Protocol.Tests;

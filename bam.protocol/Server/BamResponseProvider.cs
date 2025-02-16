@@ -1,5 +1,3 @@
-using Bam.Logging;
-
 namespace Bam.Protocol.Server;
 
 public abstract class BamResponseProvider : IBamResponseProvider

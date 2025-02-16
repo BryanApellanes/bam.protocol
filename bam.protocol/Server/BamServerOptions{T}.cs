@@ -1,4 +1,4 @@
-using Bam.CoreServices;
+using Bam.DependencyInjection;
 using Bam.Services;
 
 namespace Bam.Protocol.Server;

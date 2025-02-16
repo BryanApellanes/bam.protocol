@@ -1,4 +1,3 @@
-using System.IO;
 using System.Net.Sockets;
 
 namespace Bam.Protocol.Server;
