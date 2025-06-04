@@ -13,7 +13,7 @@ public abstract class BamClientRequest : IBamClientRequest
     public string ProtocolVersion { get; set; }
     public string Protocol { get; set; }
     public object? Content { get; set; }
-    public Uri GetUrl(IBamClient client)
+    public virtual Uri GetUrl(IBamClient client)
     {
         TcpClientRequest copy = new TcpClientRequest();
         copy.CopyProperties(this);
@@ -23,7 +23,13 @@ public abstract class BamClientRequest : IBamClientRequest
     
     public Uri GetUrl()
     {
-        return new Uri($"{Host}{Path}?{QueryString}");
+        string path = Path.StartsWith("/") ? Path : "/" + Path;
+        string uri = $"{Host}{path}";
+        if (!string.IsNullOrWhiteSpace(QueryString))
+        {
+            uri += "?" + QueryString;
+        }
+        return new Uri(uri);
     }
 
     public BamRequestLine GetRequestLine()

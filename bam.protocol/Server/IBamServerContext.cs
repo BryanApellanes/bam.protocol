@@ -6,7 +6,7 @@ namespace Bam.Protocol.Server
 {
     public interface IBamServerContext
     {
-        NetworkProtocols RequestProtocol { get; set; }
+        RequestType RequestType { get; set; }
         string RequestId { get; }
         IBamRequest BamRequest { get; }
         IBamResponse BamResponse { get; set; }

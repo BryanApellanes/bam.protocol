@@ -4,7 +4,7 @@ using Bam.Data.Repositories;
 
 //using Bam.CoreServices.ApplicationRegistration.Data.Dao.Repository;
 
-namespace Bam.CoreServices.ApplicationRegistration.Data
+namespace Bam.Protocol
 {
     [Serializable]
     public class ProcessDescriptor : KeyedAuditRepoData

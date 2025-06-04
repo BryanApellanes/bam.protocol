@@ -19,4 +19,11 @@ public class HttpClientRequest : BamClientRequest
         this.Host = options.Host;
     }
 
+    public override Uri GetUrl(IBamClient client)
+    {
+        HttpClientRequest copy = new HttpClientRequest();
+        copy.CopyProperties(this);
+        copy.Host = client.HttpBaseAddress;
+        return copy.GetUrl();
+    }
 }

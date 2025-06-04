@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -14,13 +15,17 @@ public class BamRequestReader : IBamRequestReader
 
     public int BufferSize => Options.RequestBufferSize;
 
-    public IBamRequest ReadRequest(TcpClient client)
+    public IBamRequest ReadRequest(HttpListenerRequest request)
     {
-        IBamRequest request = ReceiveRequest(client);
-        return request;
-    }
+        BamRequest bamRequest = new BamRequest(GetBamRequestLine(request))
+        {
+            Headers = ReadHeaders(request),
+            Content = ReadContentString(request.InputStream)
+        };
 
-    private IBamRequest ReceiveRequest(TcpClient client)
+        return bamRequest;
+    }
+    public IBamRequest ReadRequest(TcpClient client)
     {
         NetworkStream stream = client.GetStream();
         byte[] readBuffer = new byte[client.Available];
@@ -121,5 +126,21 @@ public class BamRequestReader : IBamRequestReader
         } while (bytesRead > 0);
 
         return buffer.Trim();
+    }
+    
+    private BamRequestLine GetBamRequestLine(HttpListenerRequest request)
+    {
+        return new BamRequestLine($@"{request.HttpMethod} {request.Url.PathAndQuery} HTTP/{request.ProtocolVersion}");
+    }
+    
+    private Dictionary<string, string> ReadHeaders(HttpListenerRequest request)
+    {
+        Dictionary<string, string>  result = new Dictionary<string, string>();
+        foreach (string key in request.Headers.AllKeys)
+        {
+            result.Add(key, request.Headers[key]);
+        }
+
+        return result;
     }
 }

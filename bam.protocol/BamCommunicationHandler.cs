@@ -15,8 +15,8 @@ public class BamCommunicationHandler : IBamCommunicationHandler
         IBamAuthorizationCalculator authorizationCalculator,
         IBamRequestProcessor requestProcessor)
     {
-        this.TcpIPAddressProvider = tcpIpAddressProvider;
-        this.UdpIPAddressProvider = udpIpAddressProvider;
+        this.TcpIpAddressProvider = tcpIpAddressProvider;
+        this.UdpIpAddressProvider = udpIpAddressProvider;
         this.RequestReader = requestReader;
         this.ContextProvider = contextProvider;
         this.ResponseProvider = responseProvider;
@@ -25,8 +25,8 @@ public class BamCommunicationHandler : IBamCommunicationHandler
         this.AuthorizationCalculator = authorizationCalculator;
         this.RequestProcessor = requestProcessor;
     }
-    public ITcpIPAddressProvider? TcpIPAddressProvider { get; internal set; }
-    public IUdpIPAddressProvider? UdpIPAddressProvider { get; internal set; }
+    public ITcpIPAddressProvider? TcpIpAddressProvider { get; internal set; }
+    public IUdpIPAddressProvider? UdpIpAddressProvider { get; internal set; }
     public IBamRequestReader? RequestReader { get; internal set; }
     public IBamContextProvider? ContextProvider { get; internal set; }
     public IBamResponseProvider? ResponseProvider { get; internal set; }

@@ -5,6 +5,8 @@ namespace Bam.Protocol.Client
     public interface IBamClient
     {
          HostBinding BaseAddress { get; set; }
+         HostBinding HttpBaseAddress { get; set; }
+         HostBinding UdpBaseAddress { get; set; }
          IBamClientRequestBuilder CreateRequestBuilder(BamClientProtocols protocol);
          Task<IBamClientResponse> ReceiveResponseAsync(IBamClientRequest request);
     }

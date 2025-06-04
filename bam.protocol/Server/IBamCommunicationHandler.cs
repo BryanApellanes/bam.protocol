@@ -2,8 +2,8 @@ namespace Bam.Protocol.Server;
 
 public interface IBamCommunicationHandler
 {
-    ITcpIPAddressProvider? TcpIPAddressProvider { get; }
-    IUdpIPAddressProvider? UdpIPAddressProvider { get; }
+    ITcpIPAddressProvider? TcpIpAddressProvider { get; }
+    IUdpIPAddressProvider? UdpIpAddressProvider { get; }
     IBamContextProvider? ContextProvider { get; }
     IBamResponseProvider? ResponseProvider { get; }
     IBamActorResolver? ActorResolver { get; }

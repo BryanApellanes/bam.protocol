@@ -1,5 +1,7 @@
 using System.Net.Sockets;
 using System.Text;
+using Amazon.Runtime.Internal;
+using bam.protocol;
 using Bam.Web;
 using Bam.Server;
 using Bam.Protocol.Server;
@@ -54,6 +56,12 @@ public class BamClient : IBamClient
             { BamClientProtocols.Tcp, () => new TcpBamClientRequestBuilder() },
             { BamClientProtocols.Udp, () => new UdpBamClientRequestBuilder() }
         };
+        ResponseHandlers = new Dictionary<Type, Func<IBamClientRequest, Task<IBamClientResponse>>>()
+        {
+            { typeof(HttpClientRequest), ReceiveHttpResponseAsync},
+            { typeof(TcpClientRequest), ReceiveTcpResponseAsync},
+            
+        };
     }
 
     private HttpClient HttpClient // content
@@ -81,6 +89,12 @@ public class BamClient : IBamClient
     }
 
     private Dictionary<BamClientProtocols, Func<IBamClientRequestBuilder>> RequestBuilders
+    {
+        get;
+        set;
+    }
+
+    private Dictionary<Type, Func<IBamClientRequest, Task<IBamClientResponse>>> ResponseHandlers
     {
         get;
         set;
@@ -127,14 +141,26 @@ public class BamClient : IBamClient
         // TODO: determine if the request is an http request, tcp request or udp request
         // See https://github.com/BryanApellanes/Bam.Net/blob/e6f1132b6eedb4fd1372011ce945fdaf775cf588/legacy/Bam.Net.Server/Streaming/StreamingClient.cs#L12
         // and https://github.com/BryanApellanes/Bam.Net/blob/e6f1132b6eedb4fd1372011ce945fdaf775cf588/legacy/Bam.Net.Server/Streaming/StreamingServer.cs#L19
+        Type requestType = request.GetType();
+        if (ResponseHandlers.ContainsKey(requestType))
+        {
+            return await ResponseHandlers[requestType](request);
+        }
+
+        throw new UnsupportedRequestTypeException(requestType);
+    }
+
+    public async Task<IBamClientResponse> ReceiveHttpResponseAsync(IBamClientRequest request)
+    {
         HttpRequestMessage requestMessage = CreateHttpRequestMessage(request);
         HttpClient client = new HttpClient();
         HttpResponseMessage responseMessage = await client.SendAsync(requestMessage);
         return new BamClientResponse(responseMessage);
     }
-
-    public async Task<IBamClientResponse> ReceiveTcpResponseAsync(TcpClientRequest request)
+    
+    public async Task<IBamClientResponse> ReceiveTcpResponseAsync(IBamClientRequest bamRequest)
     {
+        TcpClientRequest request = (TcpClientRequest)bamRequest;
         TcpClient client = new TcpClient(BaseAddress.HostName, BaseAddress.Port);
         NetworkStream stream = client.GetStream();
         byte[] data = CreateRequestData(request);
@@ -178,8 +204,8 @@ public class BamClient : IBamClient
     {
         HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethods[request.HttpMethod], request.GetUrl(this));
         requestMessage.Headers.Add(Headers.ProcessMode, ProcessMode.Current.Mode.ToString());
-        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.LocalIdentifier);
-        requestMessage.Headers.Add(Headers.ProcessDescriptor, Bam.CoreServices.ApplicationRegistration.Data.ProcessDescriptor.Current.ToString());
+        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, ProcessDescriptor.LocalIdentifier);
+        requestMessage.Headers.Add(Headers.ProcessDescriptor, ProcessDescriptor.Current.ToString());
         return requestMessage;
     }
 }

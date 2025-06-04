@@ -1,7 +1,8 @@
 namespace Bam.Protocol;
 
-public enum NetworkProtocols
+public enum RequestType
 {
+    Http,
     Tcp,
     Udp
 }

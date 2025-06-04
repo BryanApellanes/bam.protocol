@@ -91,20 +91,29 @@ public class BamClientShould : UnitTestMenuContainer
         request.ProtocolVersion.ShouldBeEqualTo("2.0");
         request.Content.ShouldBeEqualTo(content);
     }
+
+    [UnitTest]
+    public async Task StartServer()
+    {
+        BamServer server = new BamServer();
+        BamServerInfo info = server.GetInfo();
+        Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
+        server.Start();
+        System.Console.ReadLine();
+    }
     
     [UnitTest]
     public async Task ReceiveHttpResponse()
     {
         BamServer server = new BamServer();
-        //server.DefaultHostBinding = new HostBinding("127.0.0.1", 8080) { Ssl = false };
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
         server.Start();
 
         BamClient client = new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding);
         string httpPath = "/test/http/path/";
-        IBamClientRequest request = client.CreateTcpRequest(httpPath);
-        IBamClientResponse response = await client.ReceiveTcpResponseAsync((TcpClientRequest)request);
+        IBamClientRequest request = client.CreateHttpRequest(httpPath);
+        IBamClientResponse response = await client.ReceiveResponseAsync(request);
         Message.PrintLine(response.StatusCode.ToString());
         server.Stop();
     }

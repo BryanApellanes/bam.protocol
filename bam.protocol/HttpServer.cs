@@ -91,6 +91,10 @@ namespace Bam.Server
         {
             _listening.TryAdd(hp, this);
             string path = hp.ToString();
+            if (!path.EndsWith("/"))
+            {
+                path += "/";
+            }
             _logger.AddEntry("HttpServer: {0}", path);
             _listener.Prefixes.Add(path);
         }

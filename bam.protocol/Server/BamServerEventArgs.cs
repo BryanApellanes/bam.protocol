@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 
 namespace Bam.Protocol.Server;
@@ -12,7 +13,12 @@ public class BamServerEventArgs : EventArgs
     {
         this.ServerContext = serverContext;
     }
-    
+
+    public BamServerEventArgs(HttpListenerContext context, IBamServerContext serverContext = null)
+    {
+        this.ServerContext = serverContext;
+        this.HttpContext = context;
+    }
     public BamServerEventArgs(TcpClient client, IBamServerContext serverContext = null)
     {
         this.LocalEndpoint = client?.Client?.LocalEndPoint?.ToString();
@@ -22,6 +28,7 @@ public class BamServerEventArgs : EventArgs
 
     public BamServer Server { get; set; }
     public byte[] UdpData { get; set; }
+    public HttpListenerContext HttpContext { get; set; }
     public IBamServerContext ServerContext { get; internal set; }
     public string? LocalEndpoint { get; private set; }
     public string? RemoteEndpoint { get; private set; }

@@ -17,7 +17,7 @@ namespace Bam.Server
         {
             this.HostName = "localhost";
             this._port = BamServer.DefaultTcpPort;
-            this.Ssl = true;
+            this.Ssl = false;
         }
 
         public HostBinding(int port) : this("localhost", port)
@@ -33,7 +33,7 @@ namespace Bam.Server
         {
             this.HostName = hostName;
             this._port = port;
-            this.Ssl = true;
+            this.Ssl = false;
         }
 
         public string HostName { get; protected set; }
@@ -50,7 +50,7 @@ namespace Bam.Server
         public override string ToString()
         {
             string protocol = Ssl ? "https://" : "http://";
-            return $"{protocol}{HostName}:{Port}/";
+            return $"{protocol}{HostName}:{Port}";
         }
 
         public override bool Equals(object? obj)

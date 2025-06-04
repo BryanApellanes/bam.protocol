@@ -28,7 +28,7 @@ public class BamHostBinding : HostBinding
 
     public override string ToString()
     {
-        return $"{Protocol}://{HostName}:{Port}/";
+        return $"{Protocol}://{HostName}:{Port}";
     }
 
     public override bool Equals(object obj)

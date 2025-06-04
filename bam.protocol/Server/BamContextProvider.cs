@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 using Bam.Logging;
 
@@ -21,6 +22,15 @@ public class BamContextProvider : Loggable, IBamContextProvider
     [Verbosity(VerbosityLevel.Information, MessageFormat = $"EventName={nameof(ResolveUserStarted)};LoggableIdentifier: {{LoggableIdentifier}}")]
     public event EventHandler ResolveUserStarted;
 
+    public IBamServerContext CreateContext(HttpListenerRequest httpRequest, string requestId)
+    {
+        IBamRequest request = RequestReader.ReadRequest(httpRequest);
+        return new BamServerContext
+        {
+            RequestId = requestId,
+            BamRequest = request,
+        };
+    }
     public IBamServerContext CreateContext(TcpClient client, string requestId)
     {
         IBamRequest request = RequestReader.ReadRequest(client);
@@ -39,7 +49,7 @@ public class BamContextProvider : Loggable, IBamContextProvider
         {
             RequestId = requestId,
             BamRequest = request,
-            BamResponse = new BamResponse(stream)
+            //BamResponse = new BamResponse(stream)
         };
     }
 }
