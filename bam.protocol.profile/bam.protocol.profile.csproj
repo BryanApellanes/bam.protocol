@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>Bryan Apellanes</Authors>
+        <Company>Three Headz</Company>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Description>Bam Framework Protocol Profile</Description>
+        <PackageVersion>3.0.0</PackageVersion>
+        <IntermediatePackDir Condition=" '$(OS)' == 'Windows_NT' ">$(HOMEDRIVE)$(HOMEPATH)/.bam/build/pack/$(Configuration)/$(MSBuildThisFileName)/</IntermediatePackDir>
+        <IntermediatePackDir Condition=" '$(OS)' == 'UNIX' ">$(HOME)/.bam/build/pack/$(Configuration)/$(MSBuildThisFileName)/</IntermediatePackDir>
+        <PublishDir>$(IntermediatePackDir)$(TargetFramework)/</PublishDir>
+        <NuspecProperties>publishDir=$([MSBuild]::NormalizeDirectory($(IntermediatePackDir)))</NuspecProperties>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
+    </PropertyGroup>
+    <PropertyGroup>
+        <OutputPath Condition=" '$(OS)' == 'Windows_NT' ">$(HOMEDRIVE)$(HOMEPATH)\.bam\build\$(Configuration)\$(MSBuildThisFileName)\</OutputPath>
+        <OutputPath Condition=" '$(OS)' == 'UNIX' ">$(HOME)\.bam\build\$(Configuration)\$(MSBuildThisFileName)\</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\bam.data.objects\bam.data.objects\bam.data.objects.csproj" />
+      <ProjectReference Include="..\..\bam.data.repositories\bam.data.repositories\bam.data.repositories.csproj" />
+      <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />
+      <ProjectReference Include="..\bam.protocol.data\bam.protocol.data.csproj" />
+      <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
+    </ItemGroup>
+
+</Project>

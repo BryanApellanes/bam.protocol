@@ -1,6 +1,8 @@
 using System.Text;
 using Bam.Console;
+using Bam.Data.Objects;
 using Bam.DependencyInjection;
+using Bam.Protocol.Client;
 using Bam.Protocol.Server;
 using Bam.Server;
 using Bam.Services;
@@ -36,7 +38,7 @@ public class BamServerShould : UnitTestMenuContainer
     public async Task HaveDefaultHostBinding()
     {
         BamServer server = new BamServerBuilder().Build();
-        //server.DefaultHostBinding.ShouldNotBeNull();
+        server.HttpHostBinding.ShouldNotBeNull();
         Message.PrintLine(server.HttpHostBinding.ToString());
     }
     
@@ -62,10 +64,82 @@ public class BamServerShould : UnitTestMenuContainer
         stoppingEventRaised.ShouldBeTrue("`Stopping` event was not raised");
         stoppedEventRaised.ShouldBeTrue("`Stopped` event was not raised");
     }
-
+    
     [UnitTest]
-    public void FireServerRequestEventsForTcpRequest()
+    public async Task FireServerStartAndStopEventsAsync()
     {
+        bool? startingEventRaised = false;
+        bool? startedEventRaised = false;
+        bool? stoppingEventRaised = false;
+        bool? stoppedEventRaised = false;
         
+        After.Setup(registry =>
+        {
+            registry.For<BamServer>()
+                .Use<BamServer>(() =>
+                {
+                    return new BamServerBuilder()
+                        .OnStarting((sender, args) => startingEventRaised = true)
+                        .OnStarted((sender, args) => startedEventRaised = true)
+                        .OnStopping((sender, args) => stoppingEventRaised = true)
+                        .OnStopped((sender, args) => stoppedEventRaised = true)
+                        .Build();
+                });
+        })
+        .When<BamServer>("Starts and stops asynchronously", async (server, registry) =>
+        {
+            BamServerInfo info = server.GetInfo();
+            Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
+            await server.StartAsync();
+            await server.TryStopAsync();
+        })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("Starting event was raised", startingEventRaised.Value, "Starting event was not raised");
+            because.ItsTrue("Started event was raised", startedEventRaised.Value, "Started event was not raised");
+            because.ItsTrue("Stopping event was raised", stoppingEventRaised.Value, "Stopping event was not raised");
+            because.ItsTrue("Stopped event was raised", stoppedEventRaised.Value, "Stopped event was not raised");
+            
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+    
+    [UnitTest]
+    public async Task StartSession()
+    {
+        BamServer server = new BamServer();
+        BamServerInfo info = server.GetInfo();
+        Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
+        await server.StartAsync();
+        
+        After.Setup((reg) =>
+        {
+            reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
+        
+        })
+        .When<BamClient>("BamClient calls ReceiveResponseAsync", async (client) =>
+        {
+            string httpPath = "/test/http/path?q=unit";
+            IBamClientRequest request = client.CreateHttpRequest(httpPath);
+            IBamClientResponse response = await client.ReceiveResponseAsync(request);
+            return response;
+        })
+        .It
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+            because.TheResult.Is<IBamClientResponse>();
+            IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
+            because.ItsTrue("response is not null", response != null, "response is null");
+            because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
+            because.IllLookAtIt(response.Content);
+        })
+        .SoBeHappy((reg) =>
+        {
+            server.Stop();
+        })
+        .UnlessItFailed();
     }
 }

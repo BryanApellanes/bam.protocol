@@ -52,8 +52,4 @@ public class BamClientRequestBuilderShould : UnitTestMenuContainer
         request.ProtocolVersion.ShouldBeEqualTo("2.0");
         request.Content.ShouldBeNull();
     }
-
-    /*public BamClientRequestBuilderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
-    {
-    }*/
 }

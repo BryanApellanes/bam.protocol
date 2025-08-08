@@ -1,6 +1,5 @@
-﻿using Bam.Protocol.Client;
-
-namespace bam.protocol;
+﻿
+namespace Bam.Protocol;
 
 public class UnsupportedRequestTypeException : Exception
 {

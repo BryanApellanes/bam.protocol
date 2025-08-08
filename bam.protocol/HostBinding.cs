@@ -4,7 +4,7 @@
 using Bam.Configuration;
 using Bam.ServiceProxy;
 using System.Diagnostics;
-using Bam.Protocol.Server;
+using Bam.Protocol;
 
 namespace Bam.Server
 {
@@ -16,7 +16,7 @@ namespace Bam.Server
         public HostBinding()
         {
             this.HostName = "localhost";
-            this._port = BamServer.DefaultTcpPort;
+            this._port = DefaultPorts.DefaultTcpPort;
             this.Ssl = false;
         }
 

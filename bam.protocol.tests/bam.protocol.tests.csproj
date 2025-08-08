@@ -11,13 +11,20 @@
     <ItemGroup>
       <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
       <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />
+      <ProjectReference Include="..\..\bam.generators\bam.generators\bam.generators.csproj" />
       <ProjectReference Include="..\..\bam.test\bam.test\bam.test.csproj" />
+      <ProjectReference Include="..\bam.protocol.client\bam.protocol.client.csproj" />
+      <ProjectReference Include="..\bam.protocol.server\bam.protocol.server.csproj" />
       <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Tests\Integration\" />
-      <Folder Include="Tests\Unit\" />
+      <Folder Include="Tests\Unit\Profile\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NSubstitute" Version="5.3.0" />
     </ItemGroup>
 
 </Project>

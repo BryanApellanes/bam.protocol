@@ -1,3 +1,4 @@
+using System.Reflection;
 using Bam.Console;
 using Bam.Data.Objects;
 using Bam.DependencyInjection;
@@ -93,28 +94,75 @@ public class BamClientShould : UnitTestMenuContainer
     }
 
     [UnitTest]
-    public async Task StartServer()
+    public async Task Receive400HttpResponseSessionRequired()
     {
         BamServer server = new BamServer();
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
-        server.Start();
-        System.Console.ReadLine();
+        await server.StartAsync();
+        
+        After.Setup((reg) =>
+        {
+            reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
+        })
+        .When<BamClient>("BamClient calls ReceiveResponseAsync", async (client) =>
+        {
+            string httpPath = "/test/http/path?q=unit";
+            IBamClientRequest request = client.CreateHttpRequest(httpPath);
+            IBamClientResponse response = await client.ReceiveResponseAsync(request);
+            return response;
+        })
+        .It
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+            because.TheResult.Is<IBamClientResponse>();
+            IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
+            because.ItsTrue("response is not null", response != null, "response is null");
+            because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
+            because.IllLookAtIt(response.Content);
+        })
+        .SoBeHappy((reg) =>
+        {
+            server.Stop();
+        })
+        .UnlessItFailed();
     }
     
     [UnitTest]
-    public async Task ReceiveHttpResponse()
+    public async Task StartSession()
     {
         BamServer server = new BamServer();
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
-        server.Start();
-
-        BamClient client = new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding);
-        string httpPath = "/test/http/path/";
-        IBamClientRequest request = client.CreateHttpRequest(httpPath);
-        IBamClientResponse response = await client.ReceiveResponseAsync(request);
-        Message.PrintLine(response.StatusCode.ToString());
-        server.Stop();
+        await server.StartAsync();
+        
+        After.Setup((reg) =>
+        {
+            reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
+            
+        })
+        .When<BamClient>("BamClient calls ReceiveResponseAsync", async (client) =>
+        {
+            string httpPath = "/test/http/path?q=unit";
+            IBamClientRequest request = client.CreateHttpRequest(httpPath);
+            IBamClientResponse response = await client.ReceiveResponseAsync(request);
+            return response;
+        })
+        .It
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+            because.TheResult.Is<IBamClientResponse>();
+            IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
+            because.ItsTrue("response is not null", response != null, "response is null");
+            because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
+            because.IllLookAtIt(response.Content);
+        })
+        .SoBeHappy((reg) =>
+        {
+            server.Stop();
+        })
+        .UnlessItFailed();
     }
 }
