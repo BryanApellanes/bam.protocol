@@ -14,10 +14,10 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Client.Dao
 {
-	// schema = ClientSessionData
-	// connection Name = ClientSessionData
+	// schema = ClientSessionSchema
+	// connection Name = ClientSessionSchema
 	[Serializable]
-	[Bam.Data.Table("ClientKeySetData", "ClientSessionData")]
+	[Bam.Data.Table("ClientKeySetData", "ClientSessionSchema")]
 	public partial class ClientKeySetData: Bam.Data.Dao
 	{
 		public ClientKeySetData():base()
@@ -142,20 +142,6 @@ namespace Bam.Protocol.Data.Client.Dao
         set
         {
             SetValue("ServerHostName", value);
-        }
-    }
-
-    // property:Identifier, columnName: Identifier	
-    [Bam.Data.Column(Name="Identifier", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string Identifier
-    {
-        get
-        {
-            return GetStringValue("Identifier");
-        }
-        set
-        {
-            SetValue("Identifier", value);
         }
     }
 

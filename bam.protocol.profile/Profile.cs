@@ -1,4 +1,5 @@
 using Bam.Encryption;
+using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Profile;
 

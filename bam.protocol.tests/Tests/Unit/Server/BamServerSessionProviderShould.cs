@@ -35,7 +35,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         
         After.Setup(reg =>
         {
-            ServerSessionDataRepository repository = TestSetup.CreateTestData
+            ServerSessionSchemaRepository repository = TestSetup.CreateTestData
             (
                 testSessionId,
                 new Dictionary<string, string>()
@@ -49,16 +49,16 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             reg.For<INonceProvider>().Use<NonceProvider>();
             reg.For<IKeyManager>().Use<KeyManager>();
             reg.For<ISignatureProvider>().Use<SignatureProvider>();
-            reg.For<ServerSessionDataRepository>().Use(repository);
+            reg.For<ServerSessionSchemaRepository>().Use(repository);
             ServerSessionManager manager = reg.Get<ServerSessionManager>();//new ServerSessionManager(repository);
 
             reg.For<IServerSessionState>().Use(manager.GetSession(mockRequest));
-            reg.For<ServerSessionDataRepository>().Use(repository);
+            reg.For<ServerSessionSchemaRepository>().Use(repository);
 
         })
         .When<IServerSessionState>("Sets a value", (state, reg) =>
         {
-            ServerSessionDataRepository repository = reg.Get<ServerSessionDataRepository>();
+            ServerSessionSchemaRepository repository = reg.Get<ServerSessionSchemaRepository>();
             ServerSession session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
             session.KeyValues.Count.Equals(2).ShouldBeEqualTo(true);
 
@@ -66,7 +66,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         })
         .It.ShouldPass(because =>
         {
-            ServerSessionDataRepository repository = because.TestCaseRegistry.Get<ServerSessionDataRepository>();
+            ServerSessionSchemaRepository repository = because.TestCaseRegistry.Get<ServerSessionSchemaRepository>();
             ServerSession session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
             
             because.ItsTrue("there were 3 key value pairs", session.KeyValues.Count == 3);
@@ -92,7 +92,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         
         After.Setup(reg=>
         {
-            ServerSessionDataRepository repository = TestSetup.CreateTestData(
+            ServerSessionSchemaRepository repository = TestSetup.CreateTestData(
                 testSessionId,
                 new Dictionary<string, string>()
                 {
@@ -109,7 +109,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             reg.For<INonceProvider>().Use<NonceProvider>();
             reg.For<IKeyManager>().Use<KeyManager>();
             reg.For<ISignatureProvider>().Use<SignatureProvider>();
-            reg.For<ServerSessionDataRepository>().Use(repository);
+            reg.For<ServerSessionSchemaRepository>().Use(repository);
             reg.For<IServerSessionManager>().Use<ServerSessionManager>();
             reg.For<IBamRequest>().Use(mockRequest);
             

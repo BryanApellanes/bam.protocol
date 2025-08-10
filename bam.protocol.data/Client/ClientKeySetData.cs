@@ -5,9 +5,13 @@ namespace Bam.Protocol.Data.Client;
 public class ClientKeySetData : KeyedAuditRepoData
 {
     /// <summary>
-    /// Gets the pem encoded RSA public key.
+    /// Gets the pem encoded RSA public key of the client.
     /// </summary>
     public string ClientRsaKey { get; }
+    
+    /// <summary>
+    /// Gets the pem encoded RSA public key of the server.
+    /// </summary>
     public string ServerRsaKey { get; }
     
     /// <summary>
@@ -24,10 +28,16 @@ public class ClientKeySetData : KeyedAuditRepoData
     public string MachineName { get; set; }
 
 
+    /// <summary>
+    /// Gets or sets the hostname of the client as resolved by DNS at the time this keyset was instantiated.
+    /// </summary>
     [CompositeKey]
     public string ClientHostName { get; set; }
 
 
+    /// <summary>
+    /// Gets or sets the server hostname.
+    /// </summary>
     [CompositeKey]
     public string ServerHostName { get; set; }
 }

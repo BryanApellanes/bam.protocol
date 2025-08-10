@@ -1,4 +1,6 @@
-﻿namespace Bam.Protocol.Profile;
+﻿using Bam.Protocol.Data;
+
+namespace Bam.Protocol.Profile;
 
 public interface IHandleProvider
 {

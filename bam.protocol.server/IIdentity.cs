@@ -1,3 +1,5 @@
+using Bam.Protocol.Data;
+
 namespace Bam.Protocol.Server;
 
 public interface IIdentity : IActor

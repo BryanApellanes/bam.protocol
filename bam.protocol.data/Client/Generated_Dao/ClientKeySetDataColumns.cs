@@ -50,7 +50,6 @@ namespace Bam.Protocol.Data.Client.Dao
         public ClientKeySetDataColumns MachineName => new ClientKeySetDataColumns("MachineName");
         public ClientKeySetDataColumns ClientHostName => new ClientKeySetDataColumns("ClientHostName");
         public ClientKeySetDataColumns ServerHostName => new ClientKeySetDataColumns("ServerHostName");
-        public ClientKeySetDataColumns Identifier => new ClientKeySetDataColumns("Identifier");
         public ClientKeySetDataColumns Key => new ClientKeySetDataColumns("Key");
         public ClientKeySetDataColumns CompositeKeyId => new ClientKeySetDataColumns("CompositeKeyId");
         public ClientKeySetDataColumns CompositeKey => new ClientKeySetDataColumns("CompositeKey");

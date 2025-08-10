@@ -14,10 +14,10 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Client.Dao
 {
-	// schema = ClientSessionData
-	// connection Name = ClientSessionData
+	// schema = ClientSessionSchema
+	// connection Name = ClientSessionSchema
 	[Serializable]
-	[Bam.Data.Table("ClientSessionKeyValue", "ClientSessionData")]
+	[Bam.Data.Table("ClientSessionKeyValue", "ClientSessionSchema")]
 	public partial class ClientSessionKeyValue: Bam.Data.Dao
 	{
 		public ClientSessionKeyValue():base()
@@ -100,20 +100,6 @@ namespace Bam.Protocol.Data.Client.Dao
         set
         {
             SetValue("Cuid", value);
-        }
-    }
-
-    // property:ServerSessionId, columnName: ServerSessionId	
-    [Bam.Data.Column(Name="ServerSessionId", DbDataType="BigInt", MaxLength="19", AllowNull=true)]
-    public ulong? ServerSessionId
-    {
-        get
-        {
-            return GetULongValue("ServerSessionId");
-        }
-        set
-        {
-            SetValue("ServerSessionId", value);
         }
     }
 
@@ -243,6 +229,41 @@ namespace Bam.Protocol.Data.Client.Dao
         }
     }
 
+
+	// start ClientSessionDataId -> ClientSessionDataId
+	[Bam.Data.ForeignKey(
+        Table="ClientSessionKeyValue",
+		Name="ClientSessionDataId",
+		DbDataType="BigInt",
+		MaxLength="",
+		AllowNull=true,
+		ReferencedKey="Id",
+		ReferencedTable="ClientSessionData",
+		Suffix="1")]
+	public ulong? ClientSessionDataId
+	{
+		get
+		{
+			return GetULongValue("ClientSessionDataId", false);
+		}
+		set
+		{
+			SetValue("ClientSessionDataId", value, false);
+		}
+	}
+
+    ClientSessionData _clientSessionDataOfClientSessionDataId;
+	public ClientSessionData ClientSessionDataOfClientSessionDataId
+	{
+		get
+		{
+			if(_clientSessionDataOfClientSessionDataId == null)
+			{
+				_clientSessionDataOfClientSessionDataId = Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(c => c.KeyColumn == this.ClientSessionDataId, this.Database);
+			}
+			return _clientSessionDataOfClientSessionDataId;
+		}
+	}
 
 
 

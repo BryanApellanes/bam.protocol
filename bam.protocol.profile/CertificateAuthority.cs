@@ -1,5 +1,6 @@
 ﻿using Bam.Data.Objects;
 using Bam.Encryption;
+using Bam.Protocol.Data;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.X509;

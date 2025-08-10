@@ -14,10 +14,10 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Server.Dao
 {
-	// schema = ServerSessionData
-	// connection Name = ServerSessionData
+	// schema = ServerSessionSchema
+	// connection Name = ServerSessionSchema
 	[Serializable]
-	[Bam.Data.Table("ServerSession", "ServerSessionData")]
+	[Bam.Data.Table("ServerSession", "ServerSessionSchema")]
 	public partial class ServerSession: Bam.Data.Dao
 	{
 		public ServerSession():base()
@@ -59,7 +59,7 @@ namespace Bam.Protocol.Data.Server.Dao
 
 			if(_database != null)
 			{
-				this.ChildCollections.Add("ServerSessionKeyValue_ServerSessionId", new ServerSessionKeyValueCollection(Database.GetQuery<ServerSessionKeyValueColumns, ServerSessionKeyValue>((c) => c.ServerSessionId == GetULongValue("Id", false)), this, "ServerSessionId"));
+				this.ChildCollections.Add("ServerSessionKeyValuePair_ServerSessionId", new ServerSessionKeyValuePairCollection(Database.GetQuery<ServerSessionKeyValuePairColumns, ServerSessionKeyValuePair>((c) => c.ServerSessionId == GetULongValue("Id", false)), this, "ServerSessionId"));
 			}
 
 
@@ -222,7 +222,7 @@ namespace Bam.Protocol.Data.Server.Dao
 
 
 	[Bam.Exclude]
-	public ServerSessionKeyValueCollection ServerSessionKeyValuesByServerSessionId
+	public ServerSessionKeyValuePairCollection ServerSessionKeyValuePairsByServerSessionId
 	{
 		get
 		{
@@ -231,12 +231,12 @@ namespace Bam.Protocol.Data.Server.Dao
 				throw new InvalidOperationException($"The current instance of type({this.GetType().Name}) hasn't been saved and will have no child collections, call Save() or Save(Database) first.");
 			}
 
-			if(!this.ChildCollections.ContainsKey("ServerSessionKeyValue_ServerSessionId"))
+			if(!this.ChildCollections.ContainsKey("ServerSessionKeyValuePair_ServerSessionId"))
 			{
 				SetChildren();
 			}
 
-			var c = (ServerSessionKeyValueCollection)this.ChildCollections["ServerSessionKeyValue_ServerSessionId"];
+			var c = (ServerSessionKeyValuePairCollection)this.ChildCollections["ServerSessionKeyValuePair_ServerSessionId"];
 			if(!c.Loaded)
 			{
 				c.Load(Database);

@@ -1,4 +1,6 @@
-﻿namespace Bam.Protocol.Server;
+﻿using Bam.Protocol.Data;
+
+namespace Bam.Protocol.Server;
 
 public class ActorResolverInitializationHandler: IBamServerContextInitializationHandler
 {

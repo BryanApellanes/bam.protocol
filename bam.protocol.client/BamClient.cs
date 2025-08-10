@@ -2,6 +2,7 @@ using System.Net.Sockets;
 using System.Text;
 using Amazon.Runtime.Internal;
 using Bam.Protocol.Data;
+using Bam.Protocol.Data.Common;
 using Bam.Web;
 using Bam.Server;
 using Bam.Protocol.Server;
@@ -205,8 +206,8 @@ public class BamClient : IBamClient
     {
         HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethods[request.HttpMethod], request.GetUrl(this));
         requestMessage.Headers.Add(Headers.ProcessMode, ProcessMode.Current.Mode.ToString());
-        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, ProcessDescriptor.LocalIdentifier);
-        requestMessage.Headers.Add(Headers.ProcessDescriptor, ProcessDescriptor.Current.ToString());
+        requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, ProcessDescriptorData.LocalIdentifier);
+        requestMessage.Headers.Add(Headers.ProcessDescriptor, ProcessDescriptorData.Current.ToString());
         return requestMessage;
     }
 }

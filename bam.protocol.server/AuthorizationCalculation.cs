@@ -1,3 +1,4 @@
+using Bam.Protocol.Data;
 using Bam.Protocol.Server;
 
 namespace Bam.Protocol;

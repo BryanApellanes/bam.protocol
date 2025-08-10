@@ -4,5 +4,5 @@ namespace Bam.Protocol.Profile.Registration;
 
 public interface IRegistrationManager
 {
-    ProfileData RegisterProfile(ProfileRegistrationInfo info);
+    ProfileAccountData RegisterProfile(ProfileRegistrationInfo info);
 }

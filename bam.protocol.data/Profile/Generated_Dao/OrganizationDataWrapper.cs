@@ -1,0 +1,79 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Data;
+using System.Data.Common;
+using System.Linq;
+using Bam;
+using Bam.Data;
+using Bam.Data.Repositories;
+using Newtonsoft.Json;
+using Bam.Protocol.Data.Profile;
+using Bam.Protocol.Data.Profile.Dao;
+
+namespace Bam.Protocol.Data.Profile.Wrappers
+{
+	// generated
+	[Serializable]
+	public class OrganizationDataWrapper: Bam.Protocol.Data.Profile.OrganizationData, IHasUpdatedXrefCollectionProperties
+	{
+		public OrganizationDataWrapper()
+		{
+			this.UpdatedXrefCollectionProperties = new Dictionary<string, PropertyInfo>();
+		}
+
+		public OrganizationDataWrapper(DaoRepository repository) : this()
+		{
+			this.DaoRepository = repository;
+		}
+
+		[JsonIgnore]
+		public DaoRepository DaoRepository { get; set; }
+
+		[JsonIgnore]
+		public Dictionary<string, PropertyInfo> UpdatedXrefCollectionProperties { get; set; }
+
+		protected void SetUpdatedXrefCollectionProperty(string propertyName, PropertyInfo correspondingProperty)
+		{
+			if(UpdatedXrefCollectionProperties != null && !UpdatedXrefCollectionProperties.ContainsKey(propertyName))
+			{
+				UpdatedXrefCollectionProperties.Add(propertyName, correspondingProperty);				
+			}
+			else if(UpdatedXrefCollectionProperties != null)
+			{
+				UpdatedXrefCollectionProperties[propertyName] = correspondingProperty;				
+			}
+		}
+
+
+
+
+        // right xref
+
+// Right Xref property: Left -> PersonData ; Right -> OrganizationData
+		List<Bam.Protocol.Data.Profile.PersonData> _personDatas;
+		public override List<Bam.Protocol.Data.Profile.PersonData> People
+		{
+			get
+			{
+				if(_personDatas == null || _personDatas.Count == 0)
+				{
+					var xref = new XrefDaoCollection<Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData, Bam.Protocol.Data.Profile.Dao.PersonData>(DaoRepository.GetDaoInstance(this), false);
+					xref.Load(DaoRepository.Database);
+					_personDatas = ((IEnumerable)xref).CopyAs<Bam.Protocol.Data.Profile.PersonData>().ToList();
+					SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("People"));					
+				}
+
+				return _personDatas;
+			}
+			set
+			{
+				_personDatas = value;
+				SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("People"));
+			}
+		}
+
+	}
+	// -- generated
+}																								

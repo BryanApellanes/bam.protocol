@@ -7,7 +7,7 @@ public class ServerSessionState : IServerSessionState
 {
     readonly Dictionary<string, object> _state = new Dictionary<string, object>();
 
-    public ServerSessionState(ServerSession session, ServerSessionDataRepository repository)
+    public ServerSessionState(ServerSession session, ServerSessionSchemaRepository repository)
     {
         this.Repository = repository;
         this.Data = session;
@@ -30,7 +30,7 @@ public class ServerSessionState : IServerSessionState
         _loading = false;
     }
 
-    protected ServerSessionDataRepository Repository { get; set; }
+    protected ServerSessionSchemaRepository Repository { get; set; }
     protected ServerSession Data { get; set; }
     
     public string SessionId { get; set; }

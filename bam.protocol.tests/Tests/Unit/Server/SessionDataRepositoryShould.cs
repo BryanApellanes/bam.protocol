@@ -21,7 +21,7 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
         string testSessionId = 16.RandomLetters();
         FileInfo dbFile = new FileInfo($"./.bam/tests/{nameof(SaveValues)}.sqlite");
         SQLiteDatabase database = new SQLiteDatabase(dbFile);
-        ServerSessionDataRepository repository = new ServerSessionDataRepository()
+        ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
         {
             Database = database
         };
@@ -47,7 +47,7 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
         string testSessionId = 16.RandomLetters();
         FileInfo dbFile = new FileInfo($"./.bam/tests/{nameof(SaveValues)}.sqlite");
         SQLiteDatabase database = new SQLiteDatabase(dbFile);
-        ServerSessionDataRepository repository = new ServerSessionDataRepository()
+        ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
         {
             Database = database
         };
@@ -76,7 +76,7 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
         string testSessionId = 16.RandomLetters();
         FileInfo dbFile = new FileInfo($"./.bam/tests/{nameof(SaveValues)}.sqlite");
         SQLiteDatabase database = new SQLiteDatabase(dbFile);
-        ServerSessionDataRepository repository = new ServerSessionDataRepository()
+        ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
         {
             Database = database
         };

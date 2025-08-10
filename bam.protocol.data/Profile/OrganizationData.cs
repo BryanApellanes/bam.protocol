@@ -8,5 +8,5 @@ public class OrganizationData : KeyedAuditRepoData, IOrganization
     public string Handle { get; set; }
     
     public string Name { get; set; }
-    public virtual List<IPerson> Persons { get; set; }
+    public virtual List<PersonData> People { get; set; }
 }

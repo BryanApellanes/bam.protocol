@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Asn1.X509;
+﻿using Bam.Protocol.Data;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace Bam.Protocol;
 

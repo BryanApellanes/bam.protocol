@@ -7,6 +7,7 @@ using NSubstitute;
 using Org.BouncyCastle.X509;
 using Bam.Encryption;
 using Bam.Protocol;
+using Bam.Protocol.Data;
 using Bam.Protocol.Profile;
 using Org.BouncyCastle.Asn1.X509;
 using ThirdParty.BouncyCastle.Math;

@@ -11,7 +11,7 @@ namespace Bam.Protocol.Server;
 public class ServerSessionManager : IServerSessionManager
 {
 
-    public ServerSessionManager(ServerSessionDataRepository repository, ISignatureProvider signatureProvider, IKeyManager keyManager, INonceProvider nonceProvider)
+    public ServerSessionManager(ServerSessionSchemaRepository repository, ISignatureProvider signatureProvider, IKeyManager keyManager, INonceProvider nonceProvider)
     {
         this.Repository = repository;
         this.SignatureProvider = signatureProvider;
@@ -25,7 +25,7 @@ public class ServerSessionManager : IServerSessionManager
    // protected IPrivateKeyStorage PrivateKeyStorage { get; set; }
    // protected IPublicKeyStorage PublicKeyStorage { get; set; }
     protected INonceProvider NonceProvider { get; set; }
-    public ServerSessionDataRepository Repository { get; private set; }
+    public ServerSessionSchemaRepository Repository { get; private set; }
 
     protected StartSessionResponse CreateStartSessionResponse(EccPublicKey serverPublicKey, Stream outputStream, int statusCode = 404)
     {

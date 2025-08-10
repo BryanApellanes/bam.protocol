@@ -47,7 +47,6 @@ namespace Bam.Protocol.Data.Client.Dao
         public ClientSessionKeyValueColumns Id => new ClientSessionKeyValueColumns("Id");
         public ClientSessionKeyValueColumns Uuid => new ClientSessionKeyValueColumns("Uuid");
         public ClientSessionKeyValueColumns Cuid => new ClientSessionKeyValueColumns("Cuid");
-        public ClientSessionKeyValueColumns ServerSessionId => new ClientSessionKeyValueColumns("ServerSessionId");
         public ClientSessionKeyValueColumns Key => new ClientSessionKeyValueColumns("Key");
         public ClientSessionKeyValueColumns Value => new ClientSessionKeyValueColumns("Value");
         public ClientSessionKeyValueColumns CompositeKeyId => new ClientSessionKeyValueColumns("CompositeKeyId");
@@ -58,6 +57,7 @@ namespace Bam.Protocol.Data.Client.Dao
         public ClientSessionKeyValueColumns Deleted => new ClientSessionKeyValueColumns("Deleted");
         public ClientSessionKeyValueColumns Created => new ClientSessionKeyValueColumns("Created");
 
+        public ClientSessionKeyValueColumns ClientSessionDataId => new ClientSessionKeyValueColumns("ClientSessionDataId", true);
 
 		public Type DaoType => typeof(ClientSessionKeyValue);
 

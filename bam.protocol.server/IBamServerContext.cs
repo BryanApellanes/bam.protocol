@@ -2,6 +2,8 @@
 	Copyright © Bryan Apellanes 2022  
 */
 
+using Bam.Protocol.Data;
+
 namespace Bam.Protocol.Server
 {
     public interface IBamServerContext

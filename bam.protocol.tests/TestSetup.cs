@@ -6,11 +6,11 @@ namespace Bam.Protocol.Tests;
 
 public class TestSetup
 {
-    public static ServerSessionDataRepository CreateTestData(string testSessionId, Dictionary<string, string> keyValues,  string fileName)
+    public static ServerSessionSchemaRepository CreateTestData(string testSessionId, Dictionary<string, string> keyValues,  string fileName)
     {
         FileInfo dbFile = new FileInfo($"./.bam/tests/{fileName}.sqlite");
         SQLiteDatabase database = new SQLiteDatabase(dbFile);
-        ServerSessionDataRepository repository = new ServerSessionDataRepository()
+        ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
         {
             Database = database
         };
