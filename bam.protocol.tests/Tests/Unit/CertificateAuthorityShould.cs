@@ -66,7 +66,6 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
         Message.PrintLine(certificate.ObjectToPem());
 
         Message.PrintLine("Signature is issuer pub key valid: {0}", certificate.IsSignatureValid(issuerKeyPair.PublicKey.Value));
-        //Message.PrintLine("Signature is subject pub key valid: {0}", certificate.IsSignatureValid(subjectKeyPair.PublicKey.Value));
     }
     
     [UnitTest]

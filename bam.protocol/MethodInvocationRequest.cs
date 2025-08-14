@@ -74,7 +74,7 @@ public class MethodInvocationRequest : IInvocationRequest
     }
 
     /// <summary>
-    /// Initializes the invocation request for a client to transmit to a server.  Only necessary to capture instance context if necessary.
+    /// Initializes the invocation request for a client to transmit to a server.  Only necessary to capture instance context if required.
     /// </summary>
     /// <param name="instanceProvider"></param>
     /// <exception cref="InvalidOperationException"></exception>

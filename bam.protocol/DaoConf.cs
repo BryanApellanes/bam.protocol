@@ -37,7 +37,7 @@ namespace Bam.Server
         }
         
         /// <summary>
-        /// The name of the connection (this equates to ContextName in some instances (example, qi.js) and 
+        /// The name of the connection (this equals ContextName in some instances (example, qi.js) and 
         /// is also the name of the connection string setting used in the default configuration file)
         /// </summary>
         public string ConnectionName { get; set; }
