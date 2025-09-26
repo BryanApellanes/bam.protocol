@@ -103,6 +103,20 @@ namespace Bam.Protocol.Data.Common.Dao
         }
     }
 
+    // property:Description, columnName: Description	
+    [Bam.Data.Column(Name="Description", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string Description
+    {
+        get
+        {
+            return GetStringValue("Description");
+        }
+        set
+        {
+            SetValue("Description", value);
+        }
+    }
+
     // property:AddressFamily, columnName: AddressFamily	
     [Bam.Data.Column(Name="AddressFamily", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
     public string AddressFamily
@@ -142,104 +156,6 @@ namespace Bam.Protocol.Data.Common.Dao
         set
         {
             SetValue("MacAddress", value);
-        }
-    }
-
-    // property:Key, columnName: Key	
-    [Bam.Data.Column(Name="Key", DbDataType="BigInt", MaxLength="19", AllowNull=true)]
-    public ulong? Key
-    {
-        get
-        {
-            return GetULongValue("Key");
-        }
-        set
-        {
-            SetValue("Key", value);
-        }
-    }
-
-    // property:CompositeKeyId, columnName: CompositeKeyId	
-    [Bam.Data.Column(Name="CompositeKeyId", DbDataType="BigInt", MaxLength="19", AllowNull=true)]
-    public ulong? CompositeKeyId
-    {
-        get
-        {
-            return GetULongValue("CompositeKeyId");
-        }
-        set
-        {
-            SetValue("CompositeKeyId", value);
-        }
-    }
-
-    // property:CompositeKey, columnName: CompositeKey	
-    [Bam.Data.Column(Name="CompositeKey", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string CompositeKey
-    {
-        get
-        {
-            return GetStringValue("CompositeKey");
-        }
-        set
-        {
-            SetValue("CompositeKey", value);
-        }
-    }
-
-    // property:CreatedBy, columnName: CreatedBy	
-    [Bam.Data.Column(Name="CreatedBy", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string CreatedBy
-    {
-        get
-        {
-            return GetStringValue("CreatedBy");
-        }
-        set
-        {
-            SetValue("CreatedBy", value);
-        }
-    }
-
-    // property:ModifiedBy, columnName: ModifiedBy	
-    [Bam.Data.Column(Name="ModifiedBy", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string ModifiedBy
-    {
-        get
-        {
-            return GetStringValue("ModifiedBy");
-        }
-        set
-        {
-            SetValue("ModifiedBy", value);
-        }
-    }
-
-    // property:Modified, columnName: Modified	
-    [Bam.Data.Column(Name="Modified", DbDataType="DateTime", MaxLength="8", AllowNull=true)]
-    public DateTime? Modified
-    {
-        get
-        {
-            return GetDateTimeValue("Modified");
-        }
-        set
-        {
-            SetValue("Modified", value);
-        }
-    }
-
-    // property:Deleted, columnName: Deleted	
-    [Bam.Data.Column(Name="Deleted", DbDataType="DateTime", MaxLength="8", AllowNull=true)]
-    public DateTime? Deleted
-    {
-        get
-        {
-            return GetDateTimeValue("Deleted");
-        }
-        set
-        {
-            SetValue("Deleted", value);
         }
     }
 

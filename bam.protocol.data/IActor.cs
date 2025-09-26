@@ -6,7 +6,7 @@ using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<IActor, ActorData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IActor, ActorData>))]
 public interface IActor
 {
     

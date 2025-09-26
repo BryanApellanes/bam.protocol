@@ -49,13 +49,6 @@ namespace Bam.Protocol.Data.Common.Dao
         public ActorDataColumns Cuid => new ActorDataColumns("Cuid");
         public ActorDataColumns Name => new ActorDataColumns("Name");
         public ActorDataColumns Handle => new ActorDataColumns("Handle");
-        public ActorDataColumns Key => new ActorDataColumns("Key");
-        public ActorDataColumns CompositeKeyId => new ActorDataColumns("CompositeKeyId");
-        public ActorDataColumns CompositeKey => new ActorDataColumns("CompositeKey");
-        public ActorDataColumns CreatedBy => new ActorDataColumns("CreatedBy");
-        public ActorDataColumns ModifiedBy => new ActorDataColumns("ModifiedBy");
-        public ActorDataColumns Modified => new ActorDataColumns("Modified");
-        public ActorDataColumns Deleted => new ActorDataColumns("Deleted");
         public ActorDataColumns Created => new ActorDataColumns("Created");
 
 

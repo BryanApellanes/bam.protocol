@@ -5,7 +5,7 @@ using Bam.Protocol.Server;
 
 namespace Bam.Protocol.Data.Common;
 
-public class AgentData : KeyedAuditRepoData, IActor, IAgent
+public class AgentData : RepoData, IActor, IAgent, IHasHandle
 {
     public virtual ulong ActorDataId { get; set; }
     

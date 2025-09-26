@@ -76,7 +76,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 			AddType<Bam.Protocol.Data.Profile.PersonMailingAddressData>();
 			
 			
-			AddType<Bam.Protocol.Data.Profile.ProfileAccountData>();
+			AddType<Bam.Protocol.Data.Profile.ProfileData>();
 			
 			
 			AddType<Bam.Protocol.Data.Profile.ProfileAdditionalProperties>();
@@ -2205,11 +2205,11 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// one is created; success depends on the nullability
 		/// of the specified columns.
 		/// </summary>
-		public void SetOneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where, out Bam.Protocol.Data.Profile.ProfileAccountData result)
+		public void SetOneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where, out Bam.Protocol.Data.Profile.ProfileData result)
 		{
 			Bam.Protocol.Data.Profile.Dao.ProfileAccountData.SetOneWhere(where, out Bam.Protocol.Data.Profile.Dao.ProfileAccountData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Profile.ProfileAccountData>();
-            result = new DaoRepoData<Bam.Protocol.Data.Profile.ProfileAccountData>(data, this);
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Profile.ProfileData>();
+            result = new DaoRepoData<Bam.Protocol.Data.Profile.ProfileData>(data, this);
 		}
 
 		/// <summary>
@@ -2218,11 +2218,11 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Profile.ProfileAccountData GetOneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where)
+		public Bam.Protocol.Data.Profile.ProfileData GetOneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where)
 		{
-			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileAccountData>();
-			var data = (Bam.Protocol.Data.Profile.ProfileAccountData)Bam.Protocol.Data.Profile.Dao.ProfileAccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
-            return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileAccountData>(data, this); 
+			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileData>();
+			var data = (Bam.Protocol.Data.Profile.ProfileData)Bam.Protocol.Data.Profile.Dao.ProfileAccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+            return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileData>(data, this); 
         }
 
 		/// <summary>
@@ -2234,11 +2234,11 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ProfileAccountDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.ProfileAccountData OneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where)
+		public Bam.Protocol.Data.Profile.ProfileData OneProfileAccountDataWhere(WhereDelegate<ProfileAccountDataColumns> where)
         {
-            Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileAccountData>();
-            var data = (Bam.Protocol.Data.Profile.ProfileAccountData)Bam.Protocol.Data.Profile.Dao.ProfileAccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileAccountData>(data, this);           
+            Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileData>();
+            var data = (Bam.Protocol.Data.Profile.ProfileData)Bam.Protocol.Data.Profile.Dao.ProfileAccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileData>(data, this);           
         }
 
 		/// <summary>
@@ -2248,9 +2248,9 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Profile.ProfileAccountDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Profile.ProfileAccountData> ProfileAccountDatasWhere(WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Profile.ProfileData> ProfileAccountDatasWhere(WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy = null)
         {
-            return Wrap<Bam.Protocol.Data.Profile.ProfileAccountData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Where(where, orderBy, Database));
+            return Wrap<Bam.Protocol.Data.Profile.ProfileData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Where(where, orderBy, Database));
         }
 		
 		/// <summary>
@@ -2266,14 +2266,14 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ProfileAccountDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Profile.ProfileAccountData> TopProfileAccountDatasWhere(int count, WhereDelegate<ProfileAccountDataColumns> where)
+		public IEnumerable<Bam.Protocol.Data.Profile.ProfileData> TopProfileAccountDatasWhere(int count, WhereDelegate<ProfileAccountDataColumns> where)
         {
-            return Wrap<Bam.Protocol.Data.Profile.ProfileAccountData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, Database));
+            return Wrap<Bam.Protocol.Data.Profile.ProfileData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, Database));
         }
 
-        public IEnumerable<Bam.Protocol.Data.Profile.ProfileAccountData> TopProfileAccountDatasWhere(int count, WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy)
+        public IEnumerable<Bam.Protocol.Data.Profile.ProfileData> TopProfileAccountDatasWhere(int count, WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy)
         {
-            return Wrap<Bam.Protocol.Data.Profile.ProfileAccountData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, orderBy, Database));
+            return Wrap<Bam.Protocol.Data.Profile.ProfileData>(Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, orderBy, Database));
         }
                                 
 		/// <summary>
@@ -2304,11 +2304,11 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
             }, Database);
         }*/
 		
-        public async Task BatchAllProfileAccountDatas(int batchSize, Action<IEnumerable<Bam.Protocol.Data.Profile.ProfileAccountData>> batchProcessor)
+        public async Task BatchAllProfileAccountDatas(int batchSize, Action<IEnumerable<Bam.Protocol.Data.Profile.ProfileData>> batchProcessor)
         {
             await Bam.Protocol.Data.Profile.Dao.ProfileAccountData.BatchAll(batchSize, (batch) =>
             {
-				batchProcessor(Wrap<Bam.Protocol.Data.Profile.ProfileAccountData>(batch));
+				batchProcessor(Wrap<Bam.Protocol.Data.Profile.ProfileData>(batch));
             }, Database);
         }
 

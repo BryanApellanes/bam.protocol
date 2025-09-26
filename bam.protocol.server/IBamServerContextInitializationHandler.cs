@@ -2,5 +2,5 @@
 
 public interface IBamServerContextInitializationHandler
 {
-    BamServerContextInitialization HandleInitialization(BamServerContextInitialization initialization);
+    BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization);
 }

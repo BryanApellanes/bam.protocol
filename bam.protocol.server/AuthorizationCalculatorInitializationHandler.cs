@@ -7,7 +7,7 @@ public class AuthorizationCalculatorInitializationHandler : IBamServerContextIni
         this.AuthorizationCalculator = calculator;
     }
     protected IAuthorizationCalculator AuthorizationCalculator { get; set; }
-    public BamServerContextInitialization HandleInitialization(BamServerContextInitialization initialization)
+    public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
         IAuthorizationCalculation authorization = AuthorizationCalculator.CalculateAuthorization(context);

@@ -47,16 +47,10 @@ namespace Bam.Protocol.Data.Common.Dao
         public NicDataColumns Id => new NicDataColumns("Id");
         public NicDataColumns Uuid => new NicDataColumns("Uuid");
         public NicDataColumns Cuid => new NicDataColumns("Cuid");
+        public NicDataColumns Description => new NicDataColumns("Description");
         public NicDataColumns AddressFamily => new NicDataColumns("AddressFamily");
         public NicDataColumns Address => new NicDataColumns("Address");
         public NicDataColumns MacAddress => new NicDataColumns("MacAddress");
-        public NicDataColumns Key => new NicDataColumns("Key");
-        public NicDataColumns CompositeKeyId => new NicDataColumns("CompositeKeyId");
-        public NicDataColumns CompositeKey => new NicDataColumns("CompositeKey");
-        public NicDataColumns CreatedBy => new NicDataColumns("CreatedBy");
-        public NicDataColumns ModifiedBy => new NicDataColumns("ModifiedBy");
-        public NicDataColumns Modified => new NicDataColumns("Modified");
-        public NicDataColumns Deleted => new NicDataColumns("Deleted");
         public NicDataColumns Created => new NicDataColumns("Created");
 
         public NicDataColumns DeviceDataId => new NicDataColumns("DeviceDataId", true);

@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace Bam.Protocol;
 
 
-[JsonConverter(typeof(InterfaceTypeConverter<IOrganization, OrganizationData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IOrganization, OrganizationData>))]
 public interface IOrganization
 {
     string Handle { get; set; }

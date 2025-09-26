@@ -14,23 +14,24 @@ public class BamServerContextProvider : Loggable, IBamServerContextProvider
     protected IBamRequestReader RequestReader { get; private set; }
     protected  IBamResponseProvider ResponseProvider { get; private set; }
 
-    public IBamServerContext CreateServerContext(HttpListenerRequest httpRequest, string requestId)
+    public IBamServerContext CreateServerContext(HttpListenerContext httpContext, string requestId)
     {
-        IBamRequest request = RequestReader.ReadRequest(httpRequest);
+        IBamRequest request = RequestReader.ReadRequest(httpContext.Request);
         return new BamServerContext
         {
+            HttpContext = httpContext,
             RequestId = requestId,
             BamRequest = request,
         };
     }
+
     public IBamServerContext CreateServerContext(TcpClient client, string requestId)
     {
         IBamRequest request = RequestReader.ReadRequest(client);
         return new BamServerContext
         {
             RequestId = requestId,
-            BamRequest = request,
-            //BamResponse = new BamResponse(stream)
+            BamRequest = request
         };
     }
     
@@ -40,8 +41,7 @@ public class BamServerContextProvider : Loggable, IBamServerContextProvider
         return new BamServerContext
         {
             RequestId = requestId,
-            BamRequest = request,
-            //BamResponse = new BamResponse(stream)
+            BamRequest = request
         };
     }
 }

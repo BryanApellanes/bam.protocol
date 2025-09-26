@@ -35,7 +35,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     
     public event EventHandler<InitializationExceptionEventArgs>? InitializationException;
     
-    public BamServerContextInitialization InitializeServerContext(BamServerContextInitialization initialization)
+    public BamServerInitializationContext InitializeServerContext(BamServerInitializationContext initialization)
     {
         IBamServerContext serverContext = initialization.ServerContext;
         try
@@ -78,7 +78,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
-    private BamServerContextInitialization InitializeAuthorization(BamServerContextInitialization initialization,
+    private BamServerInitializationContext InitializeAuthorization(BamServerInitializationContext initialization,
         BamServerEventArgs args)
     {
         FireEvent(AuthorizeRequestStarted, args);
@@ -87,7 +87,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
-    private BamServerContextInitialization InitializeCommand(BamServerContextInitialization initialization,
+    private BamServerInitializationContext InitializeCommand(BamServerInitializationContext initialization,
         BamServerEventArgs args)
     {
         FireEvent(ResolveCommandStarted, args);
@@ -96,7 +96,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
-    private BamServerContextInitialization InitializeActor(BamServerContextInitialization initialization,
+    private BamServerInitializationContext InitializeActor(BamServerInitializationContext initialization,
         BamServerEventArgs args)
     {
         FireEvent(ResolveActorStarted, args);
@@ -105,7 +105,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
-    private BamServerContextInitialization InitializeSession(BamServerContextInitialization initialization,
+    private BamServerInitializationContext InitializeSession(BamServerInitializationContext initialization,
         BamServerEventArgs args)
     {
         FireEvent(ResolveSessionStateStarted, args);
@@ -151,7 +151,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     }
 
     
-    protected void OnBeforeInitialization(BamServerContextInitialization initialization, BamServerEventArgs args)
+    protected void OnBeforeInitialization(BamServerInitializationContext initialization, BamServerEventArgs args)
     {
         try
         {
@@ -175,7 +175,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         }
     }
 
-    protected void OnAfterInitialization(BamServerContextInitialization initialization, BamServerEventArgs args)
+    protected void OnAfterInitialization(BamServerInitializationContext initialization, BamServerEventArgs args)
     {
         try
         {

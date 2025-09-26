@@ -7,7 +7,7 @@ public class CommandInitializationHandler: IBamServerContextInitializationHandle
         this.CommandResolver = commandResolver;
     }
     protected ICommandResolver CommandResolver { get; set; }
-    public BamServerContextInitialization HandleInitialization(BamServerContextInitialization initialization)
+    public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
         ICommand command = CommandResolver.ResolveCommand(context.BamRequest);

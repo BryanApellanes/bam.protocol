@@ -12,62 +12,72 @@ using Newtonsoft.Json;
 
 namespace Bam.Protocol.Data.Common
 {
-    public class MachineData: KeyedAuditRepoData, IMachine
+    public class MachineData : RepoData, IMachine, IHasHandle
     {
-        public MachineData()
+        public MachineData(): this(true)
         {
-            Name = Environment.MachineName;
-            DnsName = Dns.GetHostName();
-            SetNics();
         }
 
-        public MachineData(string dnsName)
+        public MachineData(bool initialize = true)
         {
-            Name = Environment.MachineName;
-            DnsName = dnsName;
-            SetNics();
+            if (initialize)
+            {
+                Initialize();
+            }
         }
+
+        protected virtual void Initialize()
+        {
+            if (!IsInitialized)
+            {
+                Name = Environment.MachineName;
+                DnsName = Dns.GetHostName();
+                SetHostAddresses();
+                SetNics();
+                IsInitialized = true;
+            }
+        }
+
+        protected bool IsInitialized { get; set; }
 
         List<HostAddressData> _hostAddresses;
         public virtual List<HostAddressData> HostAddresses
         {
-            get
-            {
-                if(_hostAddresses == null || _hostAddresses.Count == 0)
-                {
-                    SetHostAddresses();
-                }
-                return _hostAddresses;
-            }
+            get => _hostAddresses ??= new List<HostAddressData>();
             set => _hostAddresses = value;
         }
-        
+
         [CompositeKey]
+        [CompositeHandle]
         public string Name { get; set; }
-        
+
         [CompositeKey]
         public string DnsName { get; set; }
 
         private List<NicData> _nics;
         public virtual List<NicData> NetworkInterfaces
         {
+            get => _nics ??= new List<NicData>();
+            set => _nics = value;
+        }
+
+        [CompositeHandle]
+        public string[] Macs
+        {
             get
             {
-                if(_nics == null || _nics.Count == 0)
-                {
-                    SetNics();
-                }
-                return _nics;
+                return NetworkInterfaces.Select(n => n.MacAddress).ToArray();
             }
-            set => _nics = value;
         }
 
         public override string ToString()
         {
             return $"{Name}@{DnsName}";
         }
+
         static MachineData _current;
         static object _currentLock = new object();
+        [JsonIgnore]
         public static MachineData Current
         {
             get
@@ -75,6 +85,8 @@ namespace Bam.Protocol.Data.Common
                 return _currentLock.DoubleCheckLock(ref _current, () => new MachineData());
             }
         }
+
+        public string Handle { get; set; } = string.Empty;
 
         public override RepoData Save(IRepository repo)
         {
@@ -85,32 +97,7 @@ namespace Bam.Protocol.Data.Common
             }                        
             return existing;
         }
-
-        /// <summary>
-        /// Gets the MAC address of the first Network Interface Card in NetworkInterfaces.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public string GetFirstMac()
-        {
-            INic nic = NetworkInterfaces.FirstOrDefault();
-            if (nic == null)
-            {
-                throw new InvalidOperationException("Unable to retrieve first Nic of current host");
-            }
-
-            string mac = nic.MacAddress;
-            return mac;
-        }
         
-        public string ToJson()
-        {
-            return this.ToJson(new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            });
-        }
-
         private void SetNics()
         {
             var context = new { Nics = new List<NicData>() };
@@ -125,6 +112,7 @@ namespace Bam.Protocol.Data.Common
                         {
                             AddressFamily = unicast.Address.AddressFamily.ToString(),
                             Address = unicast.Address.ToString(),
+                            Description = nic.Description,
                             MacAddress = nic.GetPhysicalAddress().ToString()
                         });
                 }

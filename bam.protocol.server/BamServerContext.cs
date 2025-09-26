@@ -1,3 +1,4 @@
+using System.Net;
 using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Server;
@@ -5,6 +6,7 @@ namespace Bam.Protocol.Server;
 public class BamServerContext : IBamServerContext
 {
     public RequestType RequestType { get; set; }
+    public HttpListenerContext? HttpContext { get; set; }
     public string RequestId { get; internal set; }
     public IBamRequest BamRequest { get; internal set; }
     public IBamResponse BamResponse { get; set; }

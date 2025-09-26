@@ -49,13 +49,7 @@ namespace Bam.Protocol.Data.Common.Dao
         public MachineDataColumns Cuid => new MachineDataColumns("Cuid");
         public MachineDataColumns Name => new MachineDataColumns("Name");
         public MachineDataColumns DnsName => new MachineDataColumns("DnsName");
-        public MachineDataColumns Key => new MachineDataColumns("Key");
-        public MachineDataColumns CompositeKeyId => new MachineDataColumns("CompositeKeyId");
-        public MachineDataColumns CompositeKey => new MachineDataColumns("CompositeKey");
-        public MachineDataColumns CreatedBy => new MachineDataColumns("CreatedBy");
-        public MachineDataColumns ModifiedBy => new MachineDataColumns("ModifiedBy");
-        public MachineDataColumns Modified => new MachineDataColumns("Modified");
-        public MachineDataColumns Deleted => new MachineDataColumns("Deleted");
+        public MachineDataColumns Handle => new MachineDataColumns("Handle");
         public MachineDataColumns Created => new MachineDataColumns("Created");
 
 

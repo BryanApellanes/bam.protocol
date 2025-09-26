@@ -2,6 +2,7 @@
 	Copyright © Bryan Apellanes 2022  
 */
 
+using System.Net;
 using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Server
@@ -10,6 +11,7 @@ namespace Bam.Protocol.Server
     {
         
         RequestType RequestType { get; set; }
+        HttpListenerContext? HttpContext { get; set; }
         string RequestId { get; }
         IBamRequest BamRequest { get; }
         IBamResponse BamResponse { get; set; }

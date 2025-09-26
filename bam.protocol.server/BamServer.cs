@@ -35,12 +35,12 @@ namespace Bam.Protocol.Server
             Options.SubscribeEventHandlers(this);
         }
 
-        protected Dictionary<RequestType, Func<BamServerContextInitialization>> RequestTypeInitializationInstantiators =
-            new Dictionary<RequestType, Func<BamServerContextInitialization>>()
+        protected Dictionary<RequestType, Func<BamServerInitializationContext>> RequestTypeInitializationInstantiators =
+            new Dictionary<RequestType, Func<BamServerInitializationContext>>()
             {
-                { RequestType.Http, () => new HttpBamServerContextInitialization() },
-                { RequestType.Tcp, () => new TcpBamServerContextInitialization() },
-                { RequestType.Udp, () => new UdpBamServerContextInitialization() }
+                { RequestType.Http, () => new HttpBamServerInitializationContext() },
+                { RequestType.Tcp, () => new TcpBamServerInitializationContext() },
+                { RequestType.Udp, () => new UdpBamServerInitializationContext() }
             };
         
         Encoding _encoding;
@@ -224,17 +224,17 @@ namespace Bam.Protocol.Server
                 FireEvent(HttpRequestReceived, new BamServerEventArgs() { Server = this });
                 
                 FireEvent(CreateContextStarted, new BamServerEventArgs() { Server = this });
-                IBamServerContext serverContext = ServerContextProvider.CreateServerContext(listenerContext.Request, requestId);
+                IBamServerContext serverContext = ServerContextProvider.CreateServerContext(listenerContext, requestId);
                 serverContext.RequestType = RequestType.Http;
                 FireEvent(CreateContextComplete, new BamServerEventArgs() { Server = this });
                 
                 
                 FireEvent(InitializeContextStarted, new BamServerEventArgs() { Server = this });
                 BamServerEventArgs args = new BamServerEventArgs(listenerContext, serverContext);
-                BamServerContextInitialization initialization = InitializeServerContext(serverContext, args);
+                BamServerInitializationContext initialization = InitializeServerContext(serverContext, args);
                 FireEvent(InitializeContextComplete, new BamServerEventArgs() { Server = this });
                 
-                IBamResponse response = CreateResponse(initialization);
+                IBamResponse response = ResponseProvider.CreateResponse(initialization);
                 response.Send();
             }
             catch (Exception ex)
@@ -343,27 +343,15 @@ namespace Bam.Protocol.Server
             this.CheckRequiredProperties();
         }
 
-        private BamServerContextInitialization InitializeServerContext(IBamServerContext serverContext, BamServerEventArgs args)
+        private BamServerInitializationContext InitializeServerContext(IBamServerContext serverContext, BamServerEventArgs args)
         {
             IBamServerContextInitializer initializer = Options.GetServerContextInitializer();
-            BamServerContextInitialization initialization =
+            BamServerInitializationContext initialization =
                 RequestTypeInitializationInstantiators[serverContext.RequestType]();
             initialization.Server = this;
             initialization.ServerContext = serverContext;
             initialization.EventArgs = args;
             return initializer.InitializeServerContext(initialization);
-        }
-
-        private IBamResponse CreateResponse(BamServerContextInitialization initialization)
-        {
-            if (initialization.Status == InitializationStatus.Success)
-            {
-                return ResponseProvider.CreateResponse(initialization.ServerContext);
-            }
-            else
-            {
-                return new HttpRequestFailedResponse(initialization);
-            }
         }
     }
 }

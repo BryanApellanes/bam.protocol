@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<IAgent, AgentData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IAgent, AgentData>))]
 public interface IAgent : IActor
 {
     ActorData ActorData { get; set; }

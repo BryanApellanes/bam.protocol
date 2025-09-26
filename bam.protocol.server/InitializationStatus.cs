@@ -3,13 +3,13 @@
 public enum InitializationStatus
 {
     Invalid,
-    BeforeInitializationError,
+    //BeforeInitializationError,
     SessionInitializationFailed,
     SessionRequired,
     ActorResolutionFailed,
     CommandResolutionFailed,
     AuthorizationCalculationFailed,
-    AfterInitializationError,
+    //AfterInitializationError,
     UnknownError,
     Success,
 }

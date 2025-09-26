@@ -4,7 +4,7 @@ using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<IGroup, GroupData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IGroup, GroupData>))]
 public interface IGroup
 {
     string Name { get; set; }

@@ -50,13 +50,6 @@ namespace Bam.Protocol.Data.Common.Dao
         public AgentDataColumns ActorDataId => new AgentDataColumns("ActorDataId");
         public AgentDataColumns DeviceDataId => new AgentDataColumns("DeviceDataId");
         public AgentDataColumns ProcessDescriptorDataId => new AgentDataColumns("ProcessDescriptorDataId");
-        public AgentDataColumns Key => new AgentDataColumns("Key");
-        public AgentDataColumns CompositeKeyId => new AgentDataColumns("CompositeKeyId");
-        public AgentDataColumns CompositeKey => new AgentDataColumns("CompositeKey");
-        public AgentDataColumns CreatedBy => new AgentDataColumns("CreatedBy");
-        public AgentDataColumns ModifiedBy => new AgentDataColumns("ModifiedBy");
-        public AgentDataColumns Modified => new AgentDataColumns("Modified");
-        public AgentDataColumns Deleted => new AgentDataColumns("Deleted");
         public AgentDataColumns Created => new AgentDataColumns("Created");
 
 

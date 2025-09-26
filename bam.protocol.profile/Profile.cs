@@ -3,22 +3,13 @@ using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Profile;
 
-public class Profile
-{   
-    public string Email { get; set; }
-    public string Phone { get; set; }
-    
-    public IActor Actor { get; set; }
-    
-    /// <summary>
-    /// Gets or sets this profiles public key representing the identity.
-    /// </summary>
-    public IPublicKey PublicKey { get; set; }
-    
-
-    
-    public AesKey GetSymmetricKeyPair()
-    {
-        throw new NotImplementedException();
-    }
+public class Profile : IProfile
+{
+    public string ProfileHandle { get; set; }
+    public string Name { get; set; }
+    public bool ShowEmail { get; set; }
+    public bool ShowPhone { get; set; }
+    public string MailingAddressHandles { get; set; }
+    public string DeviceHandle { get; set; }
+    public string PersonHandle { get; set; }
 }

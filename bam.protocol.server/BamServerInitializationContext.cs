@@ -1,8 +1,8 @@
 ﻿namespace Bam.Protocol.Server;
 
-public abstract class BamServerContextInitialization
+public abstract class BamServerInitializationContext
 {
-    public BamServerContextInitialization()
+    public BamServerInitializationContext()
     {
         CanContinue = true;
     }

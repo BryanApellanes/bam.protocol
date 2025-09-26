@@ -5,7 +5,7 @@ namespace Bam.Protocol.Server;
 
 public interface IBamServerContextProvider
 {
-    IBamServerContext CreateServerContext(HttpListenerRequest httpRequest, string requestId);
+    IBamServerContext CreateServerContext(HttpListenerContext httpContext, string requestId);
     IBamServerContext CreateServerContext(TcpClient client, string requestId);
     IBamServerContext CreateServerContext(Stream stream, string requestId);
 }

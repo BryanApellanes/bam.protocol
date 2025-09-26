@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace Bam.Protocol.Data.Common
 {
     [Serializable]
-    public class ProcessDescriptorData : KeyedAuditRepoData, IProcessDescriptor
+    public class ProcessDescriptorData : RepoData, IProcessDescriptor
     {
         public ProcessDescriptorData()
         {
@@ -99,7 +99,6 @@ namespace Bam.Protocol.Data.Common
                         CommandLine = Environment.CommandLine
                     };                    
                     result.InstanceIdentifier = result.ToString();
-                    //result.Hash = result.InstanceIdentifier.Sha1();
                     return result;
                 });
             }

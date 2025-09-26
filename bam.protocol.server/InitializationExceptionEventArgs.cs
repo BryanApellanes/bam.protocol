@@ -2,7 +2,7 @@
 
 public class InitializationExceptionEventArgs : EventArgs
 {
-    public InitializationExceptionEventArgs(Exception ex, BamServerContextInitialization initialization)
+    public InitializationExceptionEventArgs(Exception ex, BamServerInitializationContext initialization)
     {
         this.Exception = ex;
         this.Initialization = initialization;
@@ -10,6 +10,6 @@ public class InitializationExceptionEventArgs : EventArgs
     
     public Exception Exception { get; set; }
     
-    public BamServerContextInitialization Initialization { get; set; }
+    public BamServerInitializationContext Initialization { get; set; }
     
 }

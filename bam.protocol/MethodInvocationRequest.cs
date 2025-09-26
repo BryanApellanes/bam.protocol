@@ -83,23 +83,30 @@ public class MethodInvocationRequest : IInvocationRequest
         if (MethodInfo != null)
         {
             this.OperationIdentifier = Bam.Protocol.OperationIdentifier.For(MethodInfo);
-        }
 
-        if (!MethodInfo.IsStatic)
-        {
-            if (Instance == null)
+
+            if (!MethodInfo.IsStatic)
             {
-                if (instanceProvider == null)
+                if (Instance == null)
                 {
-                    throw new InvalidOperationException("Instance is null and no ServiceRegistry provider was specified.");
+                    if (instanceProvider == null)
+                    {
+                        throw new InvalidOperationException("Instance is null and no ServiceRegistry provider was specified.");
+                    }
+                    Type? type = MethodInfo.DeclaringType;
+                    if (type != null)
+                    {
+                        Instance = instanceProvider.Get(type);
+                    }
                 }
 
-                Instance = instanceProvider.Get(MethodInfo.DeclaringType);
+                if (Instance != null)
+                {
+                    InvocationContextSerializer serializer = instanceProvider.Get<InvocationContextSerializer>();
+                    ContextSerializationFormat = serializer.Format;
+                    SerializedContext = serializer.Serialize(Instance);
+                }
             }
-
-            InvocationContextSerializer serializer = instanceProvider.Get<InvocationContextSerializer>();
-            ContextSerializationFormat = serializer.Format;
-            SerializedContext = serializer.Serialize(Instance);
         }
     }
 

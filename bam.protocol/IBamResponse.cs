@@ -5,7 +5,7 @@
 using System.Text;
 using System.Net;
 
-namespace Bam.Protocol.Server
+namespace Bam.Protocol
 {
     public interface IBamResponse
     {

@@ -13,6 +13,7 @@ public class OperationIdentifier : IOperationIdentifier
     
     public static string For(Type type, string methodName)
     {
+        Args.ThrowIfNull(type, "type");
         return For(type.GetMethod(methodName));
     }
     

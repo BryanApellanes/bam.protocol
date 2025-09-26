@@ -11,7 +11,7 @@ public abstract class BamResponse : IBamResponse
         ContentEncoding = Encoding.UTF8;
         Cookies = new CookieCollection();
         Headers = new Dictionary<string, List<BamHeaderValue>>();
-        statusCode = statusCode;
+        StatusCode = statusCode;
     }
     public Encoding ContentEncoding { get; set; }
     public long ContentLength64 { get; set; }

@@ -4,7 +4,7 @@ using Bam.Protocol.Data.Common;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<IProcessDescriptor, ProcessDescriptorData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IProcessDescriptor, ProcessDescriptorData>))]
 public interface IProcessDescriptor
 {
     string CommandLine { get; set; }

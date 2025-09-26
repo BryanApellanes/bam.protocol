@@ -18,7 +18,7 @@ public interface IBamServerContextInitializer
     
     event EventHandler<InitializationExceptionEventArgs> InitializationException;
     
-    BamServerContextInitialization InitializeServerContext(BamServerContextInitialization context);
+    BamServerInitializationContext InitializeServerContext(BamServerInitializationContext initializationContext);
     
     IBamServerContextInitializer AddBeforeInitializationHandler(IBamServerContextInitializationHandler handler);
     IBamServerContextInitializer AddAfterInitializationHandler(IBamServerContextInitializationHandler handler);

@@ -16,14 +16,14 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 {
 	// generated
 	[Serializable]
-	public class ProfileAccountDataWrapper: Bam.Protocol.Data.Profile.ProfileAccountData, IHasUpdatedXrefCollectionProperties
+	public class ProfileDataWrapper: Bam.Protocol.Data.Profile.ProfileData, IHasUpdatedXrefCollectionProperties
 	{
-		public ProfileAccountDataWrapper()
+		public ProfileDataWrapper()
 		{
 			this.UpdatedXrefCollectionProperties = new Dictionary<string, PropertyInfo>();
 		}
 
-		public ProfileAccountDataWrapper(DaoRepository repository) : this()
+		public ProfileDataWrapper(DaoRepository repository) : this()
 		{
 			this.DaoRepository = repository;
 		}

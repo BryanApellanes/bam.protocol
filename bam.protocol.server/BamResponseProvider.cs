@@ -5,10 +5,31 @@ public abstract class BamResponseProvider : IBamResponseProvider
     public BamResponseProvider(IAuthorizationCalculator authorizationCalculator)
     {
         this.AuthorizationCalculator = authorizationCalculator;
+        this.InitializationStatusResponseHandlers =
+            new Dictionary<InitializationStatus, Func<IBamResponse>>();
     }
     
-    private  IAuthorizationCalculator AuthorizationCalculator { get; set; } 
+    private  IAuthorizationCalculator AuthorizationCalculator { get; set; }
+
+    protected Dictionary<InitializationStatus, Func<IBamResponse>> InitializationStatusResponseHandlers
+    {
+        get;
+        set;
+    }
+
+    protected abstract IBamResponse CreateFailureResponse(BamServerInitializationContext initialization);
     
+    public IBamResponse CreateResponse(BamServerInitializationContext initialization)
+    {
+        if (InitializationStatusResponseHandlers.ContainsKey(initialization.Status))
+        {
+            return InitializationStatusResponseHandlers[initialization.Status]();
+        }
+
+        return CreateFailureResponse(initialization);
+    }
+
+
     public IBamResponse CreateResponse(IBamServerContext serverContext)
     {
         switch (serverContext.AuthorizationCalculation.Access)

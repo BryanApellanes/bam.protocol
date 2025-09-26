@@ -1,5 +1,8 @@
 ﻿namespace Bam.Protocol.Profile;
 
+/// <summary>
+/// Private Enterprise Number and related information from IANA.
+/// </summary>
 public struct ThreeHeadzPen
 {
     public string Decimal { get; set; }

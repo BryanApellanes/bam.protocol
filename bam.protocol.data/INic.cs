@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<INic, NicData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<INic, NicData>))]
 public interface INic
 {
     ulong DeviceDataId { get; set; }

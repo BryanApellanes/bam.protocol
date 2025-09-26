@@ -1,7 +1,7 @@
 ﻿using Bam.Encryption;
 using Bam.Protocol.Data;
 
-namespace Bam.Protocol.Profile;
+namespace Bam.Protocol;
 
 public interface IKeyManager
 {

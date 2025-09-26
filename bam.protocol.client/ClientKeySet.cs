@@ -26,12 +26,12 @@ namespace Bam.Protocol.Data
 
         public IPrivateKey GetRsaPrivateKey()
         {
-            return PrivateKeyManager.GetPrivateKey(new RsaPublicKey(ServerRsaKey));
+            return PrivateKeyManager.GetPrivateRsaKey(new RsaPublicKey(ServerRsaKey));
         }
 
         public IPrivateKey GetEccPrivateKey()
         {
-            return PrivateKeyManager.GetPrivateKey(new EccPublicKey(ClientEccKey));
+            return PrivateKeyManager.GetPrivateEccKey(new EccPublicKey(ClientEccKey));
         }
         
         public string ServerRsaKey { get; }

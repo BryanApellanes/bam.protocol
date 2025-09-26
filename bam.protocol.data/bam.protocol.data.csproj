@@ -28,4 +28,16 @@
       <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Common\Generated_Dao_1\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Common\Generated_Dao_1\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Common\Generated_Dao_1\**" />
+    </ItemGroup>
+
 </Project>

@@ -10,7 +10,7 @@ public class ActorResolverInitializationHandler: IBamServerContextInitialization
     }
     
     protected IActorResolver ActorResolver { get; set; }
-    public BamServerContextInitialization HandleInitialization(BamServerContextInitialization initialization)
+    public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
         IActor actor = ActorResolver.ResolveActor(context.BamRequest);

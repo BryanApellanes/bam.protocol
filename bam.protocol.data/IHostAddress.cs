@@ -6,7 +6,7 @@ using Org.BouncyCastle.Asn1.X509.Qualified;
 
 namespace Bam.Protocol;
 
-[JsonConverter(typeof(InterfaceTypeConverter<IHostAddress, HostAddressData>))]
+//[JsonConverter(typeof(InterfaceTypeConverter<IHostAddress, HostAddressData>))]
 public interface IHostAddress
 {
     ulong DeviceDataId {get;set;}

@@ -48,7 +48,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
 
             reg.For<INonceProvider>().Use<NonceProvider>();
             reg.For<IKeyManager>().Use<KeyManager>();
-            reg.For<ISignatureProvider>().Use<SignatureProvider>();
+            reg.For<ISignatureProvider>().Use<RsaSignatureProvider>();
             reg.For<ServerSessionSchemaRepository>().Use(repository);
             ServerSessionManager manager = reg.Get<ServerSessionManager>();//new ServerSessionManager(repository);
 
@@ -108,7 +108,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
 
             reg.For<INonceProvider>().Use<NonceProvider>();
             reg.For<IKeyManager>().Use<KeyManager>();
-            reg.For<ISignatureProvider>().Use<SignatureProvider>();
+            reg.For<ISignatureProvider>().Use<RsaSignatureProvider>();
             reg.For<ServerSessionSchemaRepository>().Use(repository);
             reg.For<IServerSessionManager>().Use<ServerSessionManager>();
             reg.For<IBamRequest>().Use(mockRequest);

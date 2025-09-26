@@ -9,7 +9,7 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
     
     protected IServerSessionManager SessionManager { get; }
     
-    public BamServerContextInitialization HandleInitialization(BamServerContextInitialization initialization)
+    public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
         IBamRequest request = context.BamRequest;

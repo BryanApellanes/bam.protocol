@@ -59,13 +59,6 @@ namespace Bam.Protocol.Data.Common.Dao
         public ProcessDescriptorDataColumns ExitCode => new ProcessDescriptorDataColumns("ExitCode");
         public ProcessDescriptorDataColumns FilePath => new ProcessDescriptorDataColumns("FilePath");
         public ProcessDescriptorDataColumns CommandLine => new ProcessDescriptorDataColumns("CommandLine");
-        public ProcessDescriptorDataColumns Key => new ProcessDescriptorDataColumns("Key");
-        public ProcessDescriptorDataColumns CompositeKeyId => new ProcessDescriptorDataColumns("CompositeKeyId");
-        public ProcessDescriptorDataColumns CompositeKey => new ProcessDescriptorDataColumns("CompositeKey");
-        public ProcessDescriptorDataColumns CreatedBy => new ProcessDescriptorDataColumns("CreatedBy");
-        public ProcessDescriptorDataColumns ModifiedBy => new ProcessDescriptorDataColumns("ModifiedBy");
-        public ProcessDescriptorDataColumns Modified => new ProcessDescriptorDataColumns("Modified");
-        public ProcessDescriptorDataColumns Deleted => new ProcessDescriptorDataColumns("Deleted");
         public ProcessDescriptorDataColumns Created => new ProcessDescriptorDataColumns("Created");
 
 

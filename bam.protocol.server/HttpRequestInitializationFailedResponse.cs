@@ -1,18 +1,17 @@
 ﻿using System.Net;
 using System.Text;
-using Bam.Protocol.Server;
 
-namespace Bam.Protocol;
+namespace Bam.Protocol.Server;
 
-public class HttpRequestFailedResponse : BamResponse
+public class HttpRequestInitializationFailedResponse : BamResponse
 {
-    public HttpRequestFailedResponse(BamServerContextInitialization initialization) : base(initialization.EventArgs.HttpContext.Response.OutputStream, 400)
+    public HttpRequestInitializationFailedResponse(BamServerInitializationContext initialization) : base(initialization.EventArgs.HttpContext.Response.OutputStream, 400)
     {
         this.Initialization = initialization;
         this.CopyProperties(Response);
     }
 
-    protected BamServerContextInitialization Initialization { get; private set; }
+    protected BamServerInitializationContext Initialization { get; private set; }
     protected HttpListenerResponse Response => Initialization.EventArgs.HttpContext.Response;
     protected Encoding Encoding => Initialization.Server.Encoding;
     protected IObjectEncoderDecoder ObjectEncoderDecoder => Initialization.Server.ObjectEncoderDecoder;

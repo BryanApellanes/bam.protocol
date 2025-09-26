@@ -48,15 +48,9 @@ namespace Bam.Protocol.Data.Common.Dao
         public DeviceDataColumns Uuid => new DeviceDataColumns("Uuid");
         public DeviceDataColumns Cuid => new DeviceDataColumns("Cuid");
         public DeviceDataColumns ProcessDescriptorId => new DeviceDataColumns("ProcessDescriptorId");
+        public DeviceDataColumns Handle => new DeviceDataColumns("Handle");
         public DeviceDataColumns Name => new DeviceDataColumns("Name");
         public DeviceDataColumns DnsName => new DeviceDataColumns("DnsName");
-        public DeviceDataColumns Key => new DeviceDataColumns("Key");
-        public DeviceDataColumns CompositeKeyId => new DeviceDataColumns("CompositeKeyId");
-        public DeviceDataColumns CompositeKey => new DeviceDataColumns("CompositeKey");
-        public DeviceDataColumns CreatedBy => new DeviceDataColumns("CreatedBy");
-        public DeviceDataColumns ModifiedBy => new DeviceDataColumns("ModifiedBy");
-        public DeviceDataColumns Modified => new DeviceDataColumns("Modified");
-        public DeviceDataColumns Deleted => new DeviceDataColumns("Deleted");
         public DeviceDataColumns Created => new DeviceDataColumns("Created");
 
 

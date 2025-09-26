@@ -4,17 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Bam.Data.Repositories;
+using MongoDB.Bson.Serialization.IdGenerators;
+using Newtonsoft.Json;
 
 namespace Bam.Protocol.Data.Common
 {
     [Serializable]
-    public class NicData: KeyedAuditRepoData, INic
+    public class NicData: RepoData, INic
     {
         public virtual ulong DeviceDataId { get; set; }
 
+        [JsonIgnore]
         public virtual DeviceData DeviceData { get; set; }
     
         public virtual ulong MachineDataId { get; set; }
+        
+        public string Description { get; set; }
+        [JsonIgnore]
         public virtual MachineData MachineData { get; set; }
         
         [CompositeKey]

@@ -16,14 +16,10 @@ public class ServerSessionManager : IServerSessionManager
         this.Repository = repository;
         this.SignatureProvider = signatureProvider;
         this.KeyManager = keyManager;
-       // this.PrivateKeyStorage = privateKeyStorage;
-       // this.PublicKeyStorage = publicKeyStorage;
         this.NonceProvider = nonceProvider;
     }
     protected ISignatureProvider SignatureProvider { get; }
     protected IKeyManager KeyManager { get; set; }
-   // protected IPrivateKeyStorage PrivateKeyStorage { get; set; }
-   // protected IPublicKeyStorage PublicKeyStorage { get; set; }
     protected INonceProvider NonceProvider { get; set; }
     public ServerSessionSchemaRepository Repository { get; private set; }
 

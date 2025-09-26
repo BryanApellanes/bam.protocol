@@ -108,7 +108,7 @@ public class BamServerOptions
             .For<IUdpIPAddressProvider>().UseSingleton(new BamUdpIPAddressProvider(IPAddress.Any))
             .For<IObjectEncoderDecoder>().UseSingleton<JsonObjectDataEncoder>()
             .For<IBamRequestReader>().Use<BamRequestReader>()
-            .For<ISignatureProvider>().Use<SignatureProvider>()
+            .For<ISignatureProvider>().Use<RsaSignatureProvider>()
             .For<INonceProvider>().Use<NonceProvider>()
             .For<IKeyManager>().Use<KeyManager>()
             .For<IBamServerContextProvider>().Use<BamServerContextProvider>()
