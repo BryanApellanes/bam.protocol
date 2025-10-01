@@ -16,7 +16,7 @@ namespace Bam.Protocol.Client
 
         public TR Invoke<TR>(string methodName, params object[] args)
         {
-
+            throw new NotImplementedException();
         }
 
     }
