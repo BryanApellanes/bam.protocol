@@ -4,6 +4,7 @@ using Bam.Encryption;
 using Bam.Encryption.Data;
 using Bam.Protocol.Client;
 using Bam.Protocol.Data.Client;
+using Org.BouncyCastle.Crypto;
 
 namespace Bam.Protocol.Data
 {
@@ -68,7 +69,7 @@ namespace Bam.Protocol.Data
         public AesKey GetAesKey()
         {
             IPrivateKey privateKey = GetEccPrivateKey();
-            EccPublicPrivateKeyPair eccKey = new EccPublicPrivateKeyPair(privateKey.Value.ToPem());
+            EccPublicPrivateKeyPair eccKey = new EccPublicPrivateKeyPair(privateKey.Pem);
             return eccKey.GetSharedAesKey(ServerEccKey);
         }
     }

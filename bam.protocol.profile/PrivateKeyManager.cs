@@ -24,7 +24,7 @@ public class PrivateKeyManager : IPrivateKeyManager
     public IPrivateKey GetPrivateRsaKey(IPublicKey publicKey)
     {
         IKeyValuePair kvp = OpaqueStorage.Get(publicKey.Pem);
-        string pem = Encoding.UTF8.GetString(kvp.Value);
+        byte[] pem = kvp.Value;
         return new RsaPrivateKey(pem.PemToKey());
     }
 
