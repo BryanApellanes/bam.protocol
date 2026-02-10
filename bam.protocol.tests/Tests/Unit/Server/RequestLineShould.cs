@@ -11,7 +11,7 @@ public class RequestLineShould : UnitTestMenuContainer
     public RequestLineShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
     {
     }
-    
+
     [UnitTest]
     public void ParseInputData()
     {
@@ -19,11 +19,19 @@ public class RequestLineShould : UnitTestMenuContainer
         string uri = "/path/of/file";
         string protocolVersion = "BAM/2.0";
         string line = $"{method} {uri} {protocolVersion}";
-        BamRequestLine bamRequestLine = new BamRequestLine(line);
 
-        bamRequestLine.Method.ShouldBeEqualTo(HttpMethods.POST);
-        bamRequestLine.RequestUri.ShouldBeEqualTo(uri);
-        
-        bamRequestLine.ProtocolVersion.ShouldBeEqualTo(protocolVersion);
+        When.A<BamRequestLine>("parses input data correctly",
+            () => new BamRequestLine(line),
+            (requestLine) => new object[] { requestLine.Method, requestLine.RequestUri, requestLine.ProtocolVersion })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object[] results = (object[])because.Result;
+            because.ItsTrue("Method equals POST", HttpMethods.POST.Equals(results[0]));
+            because.ItsTrue("RequestUri equals expected", uri.Equals(results[1]));
+            because.ItsTrue("ProtocolVersion equals expected", protocolVersion.Equals(results[2]));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }

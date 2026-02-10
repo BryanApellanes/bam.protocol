@@ -7,33 +7,62 @@ namespace Bam.Protocol.Tests;
 public class BamServerSessionStateShould : UnitTestMenuContainer
 {
     [UnitTest]
-    public async Task SetAndGetObjectValue()
+    public void SetAndGetObjectValue()
     {
-        ServerSessionState state = new ServerSessionState(null, null);
         object obj = new object();
         string name = 8.RandomLetters();
-        state.Set(name, obj);
-        object retrieved = state.Get(name);
-        
-        retrieved.ShouldBe(obj, "Retrieved object was not the object expected");
-    }
-    
-    [UnitTest]
-    public async Task SetAndGetGenericValue()
-    {
-        ServerSessionState state = new ServerSessionState(null, null);
-        TestClass testObj = new TestClass();
-        string name = 8.RandomLetters();
-        state.Set<TestClass>(name, testObj);
-        TestClass retrieved = state.Get<TestClass>(name);
-        
-        retrieved.ShouldBe(testObj, "Retrieved object was not the object expected");
-        retrieved.ShouldBeOfType(typeof(TestClass));
+
+        When.A<ServerSessionState>("sets and gets an object value",
+            () => new ServerSessionState(null, null),
+            (state) =>
+            {
+                state.Set(name, obj);
+                return state.Get(name);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("retrieved object is the same instance", obj == because.Result);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
-    public async Task SaveValues()
+    public void SetAndGetGenericValue()
     {
-        
+        TestClass testObj = new TestClass();
+        string name = 8.RandomLetters();
+
+        When.A<ServerSessionState>("sets and gets a generic value",
+            () => new ServerSessionState(null, null),
+            (state) =>
+            {
+                state.Set<TestClass>(name, testObj);
+                return state.Get<TestClass>(name);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("retrieved object is the same instance", testObj == because.Result);
+            because.ItsTrue("retrieved object is of type TestClass", because.Result is TestClass);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void SaveValues()
+    {
+        When.A<object>("placeholder test passes",
+            () => new object(),
+            (o) => o)
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }

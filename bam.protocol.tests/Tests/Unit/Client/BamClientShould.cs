@@ -16,81 +16,138 @@ public class BamClientShould : UnitTestMenuContainer
     public BamClientShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
     {
     }
-    
+
     [UnitTest]
     public void CreateHttpRequestBuilder()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
-        IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Http);
-        
-        requestBuilder.ShouldBeInstanceOfType<HttpBamClientRequestBuilder>();
+        When.A<BamClient>("creates an HTTP request builder",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) => client.CreateRequestBuilder(BamClientProtocols.Http))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("is HttpBamClientRequestBuilder", because.Result is HttpBamClientRequestBuilder);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
     public void CreateTcpRequestBuilder()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
-        IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Tcp);
-        
-        requestBuilder.ShouldBeInstanceOfType<TcpBamClientRequestBuilder>();
+        When.A<BamClient>("creates a TCP request builder",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) => client.CreateRequestBuilder(BamClientProtocols.Tcp))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("is TcpBamClientRequestBuilder", because.Result is TcpBamClientRequestBuilder);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void CreateUdpRequestBuilder()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
-        IBamClientRequestBuilder requestBuilder = client.CreateRequestBuilder(BamClientProtocols.Udp);
-        
-        requestBuilder.ShouldBeInstanceOfType<UdpBamClientRequestBuilder>();
+        When.A<BamClient>("creates a UDP request builder",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) => client.CreateRequestBuilder(BamClientProtocols.Udp))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("is UdpBamClientRequestBuilder", because.Result is UdpBamClientRequestBuilder);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
     public void CreateHttpRequest()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string httpPath = "/test/http/path/";
-        IBamClientRequest request = client.CreateHttpRequest(httpPath);
-        request.ShouldBeInstanceOfType<HttpClientRequest>();
-        request.Host.ShouldBeEqualTo(BamClient.DefaultHttpBaseAddress);
-        request.Path.ShouldBeEqualTo(httpPath);
-        request.QueryString.ShouldBeNullOrEmpty();
-        request.HttpMethod.ShouldBeEqualTo(HttpMethods.GET);
-        request.Protocol.ShouldBeEqualTo("HTTP");
-        request.ProtocolVersion.ShouldBeEqualTo("1.1");
-        request.Content.ShouldBeNull();
+
+        When.A<BamClient>("creates an HTTP request",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) =>
+            {
+                IBamClientRequest request = client.CreateHttpRequest(httpPath);
+                return new object?[] { request is HttpClientRequest, request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object?[] r = (object?[])because.Result;
+            because.ItsTrue("is HttpClientRequest", (bool)r[0]!);
+            because.ItsTrue("Host equals default HTTP address", BamClient.DefaultHttpBaseAddress.Equals(r[1]));
+            because.ItsTrue("Path equals expected", httpPath.Equals(r[2]));
+            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[3]));
+            because.ItsTrue("HttpMethod equals GET", HttpMethods.GET.Equals(r[4]));
+            because.ItsTrue("Protocol equals HTTP", "HTTP".Equals(r[5]));
+            because.ItsTrue("ProtocolVersion equals 1.1", "1.1".Equals(r[6]));
+            because.ItsTrue("Content is null", r[7] == null);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void CreateTcpRequest()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string tcpPath = "/test/tcp/path";
-        IBamClientRequest request = client.CreateTcpRequest(tcpPath);
-        request.ShouldBeInstanceOfType<TcpClientRequest>();
-        request.Host.ShouldBeEqualTo(BamClient.DefaultTcpBaseAddress);
-        request.Path.ShouldBeEqualTo(tcpPath);
-        request.QueryString.ShouldBeNullOrEmpty();
-        request.HttpMethod.ShouldBeEqualTo(HttpMethods.POST);
-        request.Protocol.ShouldBeEqualTo("BAM");
-        request.ProtocolVersion.ShouldBeEqualTo("2.0");
-        request.Content.ShouldBeNull();
+
+        When.A<BamClient>("creates a TCP request",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) =>
+            {
+                IBamClientRequest request = client.CreateTcpRequest(tcpPath);
+                return new object?[] { request is TcpClientRequest, request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object?[] r = (object?[])because.Result;
+            because.ItsTrue("is TcpClientRequest", (bool)r[0]!);
+            because.ItsTrue("Host equals default TCP address", BamClient.DefaultTcpBaseAddress.Equals(r[1]));
+            because.ItsTrue("Path equals expected", tcpPath.Equals(r[2]));
+            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[3]));
+            because.ItsTrue("HttpMethod equals POST", HttpMethods.POST.Equals(r[4]));
+            because.ItsTrue("Protocol equals BAM", "BAM".Equals(r[5]));
+            because.ItsTrue("ProtocolVersion equals 2.0", "2.0".Equals(r[6]));
+            because.ItsTrue("Content is null", r[7] == null);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void CreateUdpRequest()
     {
-        BamClient client = new BamClient(new JsonObjectDataEncoder());
         string udpPath = "/test/udp/path";
         object content = "The content";
-        IBamClientRequest request = client.CreateUdpRequest(udpPath, content);
-        request.ShouldBeInstanceOfType<UdpClientRequest>();
-        request.Host.ShouldBeEqualTo(BamClient.DefaultUdpBaseAddress);
-        request.Path.ShouldBeEqualTo(udpPath);
-        request.QueryString.ShouldBeNullOrEmpty();
-        request.HttpMethod.ShouldBeEqualTo(HttpMethods.PUT);
-        request.Protocol.ShouldBeEqualTo("BAM");
-        request.ProtocolVersion.ShouldBeEqualTo("2.0");
-        request.Content.ShouldBeEqualTo(content);
+
+        When.A<BamClient>("creates a UDP request",
+            () => new BamClient(new JsonObjectDataEncoder()),
+            (client) =>
+            {
+                IBamClientRequest request = client.CreateUdpRequest(udpPath, content);
+                return new object?[] { request is UdpClientRequest, request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object?[] r = (object?[])because.Result;
+            because.ItsTrue("is UdpClientRequest", (bool)r[0]!);
+            because.ItsTrue("Host equals default UDP address", BamClient.DefaultUdpBaseAddress.Equals(r[1]));
+            because.ItsTrue("Path equals expected", udpPath.Equals(r[2]));
+            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[3]));
+            because.ItsTrue("HttpMethod equals PUT", HttpMethods.PUT.Equals(r[4]));
+            because.ItsTrue("Protocol equals BAM", "BAM".Equals(r[5]));
+            because.ItsTrue("ProtocolVersion equals 2.0", "2.0".Equals(r[6]));
+            because.ItsTrue("Content equals expected", content.Equals(r[7]));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
@@ -100,7 +157,7 @@ public class BamClientShould : UnitTestMenuContainer
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
         await server.StartAsync();
-        
+
         After.Setup((reg) =>
         {
             reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
@@ -128,7 +185,7 @@ public class BamClientShould : UnitTestMenuContainer
         })
         .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public async Task StartSession()
     {
@@ -136,11 +193,11 @@ public class BamClientShould : UnitTestMenuContainer
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
         await server.StartAsync();
-        
+
         After.Setup((reg) =>
         {
             reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
-            
+
         })
         .When<BamClient>("BamClient calls ReceiveResponseAsync", async (client) =>
         {

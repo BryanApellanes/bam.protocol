@@ -12,21 +12,31 @@ public class RequestReaderShould : UnitTestMenuContainer
     public RequestReaderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
     {
     }
-    
+
     [UnitTest]
     public void ReadLineFromStream()
     {
-        MemoryStream stream = new MemoryStream();
         string firstLine = "this is the first line";
         string secondLine = "this is the second line";
         string multiLineValue = $@"{firstLine}
 {secondLine}";
-        stream.Write(Encoding.ASCII.GetBytes(multiLineValue), 0, multiLineValue.Length);
-        TestBamRequestReader reader = new TestBamRequestReader(new BamRequestReaderOptions(new BamServerOptions()));
-        stream.Seek(0, SeekOrigin.Begin);
-        string line = reader.ReadStringLineAccessor(stream);
-        
-        line.Trim().ShouldBeEqualTo(firstLine);
+
+        When.A<TestBamRequestReader>("reads a line from stream",
+            () => new TestBamRequestReader(new BamRequestReaderOptions(new BamServerOptions())),
+            (reader) =>
+            {
+                MemoryStream stream = new MemoryStream();
+                stream.Write(Encoding.ASCII.GetBytes(multiLineValue), 0, multiLineValue.Length);
+                stream.Seek(0, SeekOrigin.Begin);
+                return reader.ReadStringLineAccessor(stream).Trim();
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("read line equals first line", firstLine.Equals((string)because.Result));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
@@ -40,14 +50,25 @@ X-Bam-Test: another header value
 
 {requestBody}
 ";
-        MemoryStream stream = new MemoryStream(Encoding.ASCII.GetBytes(requestStream));
 
-        TestBamRequestReader reader = new TestBamRequestReader(new BamRequestReaderOptions(new BamServerOptions()));
-        IBamRequest bamRequest = reader.ReadRequest(stream);
-        
-        bamRequest.Content.ShouldBeEqualTo(requestBody);
-        bamRequest.Headers.ContainsKey("content-type").ShouldBeTrue();
-        bamRequest.Headers.ContainsKey("accept").ShouldBeTrue();
+        When.A<TestBamRequestReader>("reads a request from stream",
+            () => new TestBamRequestReader(new BamRequestReaderOptions(new BamServerOptions())),
+            (reader) =>
+            {
+                MemoryStream stream = new MemoryStream(Encoding.ASCII.GetBytes(requestStream));
+                IBamRequest bamRequest = reader.ReadRequest(stream);
+                return new object[] { bamRequest.Content, bamRequest.Headers.ContainsKey("content-type"), bamRequest.Headers.ContainsKey("accept") };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object[] results = (object[])because.Result;
+            because.ItsTrue("Content equals request body", requestBody.Equals(results[0]));
+            because.ItsTrue("Headers contain content-type", (bool)results[1]);
+            because.ItsTrue("Headers contain accept", (bool)results[2]);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
 }

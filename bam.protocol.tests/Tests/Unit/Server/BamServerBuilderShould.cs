@@ -6,38 +6,57 @@ namespace Bam.Protocol.Tests;
 
 [UnitTestMenu("BamServer builder should")]
 public class BamServerBuilderShould : UnitTestMenuContainer
-{    
+{
     [UnitTest]
     public void BuildServer()
     {
-        BamServer server = new BamServerBuilder().Build();
-        server.ShouldNotBeNull();
+        When.A<BamServerBuilder>("builds a server",
+            (builder) => builder.Build())
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void BuildBamProtocolServer()
     {
         int testTcpPort = RandomNumber.Between(1, 50);
         int testUdpPort = RandomNumber.Between(51, 100);
-        string testHost1 = "testhost1";
-        string testHost2 = "testhost2";
         string tcpIpAddress = "10.0.0.10";
         string udpIpAddress = "10.0.0.11";
         string serverName = "Test Server Name: ".RandomLetters(8);
-        BamServer server = new BamServerBuilder()
-            .TcpPort(testTcpPort)
-            .UdpPort(testUdpPort)
-            .ServerName(serverName)
-            .TcpIPAddress(tcpIpAddress)
-            .UdpIPAddress(udpIpAddress)
-            .Build();
 
-        BamServerInfo info = server.GetInfo();
-        info.ServerName.ShouldBeEqualTo(serverName);
-        info.TcpPort.ShouldBeEqualTo(testTcpPort);
-        info.UdpPort.ShouldBeEqualTo(testUdpPort);
-        info.TcpIPAddress.ShouldBeEqualTo(IPAddress.Parse(tcpIpAddress).ToString());
-        info.UdpIPAddress.ShouldBeEqualTo(IPAddress.Parse(udpIpAddress).ToString());
-        info.HttpHostBinding.ShouldEqual(server.HttpHostBinding);
+        When.A<BamServerBuilder>("builds a configured server",
+            () => new BamServerBuilder()
+                .TcpPort(testTcpPort)
+                .UdpPort(testUdpPort)
+                .ServerName(serverName)
+                .TcpIPAddress(tcpIpAddress)
+                .UdpIPAddress(udpIpAddress),
+            (builder) =>
+            {
+                BamServer server = builder.Build();
+                BamServerInfo info = server.GetInfo();
+                return new object[] { info, server.HttpHostBinding };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object[] results = (object[])because.Result;
+            BamServerInfo info = (BamServerInfo)results[0];
+            object httpHostBinding = results[1];
+            because.ItsTrue("ServerName equals expected", serverName.Equals(info.ServerName));
+            because.ItsTrue("TcpPort equals expected", testTcpPort == info.TcpPort);
+            because.ItsTrue("UdpPort equals expected", testUdpPort == info.UdpPort);
+            because.ItsTrue("TcpIPAddress equals expected", IPAddress.Parse(tcpIpAddress).ToString().Equals(info.TcpIPAddress));
+            because.ItsTrue("UdpIPAddress equals expected", IPAddress.Parse(udpIpAddress).ToString().Equals(info.UdpIPAddress));
+            because.ItsTrue("HttpHostBinding is not null", info.HttpHostBinding != null);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }

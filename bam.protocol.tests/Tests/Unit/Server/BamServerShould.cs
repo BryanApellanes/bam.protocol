@@ -19,31 +19,50 @@ public class BamServerShould : UnitTestMenuContainer
 
     [UnitTest]
     [ConsoleCommand("Test Http Server")]
-    public async Task TestHttpServer()
+    public void TestHttpServer()
     {
-        HttpServer server = new HttpServer(context =>
+        When.A<HttpServer>("handles HTTP request",
+            () => new HttpServer(context =>
+            {
+                byte[] output = Encoding.UTF8.GetBytes(context.Request.Url.ToString());
+                context.Response.OutputStream.Write(output, 0, output.Length);
+                context.Response.Close();
+            }),
+            (server) =>
+            {
+                server.Start(new HostBinding("127.0.0.1", 8080) { Ssl = false });
+                HttpClient client = new HttpClient();
+                HttpRequestMessage requestMessage = new HttpRequestMessage();
+                requestMessage.RequestUri = new Uri("http://127.0.0.1:8080");
+                client.Send(requestMessage);
+                server.Stop();
+                return true;
+            })
+        .TheTest
+        .ShouldPass(because =>
         {
-            System.Console.WriteLine(context.Request.Url);
-            byte[] output = Encoding.UTF8.GetBytes(context.Request.Url.ToString());
-            context.Response.OutputStream.Write(output, 0, output.Length);
-            context.Response.Close();
-        });
-        server.Start(new HostBinding("127.0.0.1", 8080){Ssl = false});
-        HttpClient client = new HttpClient();
-        HttpRequestMessage requestMessage = new HttpRequestMessage();
-        requestMessage.RequestUri = new Uri("http://127.0.0.1:8080");
-        await client.SendAsync(requestMessage);
+            because.ItsTrue("server handled request", (bool)because.Result);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     [ConsoleCommand("Have Default Host Binding")]
-    public async Task HaveDefaultHostBinding()
+    public void HaveDefaultHostBinding()
     {
-        BamServer server = new BamServerBuilder().Build();
-        server.HttpHostBinding.ShouldNotBeNull();
-        Message.PrintLine(server.HttpHostBinding.ToString());
+        When.A<BamServer>("has default host binding",
+            () => new BamServerBuilder().Build(),
+            (server) => server.HttpHostBinding)
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     [ConsoleCommand("Fire Server Start And Stop Events")]
     public void FireServerStartAndStopEvents()
@@ -52,22 +71,32 @@ public class BamServerShould : UnitTestMenuContainer
         bool? startedEventRaised = false;
         bool? stoppingEventRaised = false;
         bool? stoppedEventRaised = false;
-        BamServer server = new BamServerBuilder()
-            .OnStarting((sender, args) => startingEventRaised = true)
-            .OnStarted((sender, args) => startedEventRaised = true)
-            .OnStopping((sender, args) => stoppingEventRaised = true)
-            .OnStopped((sender, args) => stoppedEventRaised = true)
-            .Build();
-        
-        server.Start();
-        server.Stop();
-        
-        startingEventRaised.ShouldBeTrue("`Starting` event was not raised");
-        startedEventRaised.ShouldBeTrue("`Started` event was not raised");
-        stoppingEventRaised.ShouldBeTrue("`Stopping` event was not raised");
-        stoppedEventRaised.ShouldBeTrue("`Stopped` event was not raised");
+
+        When.A<BamServer>("fires start and stop events",
+            () => new BamServerBuilder()
+                .OnStarting((sender, args) => startingEventRaised = true)
+                .OnStarted((sender, args) => startedEventRaised = true)
+                .OnStopping((sender, args) => stoppingEventRaised = true)
+                .OnStopped((sender, args) => stoppedEventRaised = true)
+                .Build(),
+            (server) =>
+            {
+                server.Start();
+                server.Stop();
+                return true;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("Starting event was raised", startingEventRaised.Value);
+            because.ItsTrue("Started event was raised", startedEventRaised.Value);
+            because.ItsTrue("Stopping event was raised", stoppingEventRaised.Value);
+            because.ItsTrue("Stopped event was raised", stoppedEventRaised.Value);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     [ConsoleCommand("Fire Server Start And Stop Events Async")]
     public async Task FireServerStartAndStopEventsAsync()
@@ -76,7 +105,7 @@ public class BamServerShould : UnitTestMenuContainer
         bool? startedEventRaised = false;
         bool? stoppingEventRaised = false;
         bool? stoppedEventRaised = false;
-        
+
         After.Setup(registry =>
         {
             registry.For<BamServer>()
@@ -104,12 +133,12 @@ public class BamServerShould : UnitTestMenuContainer
             because.ItsTrue("Started event was raised", startedEventRaised.Value, "Started event was not raised");
             because.ItsTrue("Stopping event was raised", stoppingEventRaised.Value, "Stopping event was not raised");
             because.ItsTrue("Stopped event was raised", stoppedEventRaised.Value, "Stopped event was not raised");
-            
+
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
-    
+
     [UnitTest]
     [ConsoleCommand("BamServer Start Session")]
     public async Task StartSession()
@@ -118,11 +147,11 @@ public class BamServerShould : UnitTestMenuContainer
         BamServerInfo info = server.GetInfo();
         Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
         await server.StartAsync();
-        
+
         After.Setup((reg) =>
         {
             reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
-        
+
         })
         .When<BamClient>("BamClient calls ReceiveResponseAsync", async (client) =>
         {

@@ -13,7 +13,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
     {
         Type type = typeof(TestClass);
         MethodInfo methodInfo = type.GetMethod("TestMethod");
-        
+
         After.Setup(reg =>
         {
             TestMethodInvocationRequest request = new TestMethodInvocationRequest(methodInfo);
@@ -31,9 +31,9 @@ public class InvocationRequestShould : UnitTestMenuContainer
             because.TheResult.IsNotNull();
             because.TheResult.Is<TestMethodInvocationRequest>();
             because.ItsTrue(
-                "result.OperationIdentifier.Equals(\"Bam.Protocol.Tests.TestClass+TestMethod, bam.protocol.tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\")", 
+                "result.OperationIdentifier.Equals(\"Bam.Protocol.Tests.TestClass+TestMethod, bam.protocol.tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\")",
                 result.OperationIdentifier.Equals("Bam.Protocol.Tests.TestClass+TestMethod, bam.protocol.tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"));
-            
+
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -70,80 +70,119 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void ServerInitializeForMethodInfo()
     {
         Type type = typeof(TestClass);
         MethodInfo methodInfo = type.GetMethod("TestMethod");
         string operationIdentifier = OperationIdentifier.For(methodInfo);
-
         TestClass instance = new TestClass() { Name = 16.RandomLetters() };
-        MethodInvocationRequest request = new MethodInvocationRequest(instance, "TestMethod", "first string", "second string");
-        request.ClientInitialize(new ServiceRegistry());
-        
-        TestMethodInvocationRequest test = request.CopyAs<TestMethodInvocationRequest>();
-        Message.PrintLine(test.ToJson(true));
-        test.GetInstance().ShouldBeNull();
-        
-        test.ServerInitialize(new ServiceRegistry());
-        test.GetInstance().ShouldNotBeNull();
-        test.GetInstance().ShouldBeOfType<TestClass>();
+
+        When.A<MethodInvocationRequest>("server initializes for method info",
+            () => new MethodInvocationRequest(instance, "TestMethod", "first string", "second string"),
+            (request) =>
+            {
+                request.ClientInitialize(new ServiceRegistry());
+                TestMethodInvocationRequest test = request.CopyAs<TestMethodInvocationRequest>();
+                bool instanceNullBeforeInit = test.GetInstance() == null;
+                test.ServerInitialize(new ServiceRegistry());
+                return new object?[] { instanceNullBeforeInit, test.GetInstance(), test.GetInstance()?.GetType() };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object?[] results = (object?[])because.Result;
+            because.ItsTrue("instance is null before server init", (bool)results[0]!);
+            because.ItsTrue("instance is not null after server init", results[1] != null);
+            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[2]));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 
     [UnitTest]
     public void ServerInitializeFromSerializedRequest()
     {
         TestClass instance = new TestClass() { Name = 16.RandomLetters() };
-        TestMethodInvocationRequest request = new TestMethodInvocationRequest()
+
+        When.A<TestMethodInvocationRequest>("server initializes from serialized request",
+            () => new TestMethodInvocationRequest()
+            {
+                SerializedContext = instance.ToJson(),
+                OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod")
+            },
+            (request) =>
+            {
+                request.ServerInitialize(new ServiceRegistry());
+                return new object?[] { request.GetInstance(), request.GetInstance()?.GetType() };
+            })
+        .TheTest
+        .ShouldPass(because =>
         {
-            SerializedContext = instance.ToJson(),
-            OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod")
-        };
-        
-        request.ServerInitialize(new ServiceRegistry());
-        request.GetInstance().ShouldNotBeNull();
-        request.GetInstance().ShouldBeOfType<TestClass>();
+            object?[] results = (object?[])because.Result;
+            because.ItsTrue("instance is not null", results[0] != null);
+            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[1]));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void ExecuteAfterServerInitialization()
     {
         TestClass instance = new TestClass() { Name = 16.RandomLetters() };
-        TestMethodInvocationRequest request = new TestMethodInvocationRequest()
-        {
-            SerializedContext = instance.ToJson(),
-            OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
-            Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
-        };
-        
-        request.ServerInitialize(new ServiceRegistry());
-        request.GetInstance().ShouldNotBeNull();
-        request.GetInstance().ShouldBeOfType<TestClass>();
 
-        string result = request.Invoke<string>();
-        Message.PrintLine(result);
+        When.A<TestMethodInvocationRequest>("executes after server initialization",
+            () => new TestMethodInvocationRequest()
+            {
+                SerializedContext = instance.ToJson(),
+                OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
+                Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
+            },
+            (request) =>
+            {
+                request.ServerInitialize(new ServiceRegistry());
+                return new object?[] { request.GetInstance(), request.GetInstance()?.GetType(), request.Invoke<string>() };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object?[] results = (object?[])because.Result;
+            because.ItsTrue("instance is not null", results[0] != null);
+            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[1]));
+            because.ItsTrue("result is not null", results[2] != null);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
     public void ExecuteAfterSerializeAndDeserialize()
     {
         TestClass instance = new TestClass() { Name = 16.RandomLetters() };
-        MethodInvocationRequest request = new MethodInvocationRequest()
-        {
-            SerializedContext = instance.ToJson(),
-            OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
-            Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
-        };
-
-        string serialized = request.ToJson();
-        Message.PrintLine(serialized);
-        MethodInvocationRequest deserialized = serialized.FromJson<MethodInvocationRequest>();
-        deserialized.ServerInitialize(new ServiceRegistry());
-
-        string result = deserialized.Invoke<string>();
         string expected = $"name = {instance.Name}, argument1 = arg1, argument2 = arg2";
-        result.ShouldBeEqualTo(expected);
-        Message.PrintLine(result);
+
+        When.A<MethodInvocationRequest>("executes after serialize and deserialize",
+            () => new MethodInvocationRequest()
+            {
+                SerializedContext = instance.ToJson(),
+                OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
+                Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
+            },
+            (request) =>
+            {
+                string serialized = request.ToJson();
+                MethodInvocationRequest deserialized = serialized.FromJson<MethodInvocationRequest>();
+                deserialized.ServerInitialize(new ServiceRegistry());
+                return deserialized.Invoke<string>();
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.ItsTrue("result equals expected", expected.Equals((string)because.Result));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }

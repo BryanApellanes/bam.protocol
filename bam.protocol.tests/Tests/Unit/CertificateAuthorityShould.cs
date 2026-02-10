@@ -29,9 +29,9 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
                 .For<ICertificateSerialNumberProvider>().Use<CertificateSerialNumberProvider>();
         });
     }
-    
+
     [UnitTest]
-    public async Task GenerateCertificateFromOptions()
+    public void GenerateCertificateFromOptions()
     {
         IActor issuer = Substitute.For<IActor>();
         issuer.Name.Returns($"issuer ({6.RandomLetters()})");
@@ -39,37 +39,33 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
         subject.Name.Returns($"subject ({6.RandomLetters()})");
         RsaKeyPair issuerKeyPair = new RsaKeyPair();
         RsaKeyPair subjectKeyPair = new RsaKeyPair();
-        
+
         ServiceRegistry testRegistry = Configure(svcRegistry => svcRegistry.For<IActor>().UseSingleton(issuer));
         IX509NameProvider x509NameProvider = testRegistry.Get<IX509NameProvider>();
-        CertificateAuthority ca = DependencyProvider.Get<CertificateAuthority>();
-        GenerateCertificateOptions generationOptions = GenerateCertificateOptions
-            .Create()
-            .IssuerPrivateKey(issuerKeyPair.PrivateKey)
-            .SubjectPublicKey(subjectKeyPair.PublicKey)
-            .IssuerName(x509NameProvider.GetName(issuer))
-            .SubjectName(x509NameProvider.GetName(subject));
 
-        X509Certificate certificate = generationOptions.Generate(ca);
-
-        Message.PrintLine("Serial #: {0}", certificate.SerialNumber.ToString());
-        Message.PrintLine("Issuer: {0}", certificate.IssuerDN.ToString());
-        Message.PrintLine("Subject: {0}", certificate.SubjectDN.ToString());
-        Message.PrintLine("Valid From: {0}", certificate.NotBefore.ToString());
-        Message.PrintLine("Valid To: {0}", certificate.NotAfter.ToString());
-        Message.PrintLine("Signature Algorithm: {0}", certificate.SigAlgName);
-        Message.PrintLine("Signature Hex: {0}", certificate.GetSignature().ToHexString());
-        Message.PrintLine("Signature Base64: {0}", certificate.GetSignature().ToBase64());
-        Message.PrintLine("SHA1 thumbprint: {0}", certificate.GetEncoded().Sha1());
-        Message.PrintLine("Subject Pub Key: {0}", certificate.SubjectPublicKeyInfo);
-        Message.PrintLine("PEM");
-        Message.PrintLine(certificate.ObjectToPem());
-
-        Message.PrintLine("Signature is issuer pub key valid: {0}", certificate.IsSignatureValid(issuerKeyPair.PublicKey.Value));
+        When.A<CertificateAuthority>("generates certificate from options",
+            () => DependencyProvider.Get<CertificateAuthority>(),
+            (ca) =>
+            {
+                GenerateCertificateOptions generationOptions = GenerateCertificateOptions
+                    .Create()
+                    .IssuerPrivateKey(issuerKeyPair.PrivateKey)
+                    .SubjectPublicKey(subjectKeyPair.PublicKey)
+                    .IssuerName(x509NameProvider.GetName(issuer))
+                    .SubjectName(x509NameProvider.GetName(subject));
+                return generationOptions.Generate(ca);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
-    
+
     [UnitTest]
-    public async Task GenerateCertificate()
+    public void GenerateCertificate()
     {
         IActor issuer = Substitute.For<IActor>();
         issuer.Name.Returns($"issuer ({6.RandomLetters()})");
@@ -77,24 +73,28 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
         subject.Name.Returns($"subject ({6.RandomLetters()})");
         RsaKeyPair issuerKeyPair = new RsaKeyPair();
         RsaKeyPair subjectKeyPair = new RsaKeyPair();
-        
+
         ServiceRegistry testRegistry = Configure(svcRegistry => svcRegistry.For<IActor>().UseSingleton(issuer));
         IX509NameProvider x509NameProvider = testRegistry.Get<IX509NameProvider>();
-        CertificateAuthority ca = DependencyProvider.Get<CertificateAuthority>();
-        GenerateCertificateOptions generationOptions = GenerateCertificateOptions
-            .Create()
-            .IssuerPrivateKey(issuerKeyPair.PrivateKey)
-            .SubjectPublicKey(subjectKeyPair.PublicKey)
-            .IssuerName(x509NameProvider.GetName(issuer))
-            .SubjectName(x509NameProvider.GetName(subject));
 
-        X509Certificate certificate = generationOptions.Generate(ca);
-
-        Message.PrintLine(certificate.IssuerDN.ToString());
-        Message.PrintLine(certificate.SubjectDN.ToString());
-        Message.PrintLine(certificate.NotBefore.ToString());
-        Message.PrintLine(certificate.NotAfter.ToString());
-        
-        
+        When.A<CertificateAuthority>("generates a certificate",
+            () => DependencyProvider.Get<CertificateAuthority>(),
+            (ca) =>
+            {
+                GenerateCertificateOptions generationOptions = GenerateCertificateOptions
+                    .Create()
+                    .IssuerPrivateKey(issuerKeyPair.PrivateKey)
+                    .SubjectPublicKey(subjectKeyPair.PublicKey)
+                    .IssuerName(x509NameProvider.GetName(issuer))
+                    .SubjectName(x509NameProvider.GetName(subject));
+                return generationOptions.Generate(ca);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }

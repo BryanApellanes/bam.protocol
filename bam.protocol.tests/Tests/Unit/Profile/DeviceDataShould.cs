@@ -12,13 +12,22 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 public class DeviceDataShould : UnitTestMenuContainer
 {
     [UnitTest]
-    public async Task SerializeAndDeserialize()
+    public void SerializeAndDeserialize()
     {
-        DeviceData deviceData = new DeviceData(true);
-        string json = deviceData.ToJson(true);
-        Message.PrintLine(json);
-        
-        DeviceData deserialized = json.FromJson<DeviceData>();
-        deserialized.HostAddresses.Each(ha=> Message.PrintLine(ha.ToString()));
+        When.A<DeviceData>("serializes and deserializes",
+            () => new DeviceData(true),
+            (deviceData) =>
+            {
+                string json = deviceData.ToJson(true);
+                DeviceData deserialized = json.FromJson<DeviceData>();
+                return deserialized;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
     }
 }
