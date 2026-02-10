@@ -72,14 +72,17 @@ public class ServerSessionState : IServerSessionState
 
     private void Save(string key, object value)
     {
-        if (!_loading)
+        if (!_loading && Data != null)
         {
             Data.KeyValues.Add(new ServerSessionKeyValuePair()
             {
                 Key = key,
                 Value = value?.ToString() ?? "null"
             });
-            Data = Repository.Save(Data);
+            if (Repository != null)
+            {
+                Data = Repository.Save(Data);
+            }
         }
     }
 }
