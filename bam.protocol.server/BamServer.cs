@@ -237,6 +237,7 @@ namespace Bam.Protocol.Server
                 IBamResponse response = initialization.ServerContext.BamResponse
                     ?? ResponseProvider.CreateResponse(initialization);
                 response.Send();
+                try { listenerContext.Response.Close(); } catch { }
             }
             catch (Exception ex)
             {

@@ -116,6 +116,7 @@ public class BamServerOptions
             .For<IActorResolver>().Use<ActorResolver>()
             .For<IServerSessionManager>().Use<ServerSessionManager>()
             .For<IAuthorizationCalculator>().Use<AuthorizationCalculator>()
+            .For<ICommandResolver>().Use<CommandResolver>()
             .For<IBamRequestProcessor>().Use<BamRequestProcessor>();
         
         ComponentRegistry

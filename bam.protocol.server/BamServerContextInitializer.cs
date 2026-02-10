@@ -5,11 +5,12 @@ namespace Bam.Protocol.Server;
 public class BamServerContextInitializer : Loggable, IBamServerContextInitializer
 {
     public BamServerContextInitializer(ActorResolverInitializationHandler actorResolverInitializationHandler, AuthorizationCalculatorInitializationHandler authorizationCalculatorInitializationHandler,
-        ServerSessionInitializationHandler serverSessionInitializationHandler)
+        ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler)
     {
         this.AuthorizationCalculatorInitializationHandlerInitializationHandler = authorizationCalculatorInitializationHandler;
         this.ActorResolverInitializationHandler = actorResolverInitializationHandler;
         this.ServerSessionInitializationHandler = serverSessionInitializationHandler;
+        this.CommandInitializationHandler = commandInitializationHandler;
     }
     
     protected HashSet<IBamServerContextInitializationHandler> BeforeInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
