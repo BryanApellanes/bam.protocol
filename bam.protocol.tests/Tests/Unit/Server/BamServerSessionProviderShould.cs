@@ -18,6 +18,7 @@ namespace Bam.Protocol.Tests;
 public class BamServerSessionProviderShould : UnitTestMenuContainer
 {
     [UnitTest]
+    [ConsoleCommand("Save Data")]
     public async Task SaveData()
     {
         string testSessionId = 16.RandomLetters();
@@ -134,6 +135,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    [ConsoleCommand("Load Data")]
     public async Task LoadData()
     {
         string testSessionId = 16.RandomLetters();
