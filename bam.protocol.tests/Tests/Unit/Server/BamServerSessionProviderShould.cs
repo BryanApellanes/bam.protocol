@@ -1,4 +1,5 @@
-﻿using Bam.Data.Repositories;
+﻿using Bam.Console;
+using Bam.Data.Repositories;
 using Bam.Data.Schema;
 using Bam.Data.SQLite;
 using Bam.Encryption;
@@ -81,6 +82,57 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             
     }
     
+    [UnitTest]
+    [ConsoleCommand("Start Session")]
+    public async Task StartSession()
+    {
+        After.Setup(reg =>
+        {
+            FileInfo dbFile = new FileInfo($"./.bam/tests/{nameof(StartSession)}.sqlite");
+            SQLiteDatabase database = new SQLiteDatabase(dbFile);
+            ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
+            {
+                Database = database
+            };
+
+            reg.For<INonceProvider>().Use<NonceProvider>();
+            reg.For<IKeyManager>().Use<KeyManager>();
+            reg.For<ISignatureProvider>().Use(Substitute.For<ISignatureProvider>());
+            reg.For<ServerSessionSchemaRepository>().Use(repository);
+            reg.For<ServerSessionManager>().Use<ServerSessionManager>();
+        })
+        .When<ServerSessionManager>("starts a session", (manager, reg) =>
+        {
+            EccPublicKey clientPublicKey = new EccPublicKey();
+            StartSessionRequest request = new StartSessionRequest
+            {
+                ClientPublicKey = clientPublicKey
+            };
+            MemoryStream outputStream = new MemoryStream();
+            return manager.StartSession(request, outputStream);
+        })
+        .It.ShouldPass(because =>
+        {
+            because.TheResult.Is<StartSessionResponse>();
+
+            StartSessionResponse response = because.TheResult.As<StartSessionResponse>();
+            because.ItsTrue("SessionId is not null", !string.IsNullOrEmpty(response.SessionId), $"SessionId was null or empty");
+            because.ItsTrue("Nonce is not null", !string.IsNullOrEmpty(response.Nonce), $"Nonce was null or empty");
+            because.ItsTrue("ServerPublicKey is not null", response.ServerPublicKey != null, "ServerPublicKey was null");
+
+            ServerSessionManager manager = because.TestCaseRegistry.Get<ServerSessionManager>();
+            IBamRequest mockRequest = Substitute.For<IBamRequest>();
+            Dictionary<string, string> mockHeaders = new Dictionary<string, string>();
+            mockHeaders.Add(Headers.SessionId, response.SessionId);
+            mockRequest.Headers.Returns(mockHeaders);
+
+            IServerSessionState state = manager.GetSession(mockRequest);
+            because.ItsTrue("Session was persisted", state != null, "GetSession returned null for the created session");
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
     [UnitTest]
     public async Task LoadData()
     {

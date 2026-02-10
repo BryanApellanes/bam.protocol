@@ -30,15 +30,33 @@ public class ServerSessionManager : IServerSessionManager
 
     public StartSessionResponse StartSession(StartSessionRequest request, Stream outputStream, int statusCode = 200)
     {
-        throw new NotImplementedException();
-        //KeyManager.StoreClientPublicKey(request.ClientPublicKey);
+        string sessionId = Cuid.Generate();
 
-        return CreateStartSessionResponse(request.ClientPublicKey, outputStream, statusCode);
+        ServerSession session = new ServerSession { SessionId = sessionId };
+        session = Repository.Save(session);
+
+        ServerSessionState state = new ServerSessionState(session, Repository);
+        state.Set("ClientPublicKey", request.ClientPublicKey?.Pem ?? string.Empty);
+
+        EccPublicPrivateKeyPair serverKeyPair = KeyManager.GenerateEccKeyPair();
+        state.Set("ServerPrivateKey", System.Text.Encoding.UTF8.GetString(serverKeyPair.Pem));
+
+        EccPublicKey serverPublicKey = new EccPublicKey(serverKeyPair);
+
+        StartSessionResponse response = CreateStartSessionResponse(serverPublicKey, outputStream, statusCode);
+        response.SessionId = sessionId;
+
+        return response;
     }
 
     public bool EndSession(string sessionId)
     {
-        throw new NotImplementedException();
+        ServerSession session = Repository.OneServerSessionWhere(s => s.SessionId == sessionId);
+        if (session == null)
+        {
+            return false;
+        }
+        return Repository.Delete(session);
     }
 
     public IServerSessionState GetSession(IBamRequest request)
