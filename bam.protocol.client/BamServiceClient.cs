@@ -1,4 +1,5 @@
-﻿using Bam.Server;
+﻿using Bam.Encryption;
+using Bam.Server;
 
 namespace Bam.Protocol.Client;
 
@@ -22,6 +23,12 @@ public class BamServiceClient : BamClient, IBamServiceClient
 
     public StartSessionResponse StartSession(string host, int port)
     {
-        throw new NotImplementedException();
+        EccPublicKey clientPublicKey = new EccPublicKey();
+        StartSessionRequest request = new StartSessionRequest { ClientPublicKey = clientPublicKey };
+        ClientSessionManager sessionManager = new ClientSessionManager(
+            this.HttpClient ?? new HttpClient(),
+            new HostBinding(host, port)
+        );
+        return sessionManager.StartSessionAsync(request).Result;
     }
 }

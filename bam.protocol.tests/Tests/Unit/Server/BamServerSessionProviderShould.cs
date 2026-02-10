@@ -1,4 +1,5 @@
-﻿using Bam.Console;
+﻿using System.Text;
+using Bam.Console;
 using Bam.Data.Repositories;
 using Bam.Data.Schema;
 using Bam.Data.SQLite;
@@ -8,6 +9,7 @@ using Bam.Protocol.Data.Server;
 using Bam.Protocol.Data.Server.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Protocol.Server;
+using Bam.Server;
 using Bam.Test;
 using Bam.Web;
 using NSubstitute;
@@ -132,6 +134,76 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         })
         .SoBeHappy()
         .UnlessItFailed();
+    }
+
+    [UnitTest]
+    [ConsoleCommand("Create Session Via Http")]
+    public async Task CreateSessionViaHttp()
+    {
+        int testPort = 9787;
+        HostBinding hostBinding = new HostBinding("localhost", testPort);
+
+        FileInfo dbFile = new FileInfo($"./.bam/tests/{nameof(CreateSessionViaHttp)}.sqlite");
+        SQLiteDatabase database = new SQLiteDatabase(dbFile);
+        ServerSessionSchemaRepository repository = new ServerSessionSchemaRepository()
+        {
+            Database = database
+        };
+
+        BamServerOptions options = new BamServerOptions()
+        {
+            HttpHostBinding = hostBinding
+        };
+        options.ComponentRegistry.For<ServerSessionSchemaRepository>().Use(repository);
+        BamServer server = new BamServer(options);
+
+        await server.StartAsync();
+
+        try
+        {
+            After.Setup(reg =>
+            {
+                reg.For<HttpClient>().Use(new HttpClient());
+            })
+            .When<HttpClient>("sends session creation request", async (httpClient, reg) =>
+            {
+                EccPublicKey clientPublicKey = new EccPublicKey();
+                string requestJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    ClientPublicKey = clientPublicKey.Pem
+                });
+                StringContent content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+                string url = $"http://localhost:{testPort}{BamSessionPaths.Create}";
+                HttpResponseMessage httpResponse = await httpClient.PostAsync(url, content);
+                string responseJson = await httpResponse.Content.ReadAsStringAsync();
+
+                return new { HttpResponse = httpResponse, ResponseJson = responseJson };
+            })
+            .It.ShouldPass(because =>
+            {
+                dynamic result = because.TheResult.As<dynamic>();
+                HttpResponseMessage httpResponse = result.HttpResponse;
+                string responseJson = result.ResponseJson;
+
+                because.ItsTrue("Status code is success", httpResponse.IsSuccessStatusCode, $"Expected success status code, got {httpResponse.StatusCode}");
+
+                var doc = System.Text.Json.JsonDocument.Parse(responseJson);
+                string sessionId = doc.RootElement.GetProperty("SessionId").GetString();
+                string nonce = doc.RootElement.GetProperty("Nonce").GetString();
+                string serverPublicKey = doc.RootElement.GetProperty("ServerPublicKey").GetString();
+
+                because.ItsTrue("SessionId is not null", !string.IsNullOrEmpty(sessionId), "SessionId was null or empty");
+                because.ItsTrue("Nonce is not null", !string.IsNullOrEmpty(nonce), "Nonce was null or empty");
+                because.ItsTrue("ServerPublicKey is not null", !string.IsNullOrEmpty(serverPublicKey), "ServerPublicKey was null or empty");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+        finally
+        {
+            server.TryStop();
+        }
     }
 
     [UnitTest]

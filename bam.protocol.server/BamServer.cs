@@ -234,7 +234,8 @@ namespace Bam.Protocol.Server
                 BamServerInitializationContext initialization = InitializeServerContext(serverContext, args);
                 FireEvent(InitializeContextComplete, new BamServerEventArgs() { Server = this });
                 
-                IBamResponse response = ResponseProvider.CreateResponse(initialization);
+                IBamResponse response = initialization.ServerContext.BamResponse
+                    ?? ResponseProvider.CreateResponse(initialization);
                 response.Send();
             }
             catch (Exception ex)
