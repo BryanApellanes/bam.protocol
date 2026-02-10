@@ -54,7 +54,7 @@ public class BamServerBuilderShould : UnitTestMenuContainer
             because.ItsTrue("UdpPort equals expected", testUdpPort == info.UdpPort);
             because.ItsTrue("TcpIPAddress equals expected", IPAddress.Parse(tcpIpAddress).ToString().Equals(info.TcpIPAddress));
             because.ItsTrue("UdpIPAddress equals expected", IPAddress.Parse(udpIpAddress).ToString().Equals(info.UdpIPAddress));
-            because.ItsTrue("HttpHostBinding is not null", info.HttpHostBinding != null);
+            because.ItsTrue("HttpHostBinding equals expected", httpHostBinding.Equals(info.HttpHostBinding));
         })
         .SoBeHappy()
         .UnlessItFailed();
