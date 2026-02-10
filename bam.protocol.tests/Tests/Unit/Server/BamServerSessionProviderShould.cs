@@ -99,7 +99,9 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             };
 
             reg.For<INonceProvider>().Use<NonceProvider>();
-            reg.For<IKeyManager>().Use<KeyManager>();
+            IKeyManager mockKeyManager = Substitute.For<IKeyManager>();
+            mockKeyManager.GenerateEccKeyPair().Returns(new EccPublicPrivateKeyPair());
+            reg.For<IKeyManager>().Use(mockKeyManager);
             reg.For<ISignatureProvider>().Use(Substitute.For<ISignatureProvider>());
             reg.For<ServerSessionSchemaRepository>().Use(repository);
             reg.For<ServerSessionManager>().Use<ServerSessionManager>();
@@ -116,9 +118,12 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         })
         .It.ShouldPass(because =>
         {
+            because.TheResult.IsNotNull();
             because.TheResult.Is<StartSessionResponse>();
 
             StartSessionResponse response = because.TheResult.As<StartSessionResponse>();
+            if (response == null) return;
+
             because.ItsTrue("SessionId is not null", !string.IsNullOrEmpty(response.SessionId), $"SessionId was null or empty");
             because.ItsTrue("Nonce is not null", !string.IsNullOrEmpty(response.Nonce), $"Nonce was null or empty");
             because.ItsTrue("ServerPublicKey is not null", response.ServerPublicKey != null, "ServerPublicKey was null");
@@ -155,6 +160,23 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             HttpHostBinding = hostBinding
         };
         options.ComponentRegistry.For<ServerSessionSchemaRepository>().Use(repository);
+        IKeyManager mockKeyManager = Substitute.For<IKeyManager>();
+        mockKeyManager.GenerateEccKeyPair().Returns(new EccPublicPrivateKeyPair());
+        ISignatureProvider mockSignatureProvider = Substitute.For<ISignatureProvider>();
+
+        // Manually construct the session manager with mock dependencies because
+        // BamServerOptions.Initialize() eagerly resolves the BamServerContextInitializer
+        // singleton, caching the entire dependency chain before we can override registrations.
+        ServerSessionManager sessionManager = new ServerSessionManager(
+            repository, mockSignatureProvider, mockKeyManager, new NonceProvider());
+        ServerSessionInitializationHandler sessionHandler = new ServerSessionInitializationHandler(sessionManager);
+        BamServerContextInitializer initializer = new BamServerContextInitializer(
+            options.ComponentRegistry.Get<ActorResolverInitializationHandler>(),
+            options.ComponentRegistry.Get<AuthorizationCalculatorInitializationHandler>(),
+            sessionHandler,
+            options.ComponentRegistry.Get<CommandInitializationHandler>());
+        options.ComponentRegistry.For<IBamServerContextInitializer>().UseSingleton(initializer);
+
         BamServer server = new BamServer(options);
 
         await server.StartAsync();
@@ -182,7 +204,10 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             })
             .It.ShouldPass(because =>
             {
+                because.TheResult.IsNotNull();
                 dynamic result = because.TheResult.As<dynamic>();
+                if (result == null) return;
+
                 HttpResponseMessage httpResponse = result.HttpResponse;
                 string responseJson = result.ResponseJson;
 
