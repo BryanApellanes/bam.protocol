@@ -85,22 +85,23 @@ public class BamRequestReader : Loggable, IBamRequestReader
 
     protected byte[] ReadLine(Stream stream)
     {
-        byte[] buffer = new byte[BufferSize];
-        int totalBytesRead = 0;
-        int bytesRead = 0;
+        MemoryStream lineBuffer = new MemoryStream();
+        byte[] singleByte = new byte[1];
+        int bytesRead;
         do
         {
-            bytesRead = stream.Read(buffer, totalBytesRead, 1);
-            byte[] currentBuffer = buffer.Trim();
-            if (currentBuffer.TailEquals("\n"))
+            bytesRead = stream.Read(singleByte, 0, 1);
+            if (bytesRead > 0)
             {
-                break;
+                lineBuffer.WriteByte(singleByte[0]);
+                if (singleByte[0] == (byte)'\n')
+                {
+                    break;
+                }
             }
-
-            totalBytesRead += bytesRead;
         } while (bytesRead > 0);
 
-        return buffer.Trim();
+        return lineBuffer.ToArray();
     }
 
     protected string ReadContentString(Stream stream, Encoding encoding = null)
@@ -109,27 +110,22 @@ public class BamRequestReader : Loggable, IBamRequestReader
         byte[] content = ReadContent(stream);
         return encoding.GetString(content).Trim();
     }
-    
+
     protected byte[] ReadContent(Stream stream)
     {
-        byte[] buffer = new byte[BufferSize];
-        int totalBytesRead = 0;
-        int bytesRead = 0;
+        MemoryStream contentBuffer = new MemoryStream();
+        byte[] chunk = new byte[BufferSize];
+        int bytesRead;
         do
         {
-            /*if (totalBytesRead == BufferSize)
+            bytesRead = stream.Read(chunk, 0, chunk.Length);
+            if (bytesRead > 0)
             {
-                byte[] newBuffer = new byte[buffer.Length + BufferSize];
-                buffer.CopyTo(newBuffer, 0);
-                buffer = newBuffer;
-                totalBytesRead = 0;
-            }*/
-
-            bytesRead = stream.Read(buffer, totalBytesRead, 1);
-            totalBytesRead += bytesRead;
+                contentBuffer.Write(chunk, 0, bytesRead);
+            }
         } while (bytesRead > 0);
 
-        return buffer.Trim();
+        return contentBuffer.ToArray();
     }
     
     private BamRequestLine GetBamRequestLine(HttpListenerRequest request)
