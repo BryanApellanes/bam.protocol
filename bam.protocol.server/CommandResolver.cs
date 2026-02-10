@@ -1,6 +1,8 @@
+using Bam.Logging;
+
 namespace Bam.Protocol.Server;
 
-public class CommandResolver : ICommandResolver
+public class CommandResolver : Loggable, ICommandResolver
 {
     public ICommand ResolveCommand(IBamRequest request)
     {
@@ -26,8 +28,9 @@ public class CommandResolver : ICommandResolver
                 Arguments = invocation.Arguments?.Select(a => a.Value?.ToString()).ToArray() ?? Array.Empty<string>()
             };
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warn("Failed to resolve command from request content: {0}", ex.Message);
             return null;
         }
     }

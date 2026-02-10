@@ -126,7 +126,7 @@ public class BamServerOptions
             .For<IBamServerContextInitializer>().UseSingleton(ComponentRegistry.Get<BamServerContextInitializer>());
     }
 
-    internal void SubscribeEventHandlers(BamServer server)
+    public void SubscribeEventHandlers(object server)
     {
         if (ServerEventHandlers.HasHandlers)
         {
@@ -139,12 +139,12 @@ public class BamServerOptions
         }
     }
 
-    internal void SubscribeServerEventHandlers(BamServer server)
+    public void SubscribeServerEventHandlers(object server)
     {
         ServerEventHandlers.ListenTo(server);
     }
 
-    internal void SubscribeRequestEventHandlers(BamServer server)
+    public void SubscribeRequestEventHandlers(object server)
     {
         RequestEventHandlers.ListenTo(server);
     }

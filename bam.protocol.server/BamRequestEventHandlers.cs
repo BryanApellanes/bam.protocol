@@ -38,7 +38,7 @@ public class BamRequestEventHandlers
         CreateResponseStartedHandlers.Count > 0 ||
         CreateResponseCompleteHandlers.Count > 0;
 
-    internal void ListenTo(BamServer server)
+    public void ListenTo(object server)
     {
         List<BamEventListener> allEventListeners = new List<BamEventListener>();
         allEventListeners.AddRange(CreateContextStartedHandlers);
@@ -54,7 +54,7 @@ public class BamRequestEventHandlers
 
         foreach (BamEventListener bamEventListener in allEventListeners)
         {
-            server.On(bamEventListener.EventName, bamEventListener.EventHandler);
+            bamEventListener.Listen(server);
         }
     }
 }

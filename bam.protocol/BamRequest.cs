@@ -29,7 +29,7 @@ public class BamRequest : IBamRequest
     public HttpMethods HttpMethod { get; internal set; }
     public Uri Url { get; internal set; }
 
-    public Uri UrlReferrer => Headers.ContainsKey("referer") ? new Uri(Headers["referrer"]) : null;
+    public Uri UrlReferrer => Headers.ContainsKey("referer") ? new Uri(Headers["referer"]) : null;
     
     public string UserAgent => Headers.ContainsKey("user-agent") ? Headers["user-agent"] : string.Empty;
     

@@ -19,10 +19,10 @@ public class BamServerEventHandlers
     public List<BamEventListener> UdpDataReceivedHandlers { get; }
 
     public bool HasHandlers =>
-        StartedHandlers.Count > 0 || StartedHandlers.Count > 0 || StoppingHandlers.Count > 0 ||
+        StartingHandlers.Count > 0 || StartedHandlers.Count > 0 || StoppingHandlers.Count > 0 ||
         StoppedHandlers.Count > 0 || TcpClientConnectedHandlers.Count > 0 || UdpDataReceivedHandlers.Count > 0;
 
-    internal void ListenTo(BamServer server)
+    public void ListenTo(object server)
     {
         List<BamEventListener> allEventHandlers = new List<BamEventListener>();
         allEventHandlers.AddRange(StartingHandlers);
@@ -34,7 +34,7 @@ public class BamServerEventHandlers
 
         foreach (BamEventListener bamEventListener in allEventHandlers)
         {
-            server.On(bamEventListener.EventName, bamEventListener.EventHandler);
+            bamEventListener.Listen(server);
         }
     }
 }
