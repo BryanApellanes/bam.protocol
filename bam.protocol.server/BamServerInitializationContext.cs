@@ -7,9 +7,9 @@ public abstract class BamServerInitializationContext
         CanContinue = true;
     }
     public BamServer Server { get; set; }
-    public IBamServerContext ServerContext { get; internal set; }
-    public bool CanContinue { get; internal set; }
-    public BamServerEventArgs EventArgs { get; internal set; }
-    public InitializationStatus Status { get; internal set; }
-    public string Message { get; internal set; }
+    public IBamServerContext ServerContext { get; set; }
+    public bool CanContinue { get; set; }
+    public BamServerEventArgs EventArgs { get; set; }
+    public InitializationStatus Status { get; set; }
+    public string Message { get; set; }
 }

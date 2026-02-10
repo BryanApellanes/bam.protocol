@@ -11,7 +11,7 @@ using Bam.Server;
 
 namespace Bam.Protocol.Server
 {
-    public class BamServer: Loggable, IManagedServer, IConfigurable, IDisposable
+    public class BamServer: Loggable, IAsyncManagedServer, IConfigurable, IDisposable
     {
         private bool _stopRequested;
         
@@ -170,6 +170,11 @@ namespace Bam.Protocol.Server
             {
                 Log.Error("Exception stopping server ({0})", this.ServerName, e);
             }
+        }
+
+        public Task StopAsync()
+        {
+            return Task.Run(Stop);
         }
 
         public Task TryStopAsync()

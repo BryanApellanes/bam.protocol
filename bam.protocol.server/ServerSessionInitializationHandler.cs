@@ -52,12 +52,16 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
     private void HandleSessionCreation(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
-        Stream outputStream = context.HttpContext?.Response?.OutputStream ?? Stream.Null;
+        MemoryStream memoryStream = new MemoryStream();
+        Stream outputStream = context.HttpContext?.Response?.OutputStream ?? memoryStream;
 
         StartSessionRequest sessionRequest = CreateStartSessionRequest(context.BamRequest);
         StartSessionResponse response = SessionManager.StartSession(sessionRequest, outputStream);
 
-        context.HttpContext.Response.StatusCode = response.StatusCode;
+        if (context.HttpContext != null)
+        {
+            context.HttpContext.Response.StatusCode = response.StatusCode;
+        }
         context.BamResponse = response;
         initialization.CanContinue = false;
     }

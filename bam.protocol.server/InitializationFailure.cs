@@ -5,6 +5,6 @@ namespace Bam.Protocol.Server;
 
 public class InitializationFailure
 {
-    public InitializationStatus Status { get; internal set; }
-    public string Message { get; internal set; }
+    public InitializationStatus Status { get; set; }
+    public string Message { get; set; }
 }

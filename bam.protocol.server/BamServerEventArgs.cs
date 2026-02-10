@@ -27,11 +27,11 @@ public class BamServerEventArgs : EventArgs
         this.ServerContext = serverContext;
     }
 
-    public string ServerName => Server.ServerName;
+    public string ServerName => Server?.ServerName;
     public BamServer Server { get; set; }
     public byte[] UdpData { get; set; }
     public HttpListenerContext HttpContext { get; set; }
-    public IBamServerContext ServerContext { get; internal set; }
+    public IBamServerContext ServerContext { get; set; }
     public string? LocalEndpoint { get; private set; }
     public string? RemoteEndpoint { get; private set; }
 }
