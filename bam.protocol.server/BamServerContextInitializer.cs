@@ -68,7 +68,9 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
             {
                 return initialization;
             }
-            
+
+            initialization.Status = InitializationStatus.Success;
+
             OnAfterInitialization(initialization, args);
         }
         catch (Exception ex)

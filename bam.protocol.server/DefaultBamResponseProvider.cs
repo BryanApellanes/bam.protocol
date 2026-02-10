@@ -2,8 +2,10 @@ namespace Bam.Protocol.Server;
 
 public class DefaultBamResponseProvider : BamResponseProvider
 {
-    public DefaultBamResponseProvider(IAuthorizationCalculator authorizationCalculator) : base(authorizationCalculator)
+    public DefaultBamResponseProvider(IAuthorizationCalculator authorizationCalculator, IBamRequestProcessor requestProcessor)
+        : base(authorizationCalculator)
     {
+        this.RequestProcessor = requestProcessor;
         this.FailureResponseProviders =
             new Dictionary<RequestType, Func<BamServerInitializationContext, IBamResponse>>()
             {
@@ -11,14 +13,24 @@ public class DefaultBamResponseProvider : BamResponseProvider
             };
     }
 
+    protected IBamRequestProcessor RequestProcessor { get; }
+
     protected Dictionary<RequestType, Func<BamServerInitializationContext, IBamResponse>> FailureResponseProviders
     {
         get;
         set;
     }
 
+    private BamServerInitializationContext _currentInitialization;
+
     protected override IBamResponse CreateFailureResponse(BamServerInitializationContext initialization)
     {
+        if (initialization.Status == InitializationStatus.Success)
+        {
+            _currentInitialization = initialization;
+            return CreateResponse(initialization.ServerContext);
+        }
+
         if (this.FailureResponseProviders.ContainsKey(initialization.ServerContext.RequestType))
         {
             return this.FailureResponseProviders[initialization.ServerContext.RequestType](initialization);
@@ -30,24 +42,29 @@ public class DefaultBamResponseProvider : BamResponseProvider
         };
     }
 
-    public override IBamResponse CreateDeniedResponse(IBamServerContext serverContext)
+    public override IBamResponse CreateWriteResponse(IBamServerContext serverContext)
     {
-        throw new NotImplementedException();
+        object result = RequestProcessor.ProcessRequestContext(serverContext);
+        return new BamResponse<object>(_currentInitialization, 200) { Content = result };
     }
 
     public override IBamResponse CreateReadResponse(IBamServerContext serverContext)
     {
-        throw new NotImplementedException();
+        object result = RequestProcessor.ProcessRequestContext(serverContext);
+        return new BamResponse<object>(_currentInitialization, 200) { Content = result };
     }
 
-    public override IBamResponse CreateWriteResponse(IBamServerContext serverContext)
+    public override IBamResponse CreateDeniedResponse(IBamServerContext serverContext)
     {
-        throw new NotImplementedException();
+        return new BamResponse<object>(_currentInitialization, 403)
+        {
+            Content = new { Message = "Access Denied" }
+        };
     }
 
     public override void LogAccessDenied(IBamServerContext serverContext)
     {
-        throw new NotImplementedException();
+        // Default no-op; can be overridden for logging
     }
 
     private int GetStatusCode(BamServerInitializationContext initialization)

@@ -118,7 +118,10 @@ public class BamServerOptions
             .For<IAuthorizationCalculator>().Use<AuthorizationCalculator>()
             .For<ICommandResolver>().Use<CommandResolver>()
             .For<IBamRequestProcessor>().Use<BamRequestProcessor>();
-        
+
+        ComponentRegistry
+            .For<ServiceRegistry>().UseSingleton(ComponentRegistry);
+
         ComponentRegistry
             .For<IBamServerContextInitializer>().UseSingleton(ComponentRegistry.Get<BamServerContextInitializer>());
     }
