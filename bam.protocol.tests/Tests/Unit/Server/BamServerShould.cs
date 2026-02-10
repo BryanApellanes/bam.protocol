@@ -18,6 +18,7 @@ public class BamServerShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    [ConsoleCommand("Test Http Server")]
     public async Task TestHttpServer()
     {
         HttpServer server = new HttpServer(context =>
@@ -35,6 +36,7 @@ public class BamServerShould : UnitTestMenuContainer
     }
     
     [UnitTest]
+    [ConsoleCommand("Have Default Host Binding")]
     public async Task HaveDefaultHostBinding()
     {
         BamServer server = new BamServerBuilder().Build();
@@ -43,6 +45,7 @@ public class BamServerShould : UnitTestMenuContainer
     }
     
     [UnitTest]
+    [ConsoleCommand("Fire Server Start And Stop Events")]
     public void FireServerStartAndStopEvents()
     {
         bool? startingEventRaised = false;
@@ -66,6 +69,7 @@ public class BamServerShould : UnitTestMenuContainer
     }
     
     [UnitTest]
+    [ConsoleCommand("Fire Server Start And Stop Events Async")]
     public async Task FireServerStartAndStopEventsAsync()
     {
         bool? startingEventRaised = false;
@@ -107,6 +111,7 @@ public class BamServerShould : UnitTestMenuContainer
     }
     
     [UnitTest]
+    [ConsoleCommand("BamServer Start Session")]
     public async Task StartSession()
     {
         BamServer server = new BamServer();
