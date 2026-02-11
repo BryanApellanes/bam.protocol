@@ -37,4 +37,20 @@ public class ClientSessionManager : IClientSessionManager
         response.SessionId = sessionId;
         return response;
     }
+
+    public async Task<IClientSessionState> StartSessionAsync()
+    {
+        EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
+        EccPublicKey clientPublicKey = clientKeyPair.GetEccPublicKey();
+
+        StartSessionRequest request = new StartSessionRequest { ClientPublicKey = clientPublicKey };
+        StartSessionResponse response = await StartSessionAsync(request);
+
+        return new ClientSessionState(
+            response.SessionId,
+            response.Nonce,
+            response.ServerPublicKey,
+            clientKeyPair
+        );
+    }
 }

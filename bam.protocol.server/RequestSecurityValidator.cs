@@ -73,7 +73,7 @@ public class RequestSecurityValidator
 
     public string DecryptBody(IBamServerContext context)
     {
-        AesKey aesKey = DeriveSessionAesKey(context.ServerSessionState);
+        using AesKey aesKey = DeriveSessionAesKey(context.ServerSessionState);
         if (aesKey == null)
         {
             return null;
@@ -100,7 +100,7 @@ public class RequestSecurityValidator
         }
 
         byte[] serverPemBytes = Encoding.UTF8.GetBytes(serverPrivateKeyPem);
-        EccPublicPrivateKeyPair serverKeyPair = new EccPublicPrivateKeyPair(serverPemBytes);
+        using EccPublicPrivateKeyPair serverKeyPair = new EccPublicPrivateKeyPair(serverPemBytes);
         return serverKeyPair.GetSharedAesKey(clientPublicKeyPem);
     }
 }

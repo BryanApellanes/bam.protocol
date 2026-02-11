@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using System.Text;
 using Amazon.Runtime.Internal;
+using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Common;
 using Bam.Web;
@@ -103,10 +104,13 @@ public class BamClient : IBamClient
     }
     
     private IObjectEncoderDecoder ObjectEncoderDecoder { get; }
-    
+
     public HostBinding HttpBaseAddress { get; set; }
     public HostBinding BaseAddress { get; set; }
     public HostBinding UdpBaseAddress { get; set; }
+
+    public IClientSessionState SessionState { get; set; }
+    private ClientRequestSecurityProvider SecurityProvider { get; } = new ClientRequestSecurityProvider();
 
     public IBamClientRequest CreateHttpRequest(string path)
     {
@@ -208,6 +212,22 @@ public class BamClient : IBamClient
         requestMessage.Headers.Add(Headers.ProcessMode, ProcessMode.Current.Mode.ToString());
         requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, ProcessDescriptorData.LocalIdentifier);
         requestMessage.Headers.Add(Headers.ProcessDescriptor, ProcessDescriptorData.Current.ToString());
+
+        string body = null;
+        if (request.Content != null)
+        {
+            body = request.Content is string s ? s : System.Text.Json.JsonSerializer.Serialize(request.Content);
+        }
+
+        if (SessionState != null && body != null)
+        {
+            SecurityProvider.PrepareHttpRequest(requestMessage, body, SessionState);
+        }
+        else if (body != null)
+        {
+            requestMessage.Content = new StringContent(body, Encoding.UTF8, "application/json");
+        }
+
         return requestMessage;
     }
 }
