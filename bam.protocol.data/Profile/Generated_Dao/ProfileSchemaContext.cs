@@ -915,58 +915,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 			return _personMailingAddressDatasLock.DoubleCheckLock<PersonMailingAddressDataQueryContext>(ref _personMailingAddressDatas, () => new PersonMailingAddressDataQueryContext());
 		}
 	}
-	public class ProfileAccountDataQueryContext
-	{
-			public ProfileAccountDataCollection Where(WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Where(where, db);
-			}
-		   
-			public ProfileAccountDataCollection Where(WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy = null, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Where(where, orderBy, db);
-			}
-
-			public ProfileAccountData OneWhere(WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.OneWhere(where, db);
-			}
-
-			public static ProfileAccountData GetOneWhere(WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.GetOneWhere(where, db);
-			}
-		
-			public ProfileAccountData FirstOneWhere(WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.FirstOneWhere(where, db);
-			}
-
-			public ProfileAccountDataCollection Top(int count, WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, db);
-			}
-
-			public ProfileAccountDataCollection Top(int count, WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Top(count, where, orderBy, db);
-			}
-
-			public long Count(WhereDelegate<ProfileAccountDataColumns> where, Database db = null)
-			{
-				return Bam.Protocol.Data.Profile.Dao.ProfileAccountData.Count(where, db);
-			}
-	}
-
-	static ProfileAccountDataQueryContext _profileAccountDatas;
-	static object _profileAccountDatasLock = new object();
-	public static ProfileAccountDataQueryContext ProfileAccountDatas
-	{
-		get
-		{
-			return _profileAccountDatasLock.DoubleCheckLock<ProfileAccountDataQueryContext>(ref _profileAccountDatas, () => new ProfileAccountDataQueryContext());
-		}
-	}
 	public class ProfileAdditionalPropertiesQueryContext
 	{
 			public ProfileAdditionalPropertiesCollection Where(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
@@ -1017,6 +965,58 @@ namespace Bam.Protocol.Data.Profile.Dao
 		get
 		{
 			return _profileAdditionalPropertiesLock.DoubleCheckLock<ProfileAdditionalPropertiesQueryContext>(ref _profileAdditionalProperties, () => new ProfileAdditionalPropertiesQueryContext());
+		}
+	}
+	public class ProfileDataQueryContext
+	{
+			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.Where(where, db);
+			}
+		   
+			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy = null, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.Where(where, orderBy, db);
+			}
+
+			public ProfileData OneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.OneWhere(where, db);
+			}
+
+			public static ProfileData GetOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.GetOneWhere(where, db);
+			}
+		
+			public ProfileData FirstOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.FirstOneWhere(where, db);
+			}
+
+			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.Top(count, where, db);
+			}
+
+			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.Top(count, where, orderBy, db);
+			}
+
+			public long Count(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			{
+				return Bam.Protocol.Data.Profile.Dao.ProfileData.Count(where, db);
+			}
+	}
+
+	static ProfileDataQueryContext _profileDatas;
+	static object _profileDatasLock = new object();
+	public static ProfileDataQueryContext ProfileDatas
+	{
+		get
+		{
+			return _profileDatasLock.DoubleCheckLock<ProfileDataQueryContext>(ref _profileDatas, () => new ProfileDataQueryContext());
 		}
 	}
 	public class PublicKeySetDataQueryContext

@@ -2,7 +2,7 @@
 
 namespace Bam.Protocol.Data.Common;
 
-public class ActorData : RepoData, IActor, IHasHandle
+public class ActorData : KeyedAuditRepoData, IActor, IHasHandle
 {
     public string Name { get; set; }
     

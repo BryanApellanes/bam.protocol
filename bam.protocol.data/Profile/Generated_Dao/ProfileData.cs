@@ -17,30 +17,30 @@ namespace Bam.Protocol.Data.Profile.Dao
 	// schema = ProfileSchema
 	// connection Name = ProfileSchema
 	[Serializable]
-	[Bam.Data.Table("ProfileAccountData", "ProfileSchema")]
-	public partial class ProfileAccountData: Bam.Data.Dao
+	[Bam.Data.Table("ProfileData", "ProfileSchema")]
+	public partial class ProfileData: Bam.Data.Dao
 	{
-		public ProfileAccountData():base()
+		public ProfileData():base()
 		{
 			this.SetKeyColumnName();
 			this.SetChildren();
 		}
 
-		public ProfileAccountData(DataRow data)
+		public ProfileData(DataRow data)
 			: base(data)
 		{
 			this.SetKeyColumnName();
 			this.SetChildren();
 		}
 
-		public ProfileAccountData(IDatabase db)
+		public ProfileData(IDatabase db)
 			: base(db)
 		{
 			this.SetKeyColumnName();
 			this.SetChildren();
 		}
 
-		public ProfileAccountData(IDatabase db, DataRow data)
+		public ProfileData(IDatabase db, DataRow data)
 			: base(db, data)
 		{
 			this.SetKeyColumnName();
@@ -48,9 +48,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 
 		[Bam.Exclude]
-		public static implicit operator ProfileAccountData(DataRow data)
+		public static implicit operator ProfileData(DataRow data)
 		{
-			return new ProfileAccountData(data);
+			return new ProfileData(data);
 		}
 
 		private void SetChildren()
@@ -131,31 +131,101 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
     }
 
-    // property:ProfileAccountHandle, columnName: ProfileAccountHandle	
-    [Bam.Data.Column(Name="ProfileAccountHandle", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string ProfileAccountHandle
+    // property:ProfileHandle, columnName: ProfileHandle	
+    [Bam.Data.Column(Name="ProfileHandle", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string ProfileHandle
     {
         get
         {
-            return GetStringValue("ProfileAccountHandle");
+            return GetStringValue("ProfileHandle");
         }
         set
         {
-            SetValue("ProfileAccountHandle", value);
+            SetValue("ProfileHandle", value);
         }
     }
 
-    // property:DisplayName, columnName: DisplayName	
-    [Bam.Data.Column(Name="DisplayName", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
-    public string DisplayName
+    // property:Name, columnName: Name	
+    [Bam.Data.Column(Name="Name", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string Name
     {
         get
         {
-            return GetStringValue("DisplayName");
+            return GetStringValue("Name");
         }
         set
         {
-            SetValue("DisplayName", value);
+            SetValue("Name", value);
+        }
+    }
+
+    // property:ShowFirstName, columnName: ShowFirstName	
+    [Bam.Data.Column(Name="ShowFirstName", DbDataType="Bit", MaxLength="1", AllowNull=true)]
+    public bool? ShowFirstName
+    {
+        get
+        {
+            return GetBooleanValue("ShowFirstName");
+        }
+        set
+        {
+            SetValue("ShowFirstName", value);
+        }
+    }
+
+    // property:ShowLastName, columnName: ShowLastName	
+    [Bam.Data.Column(Name="ShowLastName", DbDataType="Bit", MaxLength="1", AllowNull=true)]
+    public bool? ShowLastName
+    {
+        get
+        {
+            return GetBooleanValue("ShowLastName");
+        }
+        set
+        {
+            SetValue("ShowLastName", value);
+        }
+    }
+
+    // property:ShowEmail, columnName: ShowEmail	
+    [Bam.Data.Column(Name="ShowEmail", DbDataType="Bit", MaxLength="1", AllowNull=true)]
+    public bool? ShowEmail
+    {
+        get
+        {
+            return GetBooleanValue("ShowEmail");
+        }
+        set
+        {
+            SetValue("ShowEmail", value);
+        }
+    }
+
+    // property:ShowPhone, columnName: ShowPhone	
+    [Bam.Data.Column(Name="ShowPhone", DbDataType="Bit", MaxLength="1", AllowNull=true)]
+    public bool? ShowPhone
+    {
+        get
+        {
+            return GetBooleanValue("ShowPhone");
+        }
+        set
+        {
+            SetValue("ShowPhone", value);
+        }
+    }
+
+    // property:MailingAddressHandles, columnName: MailingAddressHandles	
+    [Bam.Data.Column(Name="MailingAddressHandles", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string MailingAddressHandles
+    {
+        get
+        {
+            return GetStringValue("MailingAddressHandles");
+        }
+        set
+        {
+            SetValue("MailingAddressHandles", value);
         }
     }
 
@@ -291,23 +361,23 @@ namespace Bam.Protocol.Data.Profile.Dao
 			}
 			else
 			{
-				var colFilter = new ProfileAccountDataColumns();
+				var colFilter = new ProfileDataColumns();
 				return (colFilter.KeyColumn == GetDbId());
 			}
 		}
 
 		/// <summary>
-        /// Return every record in the ProfileAccountData table.
+        /// Return every record in the ProfileData table.
         /// </summary>
 		/// <param name="database">
 		/// The database to load from or null
 		/// </param>
-		public static ProfileAccountDataCollection LoadAll(IDatabase database = null)
+		public static ProfileDataCollection LoadAll(IDatabase database = null)
 		{
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
             ISqlStringBuilder sql = db.GetSqlStringBuilder();
-            sql.Select<ProfileAccountData>();
-            var results = new ProfileAccountDataCollection(db, sql.ExecuteGetDataTable(db))
+            sql.Select<ProfileData>();
+            var results = new ProfileDataCollection(db, sql.ExecuteGetDataTable(db))
             {
                 Database = db
             };
@@ -318,12 +388,12 @@ namespace Bam.Protocol.Data.Profile.Dao
         /// Process all records in batches of the specified size
         /// </summary>
         [Bam.Exclude]
-        public static async Task BatchAll(int batchSize, Action<IEnumerable<ProfileAccountData>> batchProcessor, IDatabase database = null)
+        public static async Task BatchAll(int batchSize, Action<IEnumerable<ProfileData>> batchProcessor, IDatabase database = null)
 		{
 			await Task.Run(async ()=>
 			{
-				ProfileAccountDataColumns columns = new ProfileAccountDataColumns();
-				var orderBy = Bam.Data.Order.By<ProfileAccountDataColumns>(c => c.KeyColumn, Bam.Data.SortOrder.Ascending);
+				ProfileDataColumns columns = new ProfileDataColumns();
+				var orderBy = Bam.Data.Order.By<ProfileDataColumns>(c => c.KeyColumn, Bam.Data.SortOrder.Ascending);
 				var results = Top(batchSize, (c) => c.KeyColumn > 0, orderBy, database);
 				while(results.Count > 0)
 				{
@@ -337,124 +407,124 @@ namespace Bam.Protocol.Data.Profile.Dao
 			});
 		}
 
-		public static ProfileAccountData GetById(uint? id, IDatabase database = null)
+		public static ProfileData GetById(uint? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
-			Args.ThrowIf(!id.HasValue, "specified ProfileAccountData.Id was null");
+			Args.ThrowIf(!id.HasValue, "specified ProfileData.Id was null");
 			return GetById(id.Value, database);
 		}
 
-		public static ProfileAccountData GetById(uint id, IDatabase database = null)
+		public static ProfileData GetById(uint id, IDatabase database = null)
 		{
 			return GetById((ulong)id, database);
 		}
 
-		public static ProfileAccountData GetById(int? id, IDatabase database = null)
+		public static ProfileData GetById(int? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
-			Args.ThrowIf(!id.HasValue, "specified ProfileAccountData.Id was null");
+			Args.ThrowIf(!id.HasValue, "specified ProfileData.Id was null");
 			return GetById(id.Value, database);
 		}                                    
                                     
-		public static ProfileAccountData GetById(int id, IDatabase database = null)
+		public static ProfileData GetById(int id, IDatabase database = null)
 		{
 			return GetById((long)id, database);
 		}
 
-		public static ProfileAccountData GetById(long? id, IDatabase database = null)
+		public static ProfileData GetById(long? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
-			Args.ThrowIf(!id.HasValue, "specified ProfileAccountData.Id was null");
+			Args.ThrowIf(!id.HasValue, "specified ProfileData.Id was null");
 			return GetById(id.Value, database);
 		}
                                     
-		public static ProfileAccountData GetById(long id, IDatabase database = null)
+		public static ProfileData GetById(long id, IDatabase database = null)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static ProfileAccountData GetById(ulong? id, IDatabase database = null)
+		public static ProfileData GetById(ulong? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
-			Args.ThrowIf(!id.HasValue, "specified ProfileAccountData.Id was null");
+			Args.ThrowIf(!id.HasValue, "specified ProfileData.Id was null");
 			return GetById(id.Value, database);
 		}
                                     
-		public static ProfileAccountData GetById(ulong id, IDatabase database = null)
+		public static ProfileData GetById(ulong id, IDatabase database = null)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static ProfileAccountData GetByUuid(string uuid, IDatabase database = null)
+		public static ProfileData GetByUuid(string uuid, IDatabase database = null)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Uuid") == uuid, database);
 		}
 
-		public static ProfileAccountData GetByCuid(string cuid, IDatabase database = null)
+		public static ProfileData GetByCuid(string cuid, IDatabase database = null)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Cuid") == cuid, database);
 		}
 
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Query(QueryFilter filter, IDatabase database = null)
+		public static ProfileDataCollection Query(QueryFilter filter, IDatabase database = null)
 		{
 			return Where(filter, database);
 		}
 
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Where(QueryFilter filter, IDatabase database = null)
+		public static ProfileDataCollection Where(QueryFilter filter, IDatabase database = null)
 		{
-			WhereDelegate<ProfileAccountDataColumns> whereDelegate = (c) => filter;
+			WhereDelegate<ProfileDataColumns> whereDelegate = (c) => filter;
 			return Where(whereDelegate, database);
 		}
 
 		/// <summary>
 		/// Execute a query and return the results.
 		/// </summary>
-		/// <param name="where">A Func delegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A Func delegate that recieves a ProfileDataColumns
 		/// and returns a QueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Where(Func<ProfileAccountDataColumns, QueryFilter<ProfileAccountDataColumns>> where, OrderBy<ProfileAccountDataColumns> orderBy = null, IDatabase database = null)
+		public static ProfileDataCollection Where(Func<ProfileDataColumns, QueryFilter<ProfileDataColumns>> where, OrderBy<ProfileDataColumns> orderBy = null, IDatabase database = null)
 		{
-			database = database ?? Db.For<ProfileAccountData>();
-			return new ProfileAccountDataCollection(database.GetQuery<ProfileAccountDataColumns, ProfileAccountData>(where, orderBy), true);
+			database = database ?? Db.For<ProfileData>();
+			return new ProfileDataCollection(database.GetQuery<ProfileDataColumns, ProfileData>(where, orderBy), true);
 		}
 
 		/// <summary>
 		/// Execute a query and return the results.
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Where(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
-			database = database ?? Db.For<ProfileAccountData>();
-			var results = new ProfileAccountDataCollection(database, database.GetQuery<ProfileAccountDataColumns, ProfileAccountData>(where), true);
+			database = database ?? Db.For<ProfileData>();
+			var results = new ProfileDataCollection(database, database.GetQuery<ProfileDataColumns, ProfileData>(where), true);
 			return results;
 		}
 
 		/// <summary>
 		/// Execute a query and return the results.
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="orderBy">
 		/// Specifies what column and direction to order the results by
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Where(WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy = null, IDatabase database = null)
+		public static ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy = null, IDatabase database = null)
 		{
-			database = database ?? Db.For<ProfileAccountData>();
-			var results = new ProfileAccountDataCollection(database, database.GetQuery<ProfileAccountDataColumns, ProfileAccountData>(where, orderBy), true);
+			database = database ?? Db.For<ProfileData>();
+			var results = new ProfileDataCollection(database, database.GetQuery<ProfileDataColumns, ProfileData>(where, orderBy), true);
 			return results;
 		}
 
@@ -462,13 +532,13 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// This method is intended to respond to client side Qi queries.
 		/// Use of this method from .Net should be avoided in favor of
 		/// one of the methods that take a delegate of type
-		/// WhereDelegate`ProfileAccountDataColumns`.
+		/// WhereDelegate`ProfileDataColumns`.
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static ProfileAccountDataCollection Where(QiQuery where, IDatabase database = null)
+		public static ProfileDataCollection Where(QiQuery where, IDatabase database = null)
 		{
-			var results = new ProfileAccountDataCollection(database, Select<ProfileAccountDataColumns>.From<ProfileAccountData>().Where(where, database));
+			var results = new ProfileDataCollection(database, Select<ProfileDataColumns>.From<ProfileData>().Where(where, database));
 			return results;
 		}
 
@@ -478,7 +548,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static ProfileAccountData GetOneWhere(QueryFilter where, IDatabase database = null)
+		public static ProfileData GetOneWhere(QueryFilter where, IDatabase database = null)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -497,9 +567,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData OneWhere(QueryFilter where, IDatabase database = null)
+		public static ProfileData OneWhere(QueryFilter where, IDatabase database = null)
 		{
-			WhereDelegate<ProfileAccountDataColumns> whereDelegate = (c) => where;
+			WhereDelegate<ProfileDataColumns> whereDelegate = (c) => where;
 			var result = Top(1, whereDelegate, database);
 			return OneOrThrow(result);
 		}
@@ -510,9 +580,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
-			SetOneWhere(where, out ProfileAccountData ignore, database);
+			SetOneWhere(where, out ProfileData ignore, database);
 		}
 
 		/// <summary>
@@ -521,7 +591,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<ProfileAccountDataColumns> where, out ProfileAccountData result, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<ProfileDataColumns> where, out ProfileData result, IDatabase database = null)
 		{
 			result = GetOneWhere(where, database);
 		}
@@ -534,12 +604,12 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData GetOneWhere(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static ProfileData GetOneWhere(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
 			{
-				ProfileAccountDataColumns c = new ProfileAccountDataColumns();
+				ProfileDataColumns c = new ProfileDataColumns();
 				IQueryFilter filter = where(c);
 				result = CreateFromFilter(filter, database);
 			}
@@ -551,15 +621,15 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Execute a query that should return only one result.  If more
 		/// than one result is returned a MultipleEntriesFoundException will
 		/// be thrown.  This method is most commonly used to retrieve a
-		/// single ProfileAccountData instance by its Id/Key value
+		/// single ProfileData instance by its Id/Key value
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData OneWhere(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static ProfileData OneWhere(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
 			var result = Top(1, where, database);
 			return OneOrThrow(result);
@@ -569,11 +639,11 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// This method is intended to respond to client side Qi queries.
 		/// Use of this method from .Net should be avoided in favor of
 		/// one of the methods that take a delegate of type
-		/// WhereDelegate`ProfileAccountDataColumns`.
+		/// WhereDelegate`ProfileDataColumns`.
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static ProfileAccountData OneWhere(QiQuery where, IDatabase database = null)
+		public static ProfileData OneWhere(QiQuery where, IDatabase database = null)
 		{
 			var results = Top(1, where, database);
 			return OneOrThrow(results);
@@ -583,13 +653,13 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Execute a query and return the first result.  This method will issue a sql TOP clause so only the
 		/// specified number of values will be returned.
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData FirstOneWhere(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static ProfileData FirstOneWhere(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
 			var results = Top(1, where, database);
 			if(results.Count > 0)
@@ -606,13 +676,13 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Execute a query and return the first result.  This method will issue a sql TOP clause so only the
 		/// specified number of values will be returned.
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData FirstOneWhere(WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy, IDatabase database = null)
+		public static ProfileData FirstOneWhere(WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy, IDatabase database = null)
 		{
 			var results = Top(1, where, orderBy, database);
 			if(results.Count > 0)
@@ -628,15 +698,15 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <summary>
 		/// Shortcut for Top(1, where, orderBy, database)
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountData FirstOneWhere(QueryFilter where, OrderBy<ProfileAccountDataColumns> orderBy = null, IDatabase database = null)
+		public static ProfileData FirstOneWhere(QueryFilter where, OrderBy<ProfileDataColumns> orderBy = null, IDatabase database = null)
 		{
-			WhereDelegate<ProfileAccountDataColumns> whereDelegate = (c) => where;
+			WhereDelegate<ProfileDataColumns> whereDelegate = (c) => where;
 			var results = Top(1, whereDelegate, orderBy, database);
 			if(results.Count > 0)
 			{
@@ -657,13 +727,13 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// This value is used in the sql query so no more than this
 		/// number of values will be returned by the database.
 		/// </param>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Top(int count, WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
 			return Top(count, where, null, database);
 		}
@@ -677,9 +747,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// This value is used in the sql query so no more than this
 		/// number of values will be returned by the database.
 		/// </param>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="orderBy">
 		/// Specifies what column and direction to order the results by
@@ -688,29 +758,29 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Top(int count, WhereDelegate<ProfileAccountDataColumns> where, OrderBy<ProfileAccountDataColumns> orderBy, IDatabase database = null)
+		public static ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy, IDatabase database = null)
 		{
-			ProfileAccountDataColumns c = new ProfileAccountDataColumns();
+			ProfileDataColumns c = new ProfileDataColumns();
 			IQueryFilter filter = where(c);
 
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Top<ProfileAccountData>(count);
+			query.Top<ProfileData>(count);
 			query.Where(filter);
 
 			if(orderBy != null)
 			{
-				query.OrderBy<ProfileAccountDataColumns>(orderBy);
+				query.OrderBy<ProfileDataColumns>(orderBy);
 			}
 
 			query.Execute(db);
-			var results = query.Results.As<ProfileAccountDataCollection>(0);
+			var results = query.Results.As<ProfileDataCollection>(0);
 			results.Database = db;
 			return results;
 		}
 
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Top(int count, QueryFilter where, IDatabase database)
+		public static ProfileDataCollection Top(int count, QueryFilter where, IDatabase database)
 		{
 			return Top(count, where, null, database);
 		}
@@ -734,30 +804,30 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Top(int count, QueryFilter where, OrderBy<ProfileAccountDataColumns> orderBy = null, IDatabase database = null)
+		public static ProfileDataCollection Top(int count, QueryFilter where, OrderBy<ProfileDataColumns> orderBy = null, IDatabase database = null)
 		{
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Top<ProfileAccountData>(count);
+			query.Top<ProfileData>(count);
 			query.Where(where);
 
 			if(orderBy != null)
 			{
-				query.OrderBy<ProfileAccountDataColumns>(orderBy);
+				query.OrderBy<ProfileDataColumns>(orderBy);
 			}
 
 			query.Execute(db);
-			var results = query.Results.As<ProfileAccountDataCollection>(0);
+			var results = query.Results.As<ProfileDataCollection>(0);
 			results.Database = db;
 			return results;
 		}
 
 		[Bam.Exclude]
-		public static ProfileAccountDataCollection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null)
+		public static ProfileDataCollection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null)
 		{
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Top<ProfileAccountData>(count);
+			query.Top<ProfileData>(count);
 			query.Where(where);
 
 			if(orderBy != null)
@@ -766,7 +836,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			}
 
 			query.Execute(db);
-			var results = query.Results.As<ProfileAccountDataCollection>(0);
+			var results = query.Results.As<ProfileDataCollection>(0);
 			results.Database = db;
 			return results;
 		}
@@ -787,14 +857,14 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static ProfileAccountDataCollection Top(int count, QiQuery where, IDatabase database = null)
+		public static ProfileDataCollection Top(int count, QiQuery where, IDatabase database = null)
 		{
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Top<ProfileAccountData>(count);
+			query.Top<ProfileData>(count);
 			query.Where(where);
 			query.Execute(db);
-			var results = query.Results.As<ProfileAccountDataCollection>(0);
+			var results = query.Results.As<ProfileDataCollection>(0);
 			results.Database = db;
 			return results;
 		}
@@ -807,9 +877,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		public static long Count(IDatabase database = null)
         {
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
             IQuerySet query = GetQuerySet(db);
-            query.Count<ProfileAccountData>();
+            query.Count<ProfileData>();
             query.Execute(db);
             return (long)query.Results[0].DataRow[0];
         }
@@ -817,22 +887,22 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <summary>
 		/// Execute a query and return the number of results
 		/// </summary>
-		/// <param name="where">A WhereDelegate that recieves a ProfileAccountDataColumns
+		/// <param name="where">A WhereDelegate that recieves a ProfileDataColumns
 		/// and returns a IQueryFilter which is the result of any comparisons
-		/// between ProfileAccountDataColumns and other values
+		/// between ProfileDataColumns and other values
 		/// </param>
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static long Count(WhereDelegate<ProfileAccountDataColumns> where, IDatabase database = null)
+		public static long Count(WhereDelegate<ProfileDataColumns> where, IDatabase database = null)
 		{
-			ProfileAccountDataColumns c = new ProfileAccountDataColumns();
+			ProfileDataColumns c = new ProfileDataColumns();
 			IQueryFilter filter = where(c) ;
 
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
+			IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Count<ProfileAccountData>();
+			query.Count<ProfileData>();
 			query.Where(filter);
 			query.Execute(db);
 			return query.Results.As<CountResult>(0).Value;
@@ -840,18 +910,18 @@ namespace Bam.Protocol.Data.Profile.Dao
 
 		public static long Count(QiQuery where, IDatabase database = null)
 		{
-		    IDatabase db = database ?? Db.For<ProfileAccountData>();
+		    IDatabase db = database ?? Db.For<ProfileData>();
 			IQuerySet query = GetQuerySet(db);
-			query.Count<ProfileAccountData>();
+			query.Count<ProfileData>();
 			query.Where(where);
 			query.Execute(db);
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		private static ProfileAccountData CreateFromFilter(IQueryFilter filter, IDatabase database = null)
+		private static ProfileData CreateFromFilter(IQueryFilter filter, IDatabase database = null)
 		{
-			IDatabase db = database ?? Db.For<ProfileAccountData>();
-			var dao = new ProfileAccountData();
+			IDatabase db = database ?? Db.For<ProfileData>();
+			var dao = new ProfileData();
 			filter.Parameters.Each(p=>
 			{
 				dao.Property(p.ColumnName, p.Value);
@@ -860,7 +930,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			return dao;
 		}
 
-		private static ProfileAccountData OneOrThrow(ProfileAccountDataCollection c)
+		private static ProfileData OneOrThrow(ProfileDataCollection c)
 		{
 			if(c.Count == 1)
 			{
