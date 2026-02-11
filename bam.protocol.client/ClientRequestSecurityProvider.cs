@@ -44,5 +44,10 @@ public class ClientRequestSecurityProvider
         string nonceHash = ComputeNonceHash(body, sessionState.Nonce);
         httpRequest.Headers.Add(Headers.Nonce, sessionState.Nonce);
         httpRequest.Headers.Add(Headers.NonceHash, nonceHash);
+
+        if (!string.IsNullOrEmpty(sessionState.AuthorizationToken))
+        {
+            httpRequest.Headers.Add(Headers.Authorization, $"Bearer {sessionState.AuthorizationToken}");
+        }
     }
 }

@@ -18,6 +18,7 @@ public class ClientSessionState : IClientSessionState
 
     public string SessionId { get; }
     public string Nonce { get; }
+    public string AuthorizationToken { get; set; }
     public EccPublicKey ServerPublicKey { get; }
     protected internal EccPublicPrivateKeyPair ClientKeyPair { get; }
 

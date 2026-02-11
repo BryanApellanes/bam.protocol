@@ -6,6 +6,7 @@ public interface IClientSessionState : IDisposable
 {
     string SessionId { get; }
     string Nonce { get; }
+    string AuthorizationToken { get; }
     EccPublicKey ServerPublicKey { get; }
 
     AesKey DeriveSessionAesKey();
