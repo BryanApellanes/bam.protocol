@@ -154,9 +154,9 @@ namespace Bam.Protocol.Server
         {
             FireEvent(Stopping);
             _stopRequested = true;
-            UdpClient.Close();
-            TcpListener.Stop();
-            HttpServer.Stop();
+            UdpClient?.Close();
+            TcpListener?.Stop();
+            HttpServer?.Stop();
             FireEvent(Stopped);
         }
 
