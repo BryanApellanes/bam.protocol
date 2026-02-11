@@ -116,6 +116,8 @@ public class BamServerOptions
             .For<IBamResponseProvider>().Use<DefaultBamResponseProvider>()
             .For<IActorResolver>().Use<ActorResolver>()
             .For<IServerSessionManager>().Use<ServerSessionManager>()
+            .For<IGroupAccessConfiguration>().UseSingleton(new GroupAccessConfiguration())
+            .For<IAccessLevelProvider>().Use<GroupAccessLevelProvider>()
             .For<IAuthorizationCalculator>().Use<AuthorizationCalculator>()
             .For<ICommandResolver>().Use<CommandResolver>()
             .For<IBamRequestProcessor>().Use<BamRequestProcessor>()
@@ -161,6 +163,13 @@ public class BamServerOptions
         }
 
         return _communicationHandler;
+    }
+
+    public BamServerOptions ConfigureGroupAccess(Action<IGroupAccessConfiguration> configure)
+    {
+        IGroupAccessConfiguration config = ComponentRegistry.Get<IGroupAccessConfiguration>();
+        configure(config);
+        return this;
     }
 
     public IBamServerContextInitializer GetServerContextInitializer()
