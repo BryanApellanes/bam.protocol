@@ -5,12 +5,14 @@ namespace Bam.Protocol.Server;
 public class BamServerContextInitializer : Loggable, IBamServerContextInitializer
 {
     public BamServerContextInitializer(ActorResolverInitializationHandler actorResolverInitializationHandler, AuthorizationCalculatorInitializationHandler authorizationCalculatorInitializationHandler,
-        ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler)
+        ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler,
+        AuthenticationInitializationHandler authenticationInitializationHandler)
     {
         this.AuthorizationCalculatorInitializationHandlerInitializationHandler = authorizationCalculatorInitializationHandler;
         this.ActorResolverInitializationHandler = actorResolverInitializationHandler;
         this.ServerSessionInitializationHandler = serverSessionInitializationHandler;
         this.CommandInitializationHandler = commandInitializationHandler;
+        this.AuthenticationInitializationHandler = authenticationInitializationHandler;
     }
     
     protected HashSet<IBamServerContextInitializationHandler> BeforeInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
@@ -22,6 +24,9 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     public event EventHandler<BamServerEventArgs> ResolveActorStarted;
     public event EventHandler<BamServerEventArgs> ResolveActorComplete;
     
+    public event EventHandler<BamServerEventArgs> AuthenticateRequestStarted;
+    public event EventHandler<BamServerEventArgs> AuthenticateRequestComplete;
+
     public event EventHandler<BamServerEventArgs> ResolveCommandStarted;
     public event EventHandler<BamServerEventArgs> ResolveCommandComplete;
 
@@ -56,7 +61,13 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
             {
                 return initialization;
             }
-            
+
+            initialization = InitializeAuthentication(initialization, args);
+            if (!initialization.CanContinue)
+            {
+                return initialization;
+            }
+
             initialization = InitializeCommand(initialization, args);
             if (!initialization.CanContinue)
             {
@@ -87,6 +98,15 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         FireEvent(AuthorizeRequestStarted, args);
         initialization = AuthorizationCalculatorInitializationHandlerInitializationHandler.HandleInitialization(initialization);
         FireEvent(AuthorizeRequestComplete, args);
+        return initialization;
+    }
+
+    private BamServerInitializationContext InitializeAuthentication(BamServerInitializationContext initialization,
+        BamServerEventArgs args)
+    {
+        FireEvent(AuthenticateRequestStarted, args);
+        initialization = AuthenticationInitializationHandler.HandleInitialization(initialization);
+        FireEvent(AuthenticateRequestComplete, args);
         return initialization;
     }
 
@@ -147,6 +167,12 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         set;
     }
     
+    protected AuthenticationInitializationHandler AuthenticationInitializationHandler
+    {
+        get;
+        set;
+    }
+
     protected AuthorizationCalculatorInitializationHandler AuthorizationCalculatorInitializationHandlerInitializationHandler
     {
         get;

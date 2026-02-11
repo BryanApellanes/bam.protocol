@@ -3,6 +3,7 @@ using Bam.Data.Objects;
 using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Logging;
+using Bam.Protocol.Data;
 using Bam.Protocol.Profile;
 using Bam.Server;
 using Bam.Services;
@@ -117,13 +118,15 @@ public class BamServerOptions
             .For<IServerSessionManager>().Use<ServerSessionManager>()
             .For<IAuthorizationCalculator>().Use<AuthorizationCalculator>()
             .For<ICommandResolver>().Use<CommandResolver>()
-            .For<IBamRequestProcessor>().Use<BamRequestProcessor>();
+            .For<IBamRequestProcessor>().Use<BamRequestProcessor>()
+            .For<IProfileManager>().Use<ProfileManager>()
+            .For<IAuthenticator>().Use<BamAuthenticator>();
 
         ComponentRegistry
             .For<ServiceRegistry>().UseSingleton(ComponentRegistry);
 
         ComponentRegistry
-            .For<IBamServerContextInitializer>().UseSingleton(ComponentRegistry.Get<BamServerContextInitializer>());
+            .For<IBamServerContextInitializer>().Use<BamServerContextInitializer>();
     }
 
     public void SubscribeEventHandlers(object server)

@@ -1,4 +1,5 @@
 using System.Net;
+using Bam.Protocol;
 using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Server;
@@ -11,6 +12,7 @@ public class BamServerContext : IBamServerContext
     public IBamRequest BamRequest { get; internal set; }
     public IBamResponse BamResponse { get; set; }
     public IActor Actor { get; private set; }
+    public BamAuthentication Authentication { get; private set; }
     public ICommand Command { get; private set; }
     public IServerSessionState ServerSessionState { get; private set; }
     public IAuthorizationCalculation AuthorizationCalculation { get; private set; }
@@ -24,6 +26,12 @@ public class BamServerContext : IBamServerContext
     {
         Actor = actor;
         return actor != null;
+    }
+
+    public bool SetAuthentication(BamAuthentication authentication)
+    {
+        Authentication = authentication;
+        return authentication?.Success == true;
     }
 
     public bool SetCommand(ICommand command)

@@ -7,6 +7,7 @@ public enum InitializationStatus
     SessionInitializationFailed,
     SessionRequired,
     ActorResolutionFailed,
+    AuthenticationFailed,
     CommandResolutionFailed,
     AuthorizationCalculationFailed,
     //AfterInitializationError,

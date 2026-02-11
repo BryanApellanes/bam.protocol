@@ -6,7 +6,7 @@
 
 1. **Request reading** — parse raw bytes into `BamRequest` (request line, headers, content body)
 2. **Server context creation** — wrap the request with server-side state
-3. **Context initialization pipeline** — session resolution → actor (user) resolution → command resolution → authorization calculation
+3. **Context initialization pipeline** — session resolution → actor (user) resolution → authentication (JWT + body signature + nonce hash + body decryption) → command resolution → authorization calculation
 4. **Response generation** — based on initialization outcome (custom status codes like 419=session init failed, 420=session required, 460=actor resolution failed, etc.)
 5. **Remote method invocation** — `MethodInvocationRequest` serializes a method call (class + method + args via `OperationIdentifier`) for the client to transmit and the server to invoke reflectively
 
@@ -17,8 +17,8 @@
 | **bam.protocol** | Core types: `BamRequest`, `BamResponse`, `MethodInvocationRequest`, `HostBinding`, HTTP encryption wrappers, interfaces | Fairly complete — types are populated, serialization works |
 | **bam.protocol.server** | `BamServer` (3-transport listener), `BamServerBuilder`, context initializer pipeline, session/actor/auth handlers | Implemented — server lifecycle, request processing, session management, response generation all functional |
 | **bam.protocol.client** | `BamClient` with HTTP/TCP/UDP request builders | Mostly wired up; HTTP and TCP response handlers exist; `BamClient<T>.Invoke<TR>()` is still a stub |
-| **bam.protocol.data** | DAO layer — generated schema repos for sessions, profiles, keys, accounts, common entities (Machine, NIC, Device, Actor, Agent) | Generated code is in place; hand-written models exist; `IAccountManager` has no implementing class |
-| **bam.protocol.profile** | Profile/identity management — `ProfileManager`, `CertificateManager`, `CertificateAuthority`, `KeyManager`, `PrivateKeyManager`, X.509 name providers | Implemented — profile registration, key management, certificate creation/loading all functional |
+| **bam.protocol.data** | DAO layer — generated schema repos for sessions, profiles, keys, accounts, common entities (Machine, NIC, Device, Actor, Agent) | Generated code is in place; hand-written models exist |
+| **bam.protocol.profile** | Profile/identity management — `ProfileManager`, `CertificateManager`, `CertificateAuthority`, `KeyManager`, `PrivateKeyManager`, `AccountManager`, X.509 name providers | Implemented — profile registration, key management, certificate creation/loading, account registration all functional |
 | **bam.protocol.tests** | Tests for server lifecycle, builder, client request creation, request reader, sessions, invocation, profiles, keys | Tests exist and build; integration tests folder is empty |
 
 ## Current State — What Works
@@ -30,7 +30,7 @@
 - `BamRequestReader` parses request lines, headers, and content from streams
 - `ServerSessionManager` creates, retrieves, and ends sessions with key pair generation
 - `ServerSessionState` loads/saves key-value pairs to the session repo
-- `BamServerContextInitializer` runs the full pipeline (session → actor → command → auth) with before/after hooks
+- `BamServerContextInitializer` runs the full pipeline (session → actor → authentication → command → authorization) with before/after hooks
 - `BamRequestProcessor` deserializes `MethodInvocationRequest` JSON and invokes methods reflectively via `ServiceRegistry`
 - `DefaultBamResponseProvider` generates denied (403), read (200), and write (200) responses with status code mapping
 - `ActorResolver` resolves actor identity from session ID
@@ -40,7 +40,13 @@
 - `PrivateKeyManager` generates and stores RSA/ECC private keys in opaque storage, retrieves by public key
 - `CertificateManager` creates root CA and signed certificates via `CertificateAuthority`, persists to `CertificateData`/`AgentCertificateData`, loads by actor handle
 - `CertificateAuthority` issues X.509 certificates using BouncyCastle, supports both RSA and ECC signing
+- `AccountManager` registers accounts: delegates to ProfileManager for person/profile creation, persists ServerAccountData with server issuer
 - Client-server HTTP roundtrip works (test expects 400 "session required" — which validates the pipeline runs and returns the failure response)
+- **Auth pipeline** — `BamAuthenticator` validates JWT tokens (custom `BamJwtToken` using BouncyCastle ECDSA), verifies ECC body signatures (`X-Bam-Body-Signature`), validates nonce hashes (`X-Bam-Nonce-Hash` via HMAC-SHA256), and decrypts AES-encrypted request bodies using ECDH-derived session keys
+- `AuthenticationInitializationHandler` integrates authentication into the server context initializer pipeline
+- `RequestSecurityValidator` provides body signature validation, nonce hash validation, and body decryption
+- `EccSignatureProvider` implements ECC signing via BouncyCastle
+- **69 unit tests pass** (0 failures)
 
 ## What's Stubbed / Remaining Work
 
@@ -54,9 +60,16 @@
 - **`AuthorizationCalculator.CalculateAuthorization()`** — hardcodes `BamAccess.Write` for all requests; no real permission model
 - **`KeyManager.GenerateRsaKeyPair()`/`GenerateEccKeyPair()`/`GenerateAesKey()`** — return `new` instances (key generation happens in constructors); no persistence of the generated keys
 
-### Missing implementations
+### Interfaces with no implementing class
 
-- **`IAccountManager`** — interface defined (`RegisterAccount(PersonRegistrationData)`) but no implementing class exists
+| Interface | Project | Methods | Notes |
+|---|---|---|---|
+| `IClientKeySetDataManager` | bam.protocol | `ApplicationNameProvider`, key set CRUD | Client-side key persistence manager |
+| `IClientKeySource` | bam.protocol | Extends `IAesKeySource`, `IRsaPublicKeySource` | Client-side key source |
+| `IHandleProvider` | bam.protocol.profile | `CreateHandle(IPerson\|IActor\|IDevice\|IKeySet)` | Handle generation is currently done inline |
+
+### Other missing implementations
+
 - **`DeviceRegistrationData.InitializeAsync()`** — abstract with no concrete derived classes; TODO says to use `OSInfo.Current` for platform detection
 
 ### TODOs in code
@@ -80,6 +93,15 @@
 - Key manager tests pass (key generation, signing key retrieval, shared AES derivation)
 - Profile manager tests pass (registration, lookup)
 
+## Suggested Next Steps (priority order)
+
+1. **`AuthorizationCalculator`** — currently hardcodes `BamAccess.Write`; needs a real permission model
+2. **`ActorResolver`** — maps session ID to actor Handle/Name but doesn't look up profiles or accounts
+3. **`BamClient<T>.Invoke<TR>()`** — typed RPC stub
+4. **`DeviceRegistrationData` subclasses** — platform-specific device registration
+5. **Integration tests** — full authenticated roundtrip (session start → authentication → method invocation → response)
+6. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence
+
 ## Bottom Line
 
-The framework is **substantially implemented** — the server listens across 3 transports, the full initialization pipeline runs, sessions are managed end-to-end, requests are processed via reflective method invocation, profiles and keys are persisted, and certificates can be created and loaded. The remaining gaps are: a real authorization model (currently everything gets Write access), real actor resolution (currently uses session ID as identity), the `IAccountManager` implementation, the generic `BamClient<T>.Invoke<TR>()` RPC method, and integration tests proving a full authenticated roundtrip.
+The framework is **substantially implemented** — the server listens across 3 transports, the full initialization pipeline runs (including JWT authentication with ECC body signatures, nonce hashing, and AES body decryption), sessions are managed end-to-end, requests are processed via reflective method invocation, profiles and keys are persisted, accounts can be registered, and certificates can be created and loaded. The remaining gaps are: a real authorization model (currently everything gets Write access), real actor resolution from profiles (currently uses session ID as identity), the generic `BamClient<T>.Invoke<TR>()` RPC method, and integration tests proving a full authenticated roundtrip.

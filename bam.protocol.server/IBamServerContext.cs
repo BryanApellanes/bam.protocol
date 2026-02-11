@@ -3,6 +3,7 @@
 */
 
 using System.Net;
+using Bam.Protocol;
 using Bam.Protocol.Data;
 
 namespace Bam.Protocol.Server
@@ -19,10 +20,12 @@ namespace Bam.Protocol.Server
         IServerSessionState ServerSessionState { get; }
         IActor Actor { get; }
         ICommand Command { get; }
+        BamAuthentication Authentication { get; }
         IAuthorizationCalculation AuthorizationCalculation { get; }
-        
+
         bool SetSessionState(IServerSessionState sessionState);
         bool SetActor(IActor actor);
+        bool SetAuthentication(BamAuthentication authentication);
         bool SetCommand(ICommand command);
         bool SetAuthorizationCalculation(IAuthorizationCalculation authorizationCalculation);
         
