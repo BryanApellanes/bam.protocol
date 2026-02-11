@@ -16,10 +16,10 @@
 |---|---|---|
 | **bam.protocol** | Core types: `BamRequest`, `BamResponse`, `MethodInvocationRequest`, `HostBinding`, HTTP encryption wrappers, interfaces | Fairly complete — types are populated, serialization works |
 | **bam.protocol.server** | `BamServer` (3-transport listener), `BamServerBuilder`, context initializer pipeline, session/actor/auth handlers | Implemented — server lifecycle, request processing, session management, response generation all functional |
-| **bam.protocol.client** | `BamClient` with HTTP/TCP/UDP request builders, `ClientSessionManager`, `ClientSessionState`, `ClientRequestSecurityProvider` | HTTP/TCP response handlers work; session creation returns `IClientSessionState`; outgoing requests get encrypted body + signature + nonce + JWT Authorization headers when session is active; `BamClient<T>.Invoke<TR>()` is still a stub |
+| **bam.protocol.client** | `BamClient` with HTTP/TCP/UDP request builders, `BamClient<T>` typed RPC client, `ClientSessionManager`, `ClientSessionState`, `ClientRequestSecurityProvider`, `BamInvocationException` | HTTP/TCP response handlers work; session creation returns `IClientSessionState`; outgoing requests get encrypted body + signature + nonce + JWT Authorization headers when session is active; `BamClient<T>.InvokeAsync<TR>()`/`Invoke<TR>()` provides typed RPC invocation |
 | **bam.protocol.data** | DAO layer — generated schema repos for sessions, profiles, keys, accounts, common entities (Machine, NIC, Device, Actor, Agent) | Generated code is in place; hand-written models exist |
 | **bam.protocol.profile** | Profile/identity management — `ProfileManager`, `CertificateManager`, `CertificateAuthority`, `KeyManager`, `PrivateKeyManager`, `AccountManager`, X.509 name providers | Implemented — profile registration, key management, certificate creation/loading, account registration all functional |
-| **bam.protocol.tests** | Tests for server lifecycle, builder, client request creation, request reader, sessions, invocation, profiles, keys, client session state, request security roundtrips, AES key protection, full authenticated HTTP roundtrip | 93 tests pass; integration test proves the complete pipeline end-to-end over real HTTP |
+| **bam.protocol.tests** | Tests for server lifecycle, builder, client request creation, request reader, sessions, invocation, profiles, keys, client session state, request security roundtrips, AES key protection, full authenticated HTTP roundtrip, typed RPC invocation via `BamClient<T>` | 94 tests pass; integration tests prove the complete pipeline end-to-end over real HTTP |
 
 ## Current State — What Works
 
@@ -54,13 +54,10 @@
 - **AesKey property shadowing fix** — `DisposableAesKey.Key`/`IV` changed from `internal` to `public virtual`, `AesKey.Key`/`IV` changed to `public override`, eliminating separate backing fields so `Dispose()` zeros the correct data
 - **Client JWT support** — `IClientSessionState.AuthorizationToken` property allows callers to set a pre-encoded JWT; `ClientRequestSecurityProvider.PrepareHttpRequest()` attaches it as `Authorization: Bearer <token>` header
 - **Full authenticated HTTP roundtrip** — integration test (`AuthenticatedRoundtripShould.CompleteAuthenticatedHttpRoundtrip`) proves the entire pipeline works end-to-end: session creation → ECDH key exchange → AES body encryption → ECDSA body signature → HMAC-SHA256 nonce hash → JWT authentication → actor resolution → command resolution → authorization → reflective method invocation → JSON response over real HTTP
-- **93 tests pass** (0 failures)
+- **Typed RPC invocation** — `BamClient<T>.InvokeAsync<TR>(methodName, args)` builds a `MethodInvocationRequest`, sets the `OperationIdentifier`, serializes to JSON, sends to `/invoke` via POST with full session security, and deserializes the typed response; sync `Invoke<TR>()` delegates to the async version; non-200 responses throw `BamInvocationException` with service type, method name, status code, and response content; integration test (`AuthenticatedRoundtripShould.InvokeTypedMethodViaGenericClient`) proves `BamClient<TestEchoService>.InvokeAsync<string>("Echo", "Hello")` returns `"Echo: Hello"` through the full authenticated pipeline
+- **94 tests pass** (0 failures)
 
 ## What's Stubbed / Remaining Work
-
-### NotImplementedException stubs
-
-- **`BamClient<T>.Invoke<TR>()`** — generic typed RPC invocation on the client side
 
 ### Minimal/placeholder implementations
 
@@ -89,7 +86,7 @@
 
 ## What the Tests Reveal
 
-- The "happy path" for a full request is now tested end-to-end (`AuthenticatedRoundtripShould.CompleteAuthenticatedHttpRoundtrip`) — session creation through method invocation and response
+- The "happy path" for a full request is tested end-to-end via two integration tests: `CompleteAuthenticatedHttpRoundtrip` (manual request building) and `InvokeTypedMethodViaGenericClient` (typed `BamClient<T>` RPC) — both share a common `StartServerWithSession` setup helper
 - Session state persistence tests pass (load/save key-values)
 - Session manager tests pass (start/end/get sessions)
 - Client request builder tests pass (type assertions, defaults)
@@ -101,11 +98,10 @@
 
 ## Suggested Next Steps (priority order)
 
-1. **`BamClient<T>.Invoke<TR>()`** — typed RPC invocation. The untyped plumbing (`MethodInvocationRequest`, `BamRequestProcessor`) works end-to-end (proven by integration test); this adds a generic proxy so callers write `client.Invoke<IMyService, MyResult>(svc => svc.DoThing(args))` instead of hand-building requests.
-2. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence so keys survive across process restarts (currently keys live only in memory for the session lifetime).
-3. **Failure-mode integration tests** — expired JWT, wrong signing key, access denied, invalid session — to verify the pipeline returns appropriate error responses.
-4. **`DeviceRegistrationData` subclasses** — platform-specific device registration using `OSInfo.Current` for Windows/Mac/Linux detection.
+1. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence so keys survive across process restarts (currently keys live only in memory for the session lifetime).
+2. **Failure-mode integration tests** — expired JWT, wrong signing key, access denied, invalid session — to verify the pipeline returns appropriate error responses.
+3. **`DeviceRegistrationData` subclasses** — platform-specific device registration using `OSInfo.Current` for Windows/Mac/Linux detection.
 
 ## Bottom Line
 
-The framework is **fully implemented and proven end-to-end** — both client and server sides are functional and tested together over real HTTP. The server listens across 3 transports, runs the full initialization pipeline (session → actor → JWT authentication with ECC body signatures, nonce hashing, and AES body decryption → command resolution → authorization), and invokes methods reflectively. The client creates sessions via ECDH key exchange, encrypts and signs outgoing request bodies, attaches all required security headers including JWT Authorization, and receives responses. Key material is protected in memory via `ProtectedAesKeyUsageContext` (encrypt-at-rest, decrypt-on-use pattern) and disposed deterministically (`EccPublicPrivateKeyPair`, `AesKey` both implement `IDisposable` with proper zeroing). 93 tests pass, including a full authenticated HTTP roundtrip integration test. The primary remaining work is **typed RPC invocation** (`BamClient<T>.Invoke<TR>()`) and client-side key persistence.
+The framework is **fully implemented and proven end-to-end** — both client and server sides are functional and tested together over real HTTP. The server listens across 3 transports, runs the full initialization pipeline (session → actor → JWT authentication with ECC body signatures, nonce hashing, and AES body decryption → command resolution → authorization), and invokes methods reflectively. The client creates sessions via ECDH key exchange, encrypts and signs outgoing request bodies, attaches all required security headers including JWT Authorization, and receives responses. `BamClient<T>` provides typed RPC invocation — callers write `client.InvokeAsync<string>("Echo", "Hello")` instead of manually building `MethodInvocationRequest` objects. Key material is protected in memory via `ProtectedAesKeyUsageContext` (encrypt-at-rest, decrypt-on-use pattern) and disposed deterministically (`EccPublicPrivateKeyPair`, `AesKey` both implement `IDisposable` with proper zeroing). 94 tests pass, including two integration tests proving the full authenticated HTTP roundtrip. The primary remaining work is **client-side key persistence** and **failure-mode integration tests**.
