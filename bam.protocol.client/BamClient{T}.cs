@@ -1,5 +1,6 @@
 ﻿using Bam.Data.Objects;
 using Bam.Server;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +17,29 @@ namespace Bam.Protocol.Client
 
         public TR Invoke<TR>(string methodName, params object[] args)
         {
-            throw new NotImplementedException();
+            return InvokeAsync<TR>(methodName, args).GetAwaiter().GetResult();
         }
 
+        public async Task<TR> InvokeAsync<TR>(string methodName, params object[] args)
+        {
+            MethodInvocationRequest invocation = MethodInvocationRequest.For(typeof(T), methodName, args);
+            invocation.OperationIdentifier = OperationIdentifier.For(typeof(T), methodName);
+            string body = JsonConvert.SerializeObject(invocation);
+
+            IBamClientRequest request = CreateRequestBuilder(BamClientProtocols.Http)
+                .Path("/invoke")
+                .HttpMethod(HttpMethods.POST)
+                .Content(body)
+                .Build();
+
+            IBamClientResponse response = await ReceiveResponseAsync(request);
+
+            if (response.StatusCode != 200)
+            {
+                throw new BamInvocationException(typeof(T), methodName, response.StatusCode, response.Content);
+            }
+
+            return JsonConvert.DeserializeObject<TR>(response.Content);
+        }
     }
 }

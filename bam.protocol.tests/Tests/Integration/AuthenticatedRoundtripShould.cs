@@ -19,11 +19,9 @@ public class AuthenticatedRoundtripShould : UnitTestMenuContainer
     {
     }
 
-    [UnitTest]
-    public async Task CompleteAuthenticatedHttpRoundtrip()
+    private async Task<(BamServer server, ClientSessionState sessionState, BamServerInfo info)>
+        StartServerWithSession(string actorHandle)
     {
-        string actorHandle = "test-roundtrip-actor";
-
         // 1. Create mock profile
         IProfile mockProfile = Substitute.For<IProfile>();
         mockProfile.ProfileHandle.Returns(actorHandle);
@@ -48,60 +46,69 @@ public class AuthenticatedRoundtripShould : UnitTestMenuContainer
         Message.PrintLine($"Server info: {info.ToJson(true)}", ConsoleColor.Cyan);
         await server.StartAsync();
 
+        // 5. Create client ECC key pair (we control it for JWT signing)
+        EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
+        EccPublicKey clientPublicKey = clientKeyPair.GetEccPublicKey();
+
+        // 6. Start session via ClientSessionManager
+        ClientSessionManager sessionManager = new ClientSessionManager(new HttpClient(), info.HttpHostBinding);
+        StartSessionRequest sessionRequest = new StartSessionRequest { ClientPublicKey = clientPublicKey };
+        StartSessionResponse sessionResponse = await sessionManager.StartSessionAsync(sessionRequest);
+
+        Message.PrintLine($"Session created: {sessionResponse.SessionId}", ConsoleColor.Green);
+
+        // 7. Construct ClientSessionState with our key pair
+        ClientSessionState sessionState = new ClientSessionState(
+            sessionResponse.SessionId,
+            sessionResponse.Nonce,
+            sessionResponse.ServerPublicKey,
+            clientKeyPair
+        );
+
+        // 8. Create JWT signed with client's private key
+        PrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(clientKeyPair);
+        BamJwtToken jwtToken = new BamJwtToken(sessionState.SessionId, actorHandle, "bam-integration-test");
+        string jwt = jwtToken.Encode(privateKeyProvider.GetPrivateKey());
+        sessionState.AuthorizationToken = jwt;
+
+        Message.PrintLine("JWT created and set on session state", ConsoleColor.Green);
+
+        return (server, sessionState, info);
+    }
+
+    [UnitTest]
+    public async Task CompleteAuthenticatedHttpRoundtrip()
+    {
+        string actorHandle = "test-roundtrip-actor";
+        var (server, sessionState, info) = await StartServerWithSession(actorHandle);
+
         try
         {
-            // 5. Create client ECC key pair (we control it for JWT signing)
-            EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
-            EccPublicKey clientPublicKey = clientKeyPair.GetEccPublicKey();
-
-            // 6. Start session via ClientSessionManager
-            ClientSessionManager sessionManager = new ClientSessionManager(new HttpClient(), info.HttpHostBinding);
-            StartSessionRequest sessionRequest = new StartSessionRequest { ClientPublicKey = clientPublicKey };
-            StartSessionResponse sessionResponse = await sessionManager.StartSessionAsync(sessionRequest);
-
-            Message.PrintLine($"Session created: {sessionResponse.SessionId}", ConsoleColor.Green);
-
-            // 7. Construct ClientSessionState with our key pair
-            ClientSessionState sessionState = new ClientSessionState(
-                sessionResponse.SessionId,
-                sessionResponse.Nonce,
-                sessionResponse.ServerPublicKey,
-                clientKeyPair
-            );
-
-            // 8. Create JWT signed with client's private key
-            PrivateKeyProvider privateKeyProvider = new PrivateKeyProvider(clientKeyPair);
-            BamJwtToken jwtToken = new BamJwtToken(sessionState.SessionId, actorHandle, "bam-integration-test");
-            string jwt = jwtToken.Encode(privateKeyProvider.GetPrivateKey());
-            sessionState.AuthorizationToken = jwt;
-
-            Message.PrintLine("JWT created and set on session state", ConsoleColor.Green);
-
-            // 9. Create BamClient with session state
+            // Create BamClient with session state
             BamClient client = new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding);
             client.SessionState = sessionState;
 
-            // 10. Build MethodInvocationRequest for TestEchoService.Echo("Hello")
+            // Build MethodInvocationRequest for TestEchoService.Echo("Hello")
             MethodInvocationRequest invocation = MethodInvocationRequest.For(typeof(TestEchoService), "Echo", "Hello");
             invocation.ClientInitialize();
             string body = JsonConvert.SerializeObject(invocation);
 
             Message.PrintLine($"Request body: {body}", ConsoleColor.Yellow);
 
-            // 11. Create HTTP request
+            // Create HTTP request
             IBamClientRequest request = client.CreateRequestBuilder(BamClientProtocols.Http)
                 .Path("/invoke")
                 .HttpMethod(HttpMethods.POST)
                 .Content(body)
                 .Build();
 
-            // 12. Send request (triggers encryption, signing, nonce hash, JWT header)
+            // Send request (triggers encryption, signing, nonce hash, JWT header)
             IBamClientResponse response = await client.ReceiveResponseAsync(request);
 
             Message.PrintLine($"Response status: {response.StatusCode}", ConsoleColor.Cyan);
             Message.PrintLine($"Response content: {response.Content}", ConsoleColor.Cyan);
 
-            // 13. Assert
+            // Assert
             if (response.StatusCode != 200)
             {
                 throw new Exception($"Expected status 200 but got {response.StatusCode}. Content: {response.Content}");
@@ -113,6 +120,34 @@ public class AuthenticatedRoundtripShould : UnitTestMenuContainer
             }
 
             Message.PrintLine("Integration test PASSED: Full authenticated HTTP roundtrip succeeded", ConsoleColor.Green);
+        }
+        finally
+        {
+            server.Stop();
+        }
+    }
+
+    [UnitTest]
+    public async Task InvokeTypedMethodViaGenericClient()
+    {
+        string actorHandle = "test-typed-invoke-actor";
+        var (server, sessionState, info) = await StartServerWithSession(actorHandle);
+
+        try
+        {
+            BamClient<TestEchoService> client = new BamClient<TestEchoService>(info.HttpHostBinding);
+            client.SessionState = sessionState;
+
+            string result = await client.InvokeAsync<string>("Echo", "Hello");
+
+            Message.PrintLine($"Typed invoke result: {result}", ConsoleColor.Cyan);
+
+            if (result != "Echo: Hello")
+            {
+                throw new Exception($"Expected 'Echo: Hello' but got: {result}");
+            }
+
+            Message.PrintLine("Integration test PASSED: Typed invocation via BamClient<T> succeeded", ConsoleColor.Green);
         }
         finally
         {
