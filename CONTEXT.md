@@ -16,10 +16,10 @@
 |---|---|---|
 | **bam.protocol** | Core types: `BamRequest`, `BamResponse`, `MethodInvocationRequest`, `HostBinding`, HTTP encryption wrappers, interfaces | Fairly complete — types are populated, serialization works |
 | **bam.protocol.server** | `BamServer` (3-transport listener), `BamServerBuilder`, context initializer pipeline, session/actor/auth handlers | Implemented — server lifecycle, request processing, session management, response generation all functional |
-| **bam.protocol.client** | `BamClient` with HTTP/TCP/UDP request builders | Mostly wired up; HTTP and TCP response handlers exist; `BamClient<T>.Invoke<TR>()` is still a stub |
+| **bam.protocol.client** | `BamClient` with HTTP/TCP/UDP request builders, `ClientSessionManager`, `ClientSessionState`, `ClientRequestSecurityProvider` | HTTP/TCP response handlers work; session creation returns `IClientSessionState`; outgoing requests get encrypted body + signature + nonce headers when session is active; `BamClient<T>.Invoke<TR>()` is still a stub |
 | **bam.protocol.data** | DAO layer — generated schema repos for sessions, profiles, keys, accounts, common entities (Machine, NIC, Device, Actor, Agent) | Generated code is in place; hand-written models exist |
 | **bam.protocol.profile** | Profile/identity management — `ProfileManager`, `CertificateManager`, `CertificateAuthority`, `KeyManager`, `PrivateKeyManager`, `AccountManager`, X.509 name providers | Implemented — profile registration, key management, certificate creation/loading, account registration all functional |
-| **bam.protocol.tests** | Tests for server lifecycle, builder, client request creation, request reader, sessions, invocation, profiles, keys | Tests exist and build; integration tests folder is empty |
+| **bam.protocol.tests** | Tests for server lifecycle, builder, client request creation, request reader, sessions, invocation, profiles, keys, client session state, request security roundtrips, AES key protection | Tests exist and build; integration tests folder is empty |
 
 ## Current State — What Works
 
@@ -34,7 +34,7 @@
 - `BamRequestProcessor` deserializes `MethodInvocationRequest` JSON and invokes methods reflectively via `ServiceRegistry`
 - `DefaultBamResponseProvider` generates denied (403), read (200), and write (200) responses with status code mapping
 - `ActorResolver` resolves actor identity from client public key via `IProfileManager` — looks up `ClientPublicKey` from session state, finds matching profile by SHA256 hash, returns `ActorData` with `PersonHandle`/`Name`
-- `AuthorizationCalculator` returns authorization (currently hardcoded to `BamAccess.Write`)
+- `AuthorizationCalculator` resolves required access from `[RequiredAccess]` attributes on service classes/methods via reflection, compares against actor's access level from `GroupAccessLevelProvider` (which looks up the actor's groups and returns the highest configured access level), and returns an `AuthorizationCalculation` with grant/deny decision
 - `ProfileManager` registers person profiles, creates/gets/finds profiles by handle or public key
 - `KeyManager` retrieves signing (RSA) and encryption (ECC) keys, derives shared AES keys via ECDH
 - `PrivateKeyManager` generates and stores RSA/ECC private keys in opaque storage, retrieves by public key
@@ -44,9 +44,15 @@
 - Client-server HTTP roundtrip works (test expects 400 "session required" — which validates the pipeline runs and returns the failure response)
 - **Auth pipeline** — `BamAuthenticator` validates JWT tokens (custom `BamJwtToken` using BouncyCastle ECDSA), verifies ECC body signatures (`X-Bam-Body-Signature`), validates nonce hashes (`X-Bam-Nonce-Hash` via HMAC-SHA256), and decrypts AES-encrypted request bodies using ECDH-derived session keys
 - `AuthenticationInitializationHandler` integrates authentication into the server context initializer pipeline
-- `RequestSecurityValidator` provides body signature validation, nonce hash validation, and body decryption
+- `RequestSecurityValidator` provides body signature validation, nonce hash validation, and body decryption; disposes ECC key pairs and AES keys after use via `using` blocks
 - `EccSignatureProvider` implements ECC signing via BouncyCastle
-- **80 unit tests pass** (0 failures)
+- **Client-side session handling** — `ClientSessionManager.StartSessionAsync()` generates a client ECC key pair, sends the public key to the server, receives server public key + session ID + nonce, and returns `IClientSessionState` holding all session data
+- **Client-side request security** — `ClientRequestSecurityProvider` encrypts request bodies (AES), signs them (ECDSA), and computes nonce hashes (HMAC-SHA256); `BamClient.CreateHttpRequestMessage()` applies session headers (`X-Bam-Session-Id`, `X-Bam-Body-Signature`, `X-Bam-Nonce`, `X-Bam-Nonce-Hash`) and encrypted body when `SessionState` is set
+- **ECDH key agreement** — both client and server derive the same shared AES key via ECDH (client private + server public == server private + client public); verified by roundtrip tests
+- **AES key protection in memory** — `ProtectedAesKeyUsageContext` encrypts AES key/IV with an ephemeral key at construction, zeros the originals, and only decrypts within a `UseKey` callback (following the `RsaPrivateKeyUsageContext` pattern); `ClientSessionState.UseSessionKey()` lazily initializes this context for repeated use
+- **ECC key disposal** — `EccPublicPrivateKeyPair` implements `IDisposable`, zeroing the PEM `byte[]` and nulling the `AsymmetricCipherKeyPair`
+- **AesKey property shadowing fix** — `DisposableAesKey.Key`/`IV` changed from `internal` to `public virtual`, `AesKey.Key`/`IV` changed to `public override`, eliminating separate backing fields so `Dispose()` zeros the correct data
+- **92 unit tests pass** (0 failures)
 
 ## What's Stubbed / Remaining Work
 
@@ -56,7 +62,6 @@
 
 ### Minimal/placeholder implementations
 
-- **`AuthorizationCalculator.CalculateAuthorization()`** — hardcodes `BamAccess.Write` for all requests; no real permission model
 - **`KeyManager.GenerateRsaKeyPair()`/`GenerateEccKeyPair()`/`GenerateAesKey()`** — return `new` instances (key generation happens in constructors); no persistence of the generated keys
 
 ### Interfaces with no implementing class
@@ -79,6 +84,7 @@
 ### Test gaps
 
 - Integration tests folder exists but is empty — no end-to-end test exercises a full successful request roundtrip (session start → authenticated request → method invocation → response)
+- Client-side session/security tests are unit-level (mock ECDH roundtrips, not real HTTP)
 
 ## What the Tests Reveal
 
@@ -94,12 +100,11 @@
 
 ## Suggested Next Steps (priority order)
 
-1. **`AuthorizationCalculator`** — currently hardcodes `BamAccess.Write`; needs a real permission model
-2. **`BamClient<T>.Invoke<TR>()`** — typed RPC stub
-4. **`DeviceRegistrationData` subclasses** — platform-specific device registration
-5. **Integration tests** — full authenticated roundtrip (session start → authentication → method invocation → response)
-6. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence
+1. **Integration test — full authenticated roundtrip** — exercise the complete path: `ClientSessionManager.StartSessionAsync()` → `ClientRequestSecurityProvider.PrepareHttpRequest()` → server receives encrypted/signed request → `BamAuthenticator` validates → `BamRequestProcessor` invokes method → response returns to client. This is the single biggest gap — all the pieces exist but nothing proves they work together over HTTP.
+2. **`BamClient<T>.Invoke<TR>()`** — typed RPC invocation. The untyped plumbing (`MethodInvocationRequest`, `BamRequestProcessor`) works; this adds a generic proxy so callers write `client.Invoke<IMyService, MyResult>(svc => svc.DoThing(args))` instead of hand-building requests.
+3. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence so keys survive across process restarts (currently keys live only in memory for the session lifetime).
+4. **`DeviceRegistrationData` subclasses** — platform-specific device registration using `OSInfo.Current` for Windows/Mac/Linux detection.
 
 ## Bottom Line
 
-The framework is **substantially implemented** — the server listens across 3 transports, the full initialization pipeline runs (including JWT authentication with ECC body signatures, nonce hashing, and AES body decryption), sessions are managed end-to-end, requests are processed via reflective method invocation, profiles and keys are persisted, accounts can be registered, certificates can be created and loaded, and actor resolution maps client public keys to real profile identities. The remaining gaps are: a real authorization model (currently everything gets Write access), the generic `BamClient<T>.Invoke<TR>()` RPC method, and integration tests proving a full authenticated roundtrip.
+The framework is **substantially implemented end-to-end** — both client and server sides are functional. The server listens across 3 transports, runs the full initialization pipeline (session → actor → JWT authentication with ECC body signatures, nonce hashing, and AES body decryption → command resolution → authorization), and invokes methods reflectively. The client creates sessions via ECDH key exchange, encrypts and signs outgoing request bodies, and attaches all required security headers. Key material is protected in memory via `ProtectedAesKeyUsageContext` (encrypt-at-rest, decrypt-on-use pattern) and disposed deterministically (`EccPublicPrivateKeyPair`, `AesKey` both implement `IDisposable` with proper zeroing). 92 unit tests pass. The primary remaining gap is an **integration test proving the full authenticated roundtrip** — all individual pieces are tested but nothing yet exercises them together over a real transport.
