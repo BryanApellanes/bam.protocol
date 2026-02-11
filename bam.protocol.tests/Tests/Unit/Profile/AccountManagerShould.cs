@@ -52,9 +52,9 @@ public class AccountManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            AccountData account = (AccountData)because.Result;
-            because.ItsTrue("PersonHandle is set", !string.IsNullOrEmpty(account.PersonHandle));
+            because.TheResult
+                .IsNotNull()
+                .As<AccountData>("PersonHandle is set", a => !string.IsNullOrEmpty(a.PersonHandle));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -83,7 +83,7 @@ public class AccountManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            IProfileManager pm = (IProfileManager)because.Result;
+            IProfileManager pm = because.TheResult.As<IProfileManager>();
             pm.Received(1).RegisterPersonProfile(Arg.Any<PersonRegistrationData>());
         })
         .SoBeHappy()
@@ -113,7 +113,7 @@ public class AccountManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            ServerSessionSchemaRepository r = (ServerSessionSchemaRepository)because.Result;
+            ServerSessionSchemaRepository r = because.TheResult.As<ServerSessionSchemaRepository>();
             ServerAccountData saved = r.OneServerAccountDataWhere(c => c.ProfileHandle == "profile1");
             because.ItsTrue("ServerAccountData was persisted", saved != null);
             because.ItsTrue("ProfileHandle is correct", saved?.ProfileHandle == "profile1");

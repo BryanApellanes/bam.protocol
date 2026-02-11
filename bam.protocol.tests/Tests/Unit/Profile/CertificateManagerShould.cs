@@ -73,10 +73,9 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            X509Certificate cert = (X509Certificate)because.Result;
-            because.ItsTrue("subject contains actor name",
-                cert.SubjectDN.ToString().Contains("Root CA Actor"));
+            because.TheResult
+                .IsNotNull()
+                .As<X509Certificate>("subject contains actor name", cert => cert.SubjectDN.ToString().Contains("Root CA Actor"));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -117,14 +116,12 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            X509Certificate created = (X509Certificate)results[0];
-            X509Certificate loaded = (X509Certificate)results[1];
-            because.ItsTrue("loaded is not null", loaded != null);
-            because.ItsTrue("loaded subject matches created subject",
-                loaded.SubjectDN.ToString() == created.SubjectDN.ToString());
-            because.ItsTrue("loaded serial matches created serial",
-                loaded.SerialNumber.Equals(created.SerialNumber));
+            because.TheResult
+                .As<object[]>("loaded is not null", r => r[1] != null)
+                .As<object[]>("loaded subject matches created subject", r =>
+                    ((X509Certificate)r[1]).SubjectDN.ToString() == ((X509Certificate)r[0]).SubjectDN.ToString())
+                .As<object[]>("loaded serial matches created serial", r =>
+                    ((X509Certificate)r[1]).SerialNumber.Equals(((X509Certificate)r[0]).SerialNumber));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -170,12 +167,10 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            X509Certificate cert = (X509Certificate)because.Result;
-            because.ItsTrue("subject contains signed actor name",
-                cert.SubjectDN.ToString().Contains("Signed Actor"));
-            because.ItsTrue("issuer contains signer actor name",
-                cert.IssuerDN.ToString().Contains("Signer Actor"));
+            because.TheResult
+                .IsNotNull()
+                .As<X509Certificate>("subject contains signed actor name", cert => cert.SubjectDN.ToString().Contains("Signed Actor"))
+                .As<X509Certificate>("issuer contains signer actor name", cert => cert.IssuerDN.ToString().Contains("Signer Actor"));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -240,7 +235,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("threw InvalidOperationException", (bool)because.Result);
+            because.TheResult.Is<bool>("threw InvalidOperationException", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

@@ -22,14 +22,15 @@ public class RequestLineShould : UnitTestMenuContainer
 
         When.A<BamRequestLine>("parses input data correctly",
             () => new BamRequestLine(line),
-            (requestLine) => new object[] { requestLine.Method, requestLine.RequestUri, requestLine.ProtocolVersion })
+            (requestLine) => requestLine)
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            because.ItsTrue("Method equals POST", HttpMethods.POST.Equals(results[0]));
-            because.ItsTrue("RequestUri equals expected", uri.Equals(results[1]));
-            because.ItsTrue("ProtocolVersion equals expected", protocolVersion.Equals(results[2]));
+            because.TheResult
+                .IsNotNull()
+                .As<BamRequestLine>("Method equals POST", r => HttpMethods.POST.Equals(r?.Method))
+                .As<BamRequestLine>("RequestUri equals expected", r => uri.Equals(r?.RequestUri))
+                .As<BamRequestLine>("ProtocolVersion equals expected", r => protocolVersion.Equals(r?.ProtocolVersion));
         })
         .SoBeHappy()
         .UnlessItFailed();

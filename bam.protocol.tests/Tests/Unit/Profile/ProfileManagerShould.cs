@@ -40,11 +40,11 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            IProfile profile = (IProfile)because.Result;
-            because.ItsTrue("ProfileHandle is not empty", !string.IsNullOrEmpty(profile.ProfileHandle));
-            because.ItsTrue("PersonHandle is not empty", !string.IsNullOrEmpty(profile.PersonHandle));
-            because.ItsTrue("Name is set", !string.IsNullOrEmpty(profile.Name));
+            because.TheResult
+                .IsNotNull()
+                .As<IProfile>("ProfileHandle is not empty", p => !string.IsNullOrEmpty(p.ProfileHandle))
+                .As<IProfile>("PersonHandle is not empty", p => !string.IsNullOrEmpty(p.PersonHandle))
+                .As<IProfile>("Name is set", p => !string.IsNullOrEmpty(p.Name));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -71,11 +71,9 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            IProfile registered = (IProfile)results[0];
-            IProfile found = (IProfile)results[1];
-            because.ItsTrue("found is not null", found != null);
-            because.ItsTrue("ProfileHandle matches", found?.ProfileHandle == registered.ProfileHandle);
+            because.TheResult
+                .As<object[]>("found is not null", r => r[1] != null)
+                .As<object[]>("ProfileHandle matches", r => ((IProfile)r[1])?.ProfileHandle == ((IProfile)r[0]).ProfileHandle);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -102,11 +100,9 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            IProfile registered = (IProfile)results[0];
-            IProfile found = (IProfile)results[1];
-            because.ItsTrue("found is not null", found != null);
-            because.ItsTrue("PersonHandle matches", found?.PersonHandle == registered.PersonHandle);
+            because.TheResult
+                .As<object[]>("found is not null", r => r[1] != null)
+                .As<object[]>("PersonHandle matches", r => ((IProfile)r[1])?.PersonHandle == ((IProfile)r[0]).PersonHandle);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -125,9 +121,9 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            IProfile profile = (IProfile)because.Result;
-            because.ItsTrue("ProfileHandle is not empty", !string.IsNullOrEmpty(profile.ProfileHandle));
+            because.TheResult
+                .IsNotNull()
+                .As<IProfile>("ProfileHandle is not empty", p => !string.IsNullOrEmpty(p.ProfileHandle));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -165,9 +161,9 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            IProfile profile = (IProfile)because.Result;
-            because.ItsTrue("ProfileHandle is not empty", !string.IsNullOrEmpty(profile.ProfileHandle));
+            because.TheResult
+                .IsNotNull()
+                .As<IProfile>("ProfileHandle is not empty", p => !string.IsNullOrEmpty(p.ProfileHandle));
         })
         .SoBeHappy()
         .UnlessItFailed();

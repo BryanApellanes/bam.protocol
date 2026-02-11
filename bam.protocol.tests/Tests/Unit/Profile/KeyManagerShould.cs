@@ -36,9 +36,9 @@ public class KeyManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            RsaPublicPrivateKeyPair keyPair = (RsaPublicPrivateKeyPair)because.Result;
-            because.ItsTrue("PublicKeyPem is not empty", !string.IsNullOrEmpty(keyPair.PublicKeyPem));
+            because.TheResult
+                .IsNotNull()
+                .As<RsaPublicPrivateKeyPair>("PublicKeyPem is not empty", kp => !string.IsNullOrEmpty(kp.PublicKeyPem));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -57,9 +57,9 @@ public class KeyManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            EccPublicPrivateKeyPair keyPair = (EccPublicPrivateKeyPair)because.Result;
-            because.ItsTrue("PublicKeyPem is not empty", !string.IsNullOrEmpty(keyPair.PublicKeyPem));
+            because.TheResult
+                .IsNotNull()
+                .As<EccPublicPrivateKeyPair>("PublicKeyPem is not empty", kp => !string.IsNullOrEmpty(kp.PublicKeyPem));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -78,12 +78,12 @@ public class KeyManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            AesKey aesKey = (AesKey)because.Result;
-            because.ItsTrue("Key is not null", aesKey.Key != null);
-            because.ItsTrue("IV is not null", aesKey.IV != null);
-            because.ItsTrue("Key has length", aesKey.Key.Length > 0);
-            because.ItsTrue("IV has length", aesKey.IV.Length > 0);
+            because.TheResult
+                .IsNotNull()
+                .As<AesKey>("Key is not null", k => k.Key != null)
+                .As<AesKey>("IV is not null", k => k.IV != null)
+                .As<AesKey>("Key has length", k => k.Key.Length > 0)
+                .As<AesKey>("IV has length", k => k.IV.Length > 0);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -208,10 +208,10 @@ public class KeyManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.IsNotNull();
-            AesKey sharedKey = (AesKey)because.Result;
-            because.ItsTrue("shared key has Key", sharedKey.Key != null && sharedKey.Key.Length > 0);
-            because.ItsTrue("shared key has IV", sharedKey.IV != null && sharedKey.IV.Length > 0);
+            because.TheResult
+                .IsNotNull()
+                .As<AesKey>("shared key has Key", k => k.Key != null && k.Key.Length > 0)
+                .As<AesKey>("shared key has IV", k => k.IV != null && k.IV.Length > 0);
         })
         .SoBeHappy()
         .UnlessItFailed();

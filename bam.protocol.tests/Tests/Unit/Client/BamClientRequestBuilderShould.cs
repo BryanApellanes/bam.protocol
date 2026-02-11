@@ -10,22 +10,19 @@ public class BamClientRequestBuilderShould : UnitTestMenuContainer
     public void CreateHttpRequestFromBuilder()
     {
         When.A<HttpBamClientRequestBuilder>("creates an HTTP request",
-            (builder) =>
-            {
-                IBamClientRequest request = builder.Build();
-                return new object?[] { request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
-            })
+            (builder) => builder.Build())
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] r = (object?[])because.Result;
-            because.ItsTrue("Host equals default HTTP address", BamClient.DefaultHttpBaseAddress.Equals(r[0]));
-            because.ItsTrue("Path is null or empty", string.IsNullOrEmpty((string?)r[1]));
-            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[2]));
-            because.ItsTrue("HttpMethod equals GET", HttpMethods.GET.Equals(r[3]));
-            because.ItsTrue("Protocol equals HTTP", "HTTP".Equals(r[4]));
-            because.ItsTrue("ProtocolVersion equals 1.1", "1.1".Equals(r[5]));
-            because.ItsTrue("Content is null", r[6] == null);
+            because.TheResult
+                .IsNotNull()
+                .As<IBamClientRequest>("Host equals default HTTP address", r => BamClient.DefaultHttpBaseAddress.Equals(r.Host))
+                .As<IBamClientRequest>("Path is null or empty", r => string.IsNullOrEmpty(r.Path))
+                .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
+                .As<IBamClientRequest>("HttpMethod equals GET", r => HttpMethods.GET.Equals(r.HttpMethod))
+                .As<IBamClientRequest>("Protocol equals HTTP", r => "HTTP".Equals(r.Protocol))
+                .As<IBamClientRequest>("ProtocolVersion equals 1.1", r => "1.1".Equals(r.ProtocolVersion))
+                .As<IBamClientRequest>("Content is null", r => r.Content == null);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -35,22 +32,19 @@ public class BamClientRequestBuilderShould : UnitTestMenuContainer
     public void CreateTcpRequestFromBuilder()
     {
         When.A<TcpBamClientRequestBuilder>("creates a TCP request",
-            (builder) =>
-            {
-                IBamClientRequest request = builder.Build();
-                return new object?[] { request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
-            })
+            (builder) => builder.Build())
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] r = (object?[])because.Result;
-            because.ItsTrue("Host equals default TCP address", BamClient.DefaultTcpBaseAddress.Equals(r[0]));
-            because.ItsTrue("Path is null or empty", string.IsNullOrEmpty((string?)r[1]));
-            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[2]));
-            because.ItsTrue("HttpMethod equals POST", HttpMethods.POST.Equals(r[3]));
-            because.ItsTrue("Protocol equals BAM", "BAM".Equals(r[4]));
-            because.ItsTrue("ProtocolVersion equals 2.0", "2.0".Equals(r[5]));
-            because.ItsTrue("Content is null", r[6] == null);
+            because.TheResult
+                .IsNotNull()
+                .As<IBamClientRequest>("Host equals default TCP address", r => BamClient.DefaultTcpBaseAddress.Equals(r.Host))
+                .As<IBamClientRequest>("Path is null or empty", r => string.IsNullOrEmpty(r.Path))
+                .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
+                .As<IBamClientRequest>("HttpMethod equals POST", r => HttpMethods.POST.Equals(r.HttpMethod))
+                .As<IBamClientRequest>("Protocol equals BAM", r => "BAM".Equals(r.Protocol))
+                .As<IBamClientRequest>("ProtocolVersion equals 2.0", r => "2.0".Equals(r.ProtocolVersion))
+                .As<IBamClientRequest>("Content is null", r => r.Content == null);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -60,22 +54,19 @@ public class BamClientRequestBuilderShould : UnitTestMenuContainer
     public void CreateUdpRequestFromBuilder()
     {
         When.A<UdpBamClientRequestBuilder>("creates a UDP request",
-            (builder) =>
-            {
-                IBamClientRequest request = builder.Build();
-                return new object?[] { request.Host, request.Path, request.QueryString, request.HttpMethod, request.Protocol, request.ProtocolVersion, request.Content };
-            })
+            (builder) => builder.Build())
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] r = (object?[])because.Result;
-            because.ItsTrue("Host equals default TCP address", BamClient.DefaultTcpBaseAddress.Equals(r[0]));
-            because.ItsTrue("Path is null or empty", string.IsNullOrEmpty((string?)r[1]));
-            because.ItsTrue("QueryString is null or empty", string.IsNullOrEmpty((string?)r[2]));
-            because.ItsTrue("HttpMethod equals PUT", HttpMethods.PUT.Equals(r[3]));
-            because.ItsTrue("Protocol equals BAM", "BAM".Equals(r[4]));
-            because.ItsTrue("ProtocolVersion equals 2.0", "2.0".Equals(r[5]));
-            because.ItsTrue("Content is null", r[6] == null);
+            because.TheResult
+                .IsNotNull()
+                .As<IBamClientRequest>("Host equals default TCP address", r => BamClient.DefaultTcpBaseAddress.Equals(r.Host))
+                .As<IBamClientRequest>("Path is null or empty", r => string.IsNullOrEmpty(r.Path))
+                .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
+                .As<IBamClientRequest>("HttpMethod equals PUT", r => HttpMethods.PUT.Equals(r.HttpMethod))
+                .As<IBamClientRequest>("Protocol equals BAM", r => "BAM".Equals(r.Protocol))
+                .As<IBamClientRequest>("ProtocolVersion equals 2.0", r => "2.0".Equals(r.ProtocolVersion))
+                .As<IBamClientRequest>("Content is null", r => r.Content == null);
         })
         .SoBeHappy()
         .UnlessItFailed();

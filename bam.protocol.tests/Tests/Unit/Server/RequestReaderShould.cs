@@ -33,7 +33,7 @@ public class RequestReaderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("read line equals first line", firstLine.Equals((string)because.Result));
+            because.TheResult.As<string>("read line equals first line", result => firstLine.Equals(result));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -56,16 +56,16 @@ X-Bam-Test: another header value
             (reader) =>
             {
                 MemoryStream stream = new MemoryStream(Encoding.ASCII.GetBytes(requestStream));
-                IBamRequest bamRequest = reader.ReadRequest(stream);
-                return new object[] { bamRequest.Content, bamRequest.Headers.ContainsKey("content-type"), bamRequest.Headers.ContainsKey("accept") };
+                return reader.ReadRequest(stream);
             })
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            because.ItsTrue("Content equals request body", requestBody.Equals(results[0]));
-            because.ItsTrue("Headers contain content-type", (bool)results[1]);
-            because.ItsTrue("Headers contain accept", (bool)results[2]);
+            because.TheResult
+                .IsNotNull()
+                .As<IBamRequest>("Content equals request body", r => requestBody.Equals(r?.Content))
+                .As<IBamRequest>("Headers contain content-type", r => r?.Headers.ContainsKey("content-type"))
+                .As<IBamRequest>("Headers contain accept", r => r?.Headers.ContainsKey("accept"));
         })
         .SoBeHappy()
         .UnlessItFailed();

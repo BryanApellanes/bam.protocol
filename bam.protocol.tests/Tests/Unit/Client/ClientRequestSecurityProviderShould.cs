@@ -76,7 +76,7 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("server validated the signature", (bool)because.Result);
+            because.TheResult.Is<bool>("server validated the signature", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -112,7 +112,7 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("server validated the nonce hash", (bool)because.Result);
+            because.TheResult.Is<bool>("server validated the nonce hash", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -149,12 +149,12 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("has session ID header", (bool)result[0]);
-            because.ItsTrue("has body signature header", (bool)result[1]);
-            because.ItsTrue("has nonce header", (bool)result[2]);
-            because.ItsTrue("has nonce hash header", (bool)result[3]);
-            because.ItsTrue("has encrypted content", (bool)result[4]);
+            because.TheResult
+                .As<object[]>("has session ID header", r => (bool)r[0])
+                .As<object[]>("has body signature header", r => (bool)r[1])
+                .As<object[]>("has nonce header", r => (bool)r[2])
+                .As<object[]>("has nonce hash header", r => (bool)r[3])
+                .As<object[]>("has encrypted content", r => (bool)r[4]);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -191,12 +191,12 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("has session ID header", (bool)result[0]);
-            because.ItsTrue("has body signature header", (bool)result[1]);
-            because.ItsTrue("has nonce header", (bool)result[2]);
-            because.ItsTrue("has nonce hash header", (bool)result[3]);
-            because.ItsTrue("body is encrypted (different from original)", (bool)result[4]);
+            because.TheResult
+                .As<object[]>("has session ID header", r => (bool)r[0])
+                .As<object[]>("has body signature header", r => (bool)r[1])
+                .As<object[]>("has nonce header", r => (bool)r[2])
+                .As<object[]>("has nonce hash header", r => (bool)r[3])
+                .As<object[]>("body is encrypted (different from original)", r => (bool)r[4]);
         })
         .SoBeHappy()
         .UnlessItFailed();

@@ -92,10 +92,10 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("instance is null before server init", (bool)results[0]!);
-            because.ItsTrue("instance is not null after server init", results[1] != null);
-            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[2]));
+            because.TheResult
+                .As<object?[]>("instance is null before server init", r => (bool)r[0]!)
+                .As<object?[]>("instance is not null after server init", r => r[1] != null)
+                .As<object?[]>("instance is of type TestClass", r => typeof(TestClass).Equals(r[2]));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -120,9 +120,9 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("instance is not null", results[0] != null);
-            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[1]));
+            because.TheResult
+                .As<object?[]>("instance is not null", r => r[0] != null)
+                .As<object?[]>("instance is of type TestClass", r => typeof(TestClass).Equals(r[1]));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -148,10 +148,10 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("instance is not null", results[0] != null);
-            because.ItsTrue("instance is of type TestClass", typeof(TestClass).Equals(results[1]));
-            because.ItsTrue("result is not null", results[2] != null);
+            because.TheResult
+                .As<object?[]>("instance is not null", r => r[0] != null)
+                .As<object?[]>("instance is of type TestClass", r => typeof(TestClass).Equals(r[1]))
+                .As<object?[]>("result is not null", r => r[2] != null);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -180,7 +180,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("result equals expected", expected.Equals((string)because.Result));
+            because.TheResult.As<string>("result equals expected", r => expected.Equals(r));
         })
         .SoBeHappy()
         .UnlessItFailed();

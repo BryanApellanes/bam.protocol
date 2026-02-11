@@ -37,24 +37,19 @@ public class BamServerBuilderShould : UnitTestMenuContainer
                 .ServerName(serverName)
                 .TcpIPAddress(tcpIpAddress)
                 .UdpIPAddress(udpIpAddress),
-            (builder) =>
-            {
-                BamServer server = builder.Build();
-                BamServerInfo info = server.GetInfo();
-                return new object[] { info, server.HttpHostBinding };
-            })
+            (builder) => builder.Build())
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            BamServerInfo info = (BamServerInfo)results[0];
-            object httpHostBinding = results[1];
+            because.TheResult.IsNotNull();
+            BamServer server = because.TheResult.As<BamServer>();
+            BamServerInfo info = server.GetInfo();
             because.ItsTrue("ServerName equals expected", serverName.Equals(info.ServerName));
             because.ItsTrue("TcpPort equals expected", testTcpPort == info.TcpPort);
             because.ItsTrue("UdpPort equals expected", testUdpPort == info.UdpPort);
             because.ItsTrue("TcpIPAddress equals expected", IPAddress.Parse(tcpIpAddress).ToString().Equals(info.TcpIPAddress));
             because.ItsTrue("UdpIPAddress equals expected", IPAddress.Parse(udpIpAddress).ToString().Equals(info.UdpIPAddress));
-            because.ItsTrue("HttpHostBinding equals expected", httpHostBinding.Equals(info.HttpHostBinding));
+            because.ItsTrue("HttpHostBinding equals expected", server.HttpHostBinding.Equals(info.HttpHostBinding));
         })
         .SoBeHappy()
         .UnlessItFailed();

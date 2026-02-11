@@ -41,7 +41,7 @@ public class BamServerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("server handled request", (bool)because.Result);
+            because.TheResult.Is<bool>("server handled request", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

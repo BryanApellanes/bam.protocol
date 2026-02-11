@@ -40,28 +40,19 @@ X-Bam-Custom: custom-value
         .When<BamRequestReader>("parses BAM/2.0 request from stream", (reader) =>
         {
             MemoryStream stream = new MemoryStream(Encoding.ASCII.GetBytes(requestStream));
-            IBamRequest bamRequest = reader.ReadRequest(stream);
-            BamRequest concrete = (BamRequest)bamRequest;
-            return new object[]
-            {
-                bamRequest.Content,
-                bamRequest.Headers.ContainsKey("content-type"),
-                bamRequest.Headers.ContainsKey("x-bam-custom"),
-                concrete.Line?.Method.ToString(),
-                concrete.Line?.RequestUri,
-                concrete.Line?.ProtocolVersion
-            };
+            return reader.ReadRequest(stream);
         })
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            because.ItsTrue("Content equals request body", requestBody.Equals(results[0]));
-            because.ItsTrue("Headers contain content-type", (bool)results[1]);
-            because.ItsTrue("Headers contain x-bam-custom", (bool)results[2]);
-            because.ItsTrue("Method is GET", "GET".Equals(results[3]));
-            because.ItsTrue("RequestUri is bam://test.com/tcp/path", "bam://test.com/tcp/path".Equals(results[4]));
-            because.ItsTrue("ProtocolVersion is BAM/2.0", "BAM/2.0".Equals(results[5]));
+            because.TheResult
+                .IsNotNull()
+                .As<IBamRequest>("Content equals request body", r => requestBody.Equals(r.Content))
+                .As<IBamRequest>("Headers contain content-type", r => r.Headers.ContainsKey("content-type"))
+                .As<IBamRequest>("Headers contain x-bam-custom", r => r.Headers.ContainsKey("x-bam-custom"))
+                .As<BamRequest>("Method is GET", r => "GET".Equals(r.Line?.Method.ToString()))
+                .As<BamRequest>("RequestUri is bam://test.com/tcp/path", r => "bam://test.com/tcp/path".Equals(r.Line?.RequestUri))
+                .As<BamRequest>("ProtocolVersion is BAM/2.0", r => "BAM/2.0".Equals(r.Line?.ProtocolVersion));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -103,17 +94,7 @@ test body
                 sender.Close();
                 serverSide.Close();
 
-                BamRequest concrete = (BamRequest)result;
-                return new object?[]
-                {
-                    result.Content,
-                    result.Headers,
-                    concrete.Line,
-                    concrete.Line?.Method.ToString(),
-                    concrete.Line?.RequestUri,
-                    concrete.Line?.ProtocolVersion,
-                    result.Headers?.ContainsKey("content-type")
-                };
+                return result;
             }
             finally
             {
@@ -123,14 +104,15 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("Content is 'test body'", "test body".Equals(results[0]));
-            because.ItsTrue("Headers is not null (parsed)", results[1] != null);
-            because.ItsTrue("Line is not null (parsed)", results[2] != null);
-            because.ItsTrue("Method is GET", "GET".Equals(results[3]));
-            because.ItsTrue("RequestUri is bam://test.com/tcp/path", "bam://test.com/tcp/path".Equals(results[4]));
-            because.ItsTrue("ProtocolVersion is BAM/2.0", "BAM/2.0".Equals(results[5]));
-            because.ItsTrue("Headers contain content-type", results[6] is true);
+            because.TheResult
+                .IsNotNull()
+                .As<IBamRequest>("Content is 'test body'", r => "test body".Equals(r.Content))
+                .As<IBamRequest>("Headers is not null (parsed)", r => r.Headers != null)
+                .As<BamRequest>("Line is not null (parsed)", r => r.Line != null)
+                .As<BamRequest>("Method is GET", r => "GET".Equals(r.Line?.Method.ToString()))
+                .As<BamRequest>("RequestUri is bam://test.com/tcp/path", r => "bam://test.com/tcp/path".Equals(r.Line?.RequestUri))
+                .As<BamRequest>("ProtocolVersion is BAM/2.0", r => "BAM/2.0".Equals(r.Line?.ProtocolVersion))
+                .As<IBamRequest>("Headers contain content-type", r => r.Headers?.ContainsKey("content-type") == true);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -179,7 +161,7 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("TcpClientConnected event was fired", (bool)because.Result);
+            because.TheResult.Is<bool>("TcpClientConnected event was fired", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -234,10 +216,11 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            string text = (string)because.Result;
-            because.ItsTrue("Response is not empty", !string.IsNullOrEmpty(text));
-            because.ItsTrue("Response starts with BAM/2.0", text.StartsWith("BAM/2.0"));
-            Message.PrintLine($"[TCP Response] {text}", ConsoleColor.Green);
+            because.TheResult
+                .IsNotNull()
+                .As<string>("Response is not empty", text => !string.IsNullOrEmpty(text))
+                .As<string>("Response starts with BAM/2.0", text => text.StartsWith("BAM/2.0"));
+            Message.PrintLine($"[TCP Response] {because.Result}", ConsoleColor.Green);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -290,10 +273,10 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("UdpDataReceived event was fired", (bool)results[0]!);
-            because.ItsTrue("Received data is not null", (bool)results[1]!);
-            because.ItsTrue("Received data has content", (bool)results[2]!);
+            because.TheResult
+                .As<object?[]>("UdpDataReceived event was fired", r => (bool)r[0]!)
+                .As<object?[]>("Received data is not null", r => (bool)r[1]!)
+                .As<object?[]>("Received data has content", r => (bool)r[2]!);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -322,7 +305,7 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("UnsupportedRequestTypeException was thrown for UdpClientRequest", (bool)because.Result);
+            because.TheResult.Is<bool>("UnsupportedRequestTypeException was thrown for UdpClientRequest", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -356,9 +339,9 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            because.ItsTrue("BamResponse<T> constructed without NullReferenceException", (bool)results[0]);
-            because.ItsTrue("StatusCode is 200", 200.Equals(results[1]));
+            because.TheResult
+                .As<object[]>("BamResponse<T> constructed without NullReferenceException", r => (bool)r[0])
+                .As<object[]>("StatusCode is 200", r => 200.Equals(r[1]));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -391,7 +374,7 @@ test body
                 BamClient client = reg.Get<BamClient>();
                 IBamClientRequest request = client.CreateTcpRequest("/test/roundtrip");
                 IBamClientResponse response = await client.ReceiveResponseAsync(request);
-                return (object)new object[] { response.Content, response.StatusCode };
+                return response;
             }
             finally
             {
@@ -401,13 +384,13 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            object[] results = (object[])because.Result;
-            string text = (string)results[0];
-            int code = (int)results[1];
-            because.ItsTrue("Response content is not empty", !string.IsNullOrEmpty(text));
-            because.ItsTrue("Response contains BAM/2.0", text.Contains("BAM/2.0"));
-            because.ItsTrue("Status code is non-zero", code != 0);
-            Message.PrintLine($"[TCP Roundtrip] StatusCode={code}, Content={text}", ConsoleColor.Green);
+            IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
+            because.TheResult
+                .IsNotNull()
+                .As<IBamClientResponse>("Response content is not empty", r => !string.IsNullOrEmpty(r.Content))
+                .As<IBamClientResponse>("Response contains BAM/2.0", r => r.Content.Contains("BAM/2.0"))
+                .As<IBamClientResponse>("Status code is non-zero", r => r.StatusCode != 0);
+            Message.PrintLine($"[TCP Roundtrip] StatusCode={response.StatusCode}, Content={response.Content}", ConsoleColor.Green);
         })
         .SoBeHappy()
         .UnlessItFailed();

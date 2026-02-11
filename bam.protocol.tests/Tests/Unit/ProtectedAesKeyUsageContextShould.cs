@@ -77,10 +77,10 @@ public class ProtectedAesKeyUsageContextShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("original key bytes were zeroed", (bool)result[0]);
-            because.ItsTrue("original IV bytes were zeroed", (bool)result[1]);
-            because.ItsTrue("key is still usable via protected context", (bool)result[2]);
+            because.TheResult
+                .As<object[]>("original key bytes were zeroed", r => (bool)r[0])
+                .As<object[]>("original IV bytes were zeroed", r => (bool)r[1])
+                .As<object[]>("key is still usable via protected context", r => (bool)r[2]);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -120,8 +120,8 @@ public class ProtectedAesKeyUsageContextShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("key worked before dispose", (bool)result[0]);
+            because.TheResult
+                .As<object[]>("key worked before dispose", r => (bool)r[0]);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -145,7 +145,7 @@ public class ProtectedAesKeyUsageContextShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("returned key length is 32", (int)because.Result == 32);
+            because.TheResult.Is<int>("returned key length is 32", n => n == 32);
         })
         .SoBeHappy()
         .UnlessItFailed();

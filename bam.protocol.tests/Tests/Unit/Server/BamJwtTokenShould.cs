@@ -54,7 +54,7 @@ public class BamJwtTokenShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("signature is valid", (bool)because.Result);
+            because.TheResult.Is<bool>("signature is valid", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -84,7 +84,7 @@ public class BamJwtTokenShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.ItsTrue("tampered token is rejected", !(bool)because.Result);
+            because.TheResult.Is<bool>("tampered token is rejected", b => !b);
         })
         .SoBeHappy()
         .UnlessItFailed();

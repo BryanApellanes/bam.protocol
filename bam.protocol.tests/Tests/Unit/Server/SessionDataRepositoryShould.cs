@@ -30,16 +30,15 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
                 ServerSession session = new ServerSession() { SessionId = testSessionId };
                 session.KeyValues.Add(new ServerSessionKeyValuePair() { Key = "testKey", Value = "testValue" });
                 session = repository.Save(session);
-                ServerSession reloaded = repository.Retrieve<ServerSession>(session.Id);
-                return new object?[] { reloaded, reloaded?.KeyValues };
+                return repository.Retrieve<ServerSession>(session.Id);
             })
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("reloaded is not null", results[0] != null);
-            because.ItsTrue("KeyValues is not null", results[1] != null);
-            if (results[1] is List<ServerSessionKeyValuePair> kvps)
+            because.TheResult.IsNotNull();
+            ServerSession reloaded = because.TheResult.As<ServerSession>();
+            because.ItsTrue("KeyValues is not null", reloaded?.KeyValues != null);
+            if (reloaded?.KeyValues is List<ServerSessionKeyValuePair> kvps)
             {
                 because.ItsTrue("KeyValues count equals 1", kvps.Count == 1);
             }
@@ -63,16 +62,15 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
                 ServerSession session = new ServerSession() { SessionId = testSessionId };
                 session.KeyValues.Add(new ServerSessionKeyValuePair() { Key = "testKey", Value = "testValue" });
                 repository.Save(session);
-                ServerSession reloaded = repository.OneServerSessionWhere(c => c.SessionId == testSessionId);
-                return new object?[] { reloaded, reloaded?.KeyValues };
+                return repository.OneServerSessionWhere(c => c.SessionId == testSessionId);
             })
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("reloaded is not null", results[0] != null);
-            because.ItsTrue("KeyValues is not null", results[1] != null);
-            if (results[1] is List<ServerSessionKeyValuePair> kvps)
+            because.TheResult.IsNotNull();
+            ServerSession reloaded = because.TheResult.As<ServerSession>();
+            because.ItsTrue("KeyValues is not null", reloaded?.KeyValues != null);
+            if (reloaded?.KeyValues is List<ServerSessionKeyValuePair> kvps)
             {
                 because.ItsTrue("KeyValues count equals 1", kvps.Count == 1);
             }
@@ -96,16 +94,15 @@ public class SessionDataRepositoryShould : UnitTestMenuContainer
                 ServerSession session = new ServerSession() { SessionId = testSessionId };
                 session.KeyValues.Add(new ServerSessionKeyValuePair() { Key = "testKey", Value = "testValue" });
                 repository.Save(session);
-                ServerSession reloaded = repository.ServerSessionsWhere(c => c.SessionId == testSessionId).First();
-                return new object?[] { reloaded, reloaded?.KeyValues };
+                return repository.ServerSessionsWhere(c => c.SessionId == testSessionId).First();
             })
         .TheTest
         .ShouldPass(because =>
         {
-            object?[] results = (object?[])because.Result;
-            because.ItsTrue("reloaded is not null", results[0] != null);
-            because.ItsTrue("KeyValues is not null", results[1] != null);
-            if (results[1] is List<ServerSessionKeyValuePair> kvps)
+            because.TheResult.IsNotNull();
+            ServerSession reloaded = because.TheResult.As<ServerSession>();
+            because.ItsTrue("KeyValues is not null", reloaded?.KeyValues != null);
+            if (reloaded?.KeyValues is List<ServerSessionKeyValuePair> kvps)
             {
                 because.ItsTrue("KeyValues count equals 1", kvps.Count == 1);
             }

@@ -67,9 +67,9 @@ public class ClientSessionStateShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("keys match", ((string)result[0]).Equals(result[1]));
-            because.ItsTrue("IVs match", ((string)result[2]).Equals(result[3]));
+            because.TheResult
+                .As<object[]>("keys match", r => ((string)r[0]).Equals(r[1]))
+                .As<object[]>("IVs match", r => ((string)r[2]).Equals(r[3]));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -146,9 +146,9 @@ public class ClientSessionStateShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            object[] result = (object[])because.Result;
-            because.ItsTrue("key worked before dispose", (bool)result[0]);
-            because.ItsTrue("key pair unusable after dispose", (bool)result[1]);
+            because.TheResult
+                .As<object[]>("key worked before dispose", r => (bool)r[0])
+                .As<object[]>("key pair unusable after dispose", r => (bool)r[1]);
         })
         .SoBeHappy()
         .UnlessItFailed();
