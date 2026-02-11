@@ -25,6 +25,35 @@ public class ClientRequestSecurityProvider
         return Convert.ToBase64String(hash);
     }
 
+    public string PrepareTcpRequest(BamClientRequest request, string body, IClientSessionState sessionState)
+    {
+        request.Headers ??= new Dictionary<string, string>();
+        request.Headers[Headers.SessionId] = sessionState.SessionId;
+
+        string encryptedBody = body;
+        sessionState.UseSessionKey(sessionKey =>
+        {
+            encryptedBody = EncryptBody(body, sessionKey);
+        });
+
+        if (sessionState is ClientSessionState clientState)
+        {
+            string signature = SignBody(body, clientState.ClientKeyPair);
+            request.Headers[Headers.BodySignature] = signature;
+        }
+
+        string nonceHash = ComputeNonceHash(body, sessionState.Nonce);
+        request.Headers[Headers.Nonce] = sessionState.Nonce;
+        request.Headers[Headers.NonceHash] = nonceHash;
+
+        if (!string.IsNullOrEmpty(sessionState.AuthorizationToken))
+        {
+            request.Headers[Headers.Authorization] = $"Bearer {sessionState.AuthorizationToken}";
+        }
+
+        return encryptedBody;
+    }
+
     public void PrepareHttpRequest(HttpRequestMessage httpRequest, string body, IClientSessionState sessionState)
     {
         httpRequest.Headers.Add(Headers.SessionId, sessionState.SessionId);

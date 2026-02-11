@@ -1,6 +1,7 @@
 using System.Text;
 using Bam.Encryption;
 using Bam.Protocol.Client;
+using Bam.Protocol.Data;
 using Bam.Protocol.Server;
 using Bam.Test;
 using Bam.Web;
@@ -154,6 +155,48 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
             because.ItsTrue("has nonce header", (bool)result[2]);
             because.ItsTrue("has nonce hash header", (bool)result[3]);
             because.ItsTrue("has encrypted content", (bool)result[4]);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void PrepareTcpRequestSetsHeaders()
+    {
+        EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair serverKeyPair = new EccPublicPrivateKeyPair();
+        string body = "request body to secure";
+
+        When.A<ClientRequestSecurityProvider>("prepares TCP request with security headers",
+            () => new ClientRequestSecurityProvider(),
+            (provider) =>
+            {
+                ClientSessionState sessionState = new ClientSessionState(
+                    "session-123",
+                    "nonce-456",
+                    serverKeyPair.GetEccPublicKey(),
+                    clientKeyPair);
+
+                TcpClientRequest tcpRequest = new TcpClientRequest();
+                string encryptedBody = provider.PrepareTcpRequest(tcpRequest, body, sessionState);
+
+                bool hasSessionId = tcpRequest.Headers.ContainsKey(Headers.SessionId);
+                bool hasBodySignature = tcpRequest.Headers.ContainsKey(Headers.BodySignature);
+                bool hasNonce = tcpRequest.Headers.ContainsKey(Headers.Nonce);
+                bool hasNonceHash = tcpRequest.Headers.ContainsKey(Headers.NonceHash);
+                bool bodyIsEncrypted = !body.Equals(encryptedBody);
+
+                return new object[] { hasSessionId, hasBodySignature, hasNonce, hasNonceHash, bodyIsEncrypted };
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            object[] result = (object[])because.Result;
+            because.ItsTrue("has session ID header", (bool)result[0]);
+            because.ItsTrue("has body signature header", (bool)result[1]);
+            because.ItsTrue("has nonce header", (bool)result[2]);
+            because.ItsTrue("has nonce hash header", (bool)result[3]);
+            because.ItsTrue("body is encrypted (different from original)", (bool)result[4]);
         })
         .SoBeHappy()
         .UnlessItFailed();

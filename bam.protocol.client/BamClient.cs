@@ -170,14 +170,19 @@ public class BamClient : IBamClient
         TcpClient client = new TcpClient(BaseAddress.HostName, BaseAddress.Port);
         NetworkStream stream = client.GetStream();
         byte[] data = CreateRequestData(request);
-        stream.Write(data, 0, data.Length);
-        byte[] readBuffer = new byte[client.Available];
-        string response = string.Empty;
-        while (stream.Read(readBuffer, 0,  readBuffer.Length) != 0)
+        await stream.WriteAsync(data, 0, data.Length);
+        client.Client.Shutdown(SocketShutdown.Send);
+
+        using MemoryStream responseBuffer = new MemoryStream();
+        byte[] readBuffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = await stream.ReadAsync(readBuffer, 0, readBuffer.Length)) > 0)
         {
-            response = Encoding.UTF8.GetString(readBuffer);
+            responseBuffer.Write(readBuffer, 0, bytesRead);
         }
 
+        client.Close();
+        string response = Encoding.UTF8.GetString(responseBuffer.ToArray());
         return new BamClientResponse(response);
     }
 
@@ -185,6 +190,19 @@ public class BamClient : IBamClient
     {
         StringBuilder data = new StringBuilder();
         data.AppendLine(request.GetRequestLine().ToString());
+
+        string body = null;
+        if (request.Content != null)
+        {
+            IObjectEncoding encoding = ObjectEncoderDecoder.Encode(request.Content);
+            body = encoding.Encoding.GetString(encoding.Value);
+        }
+
+        if (SessionState != null && body != null)
+        {
+            body = SecurityProvider.PrepareTcpRequest(request, body, SessionState);
+        }
+
         if (request.Headers?.Count > 0)
         {
             foreach (KeyValuePair<string, string> keyValuePair in request.Headers)
@@ -193,12 +211,10 @@ public class BamClient : IBamClient
             }
         }
 
-        if (request.Content != null)
+        if (body != null)
         {
-            IObjectEncoding encoding = ObjectEncoderDecoder.Encode(request.Content);
-            string content = encoding.Encoding.GetString(encoding.Value);
             data.AppendLine();
-            data.AppendLine(content);
+            data.AppendLine(body);
         }
 
         return Encoding.UTF8.GetBytes(data.ToString());
