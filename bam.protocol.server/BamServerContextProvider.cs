@@ -22,6 +22,7 @@ public class BamServerContextProvider : Loggable, IBamServerContextProvider
             HttpContext = httpContext,
             RequestId = requestId,
             BamRequest = request,
+            OutputStream = httpContext.Response.OutputStream,
         };
     }
 
@@ -31,7 +32,8 @@ public class BamServerContextProvider : Loggable, IBamServerContextProvider
         return new BamServerContext
         {
             RequestId = requestId,
-            BamRequest = request
+            BamRequest = request,
+            OutputStream = client.GetStream(),
         };
     }
     
@@ -41,7 +43,8 @@ public class BamServerContextProvider : Loggable, IBamServerContextProvider
         return new BamServerContext
         {
             RequestId = requestId,
-            BamRequest = request
+            BamRequest = request,
+            OutputStream = stream,
         };
     }
 }

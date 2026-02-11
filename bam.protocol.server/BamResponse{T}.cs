@@ -11,7 +11,7 @@ public class BamResponse<T> : BamResponse, IBamResponse<T>
         this.Content = content;
     }
 
-    public BamResponse(BamServerInitializationContext initializationContext, int statusCode = 404) : base(initializationContext.ServerContext.HttpContext.Response.OutputStream, statusCode)
+    public BamResponse(BamServerInitializationContext initializationContext, int statusCode = 404) : base(initializationContext.ServerContext.OutputStream, statusCode)
     {
         this.BamServerInitializationContext = initializationContext;
     }
@@ -22,16 +22,23 @@ public class BamResponse<T> : BamResponse, IBamResponse<T>
 
     protected IObjectEncoderDecoder BamObjectEncoderDecoder => Server.ObjectEncoderDecoder;
 
-    protected HttpListenerResponse Response => BamServerContext.HttpContext.Response;
+    protected HttpListenerResponse? Response => BamServerContext.HttpContext?.Response;
 
     protected Encoding Encoding => Server.Encoding;
 
     protected void Close()
     {
-        Response.OutputStream.Flush();
-        Response.Close();
+        if (Response != null)
+        {
+            Response.OutputStream.Flush();
+            Response.Close();
+        }
+        else
+        {
+            OutputStream.Flush();
+        }
     }
-    
+
     public override void Send()
     {
        if (Content != null)
@@ -41,17 +48,31 @@ public class BamResponse<T> : BamResponse, IBamResponse<T>
            return;
        }
 
-       Response.StatusCode = StatusCode;
+       if (Response != null)
+       {
+           Response.StatusCode = StatusCode;
+       }
        Close();
     }
 
     public override void Send(byte[] responseEntity)
     {
-        Response.StatusCode = StatusCode;
-        Response.OutputStream.Write(responseEntity, 0, responseEntity.Length);
-        Close();
+        if (Response != null)
+        {
+            Response.StatusCode = StatusCode;
+            Response.OutputStream.Write(responseEntity, 0, responseEntity.Length);
+            Close();
+        }
+        else
+        {
+            string statusLine = $"BAM/2.0 {StatusCode}\n\n";
+            byte[] header = Encoding.GetBytes(statusLine);
+            OutputStream.Write(header, 0, header.Length);
+            OutputStream.Write(responseEntity, 0, responseEntity.Length);
+            OutputStream.Flush();
+        }
     }
 
     public T Content { get; set; }
-    
+
 }

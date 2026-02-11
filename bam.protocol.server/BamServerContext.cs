@@ -11,6 +11,7 @@ public class BamServerContext : IBamServerContext
     public string RequestId { get; internal set; }
     public IBamRequest BamRequest { get; internal set; }
     public IBamResponse BamResponse { get; set; }
+    public Stream? OutputStream { get; set; }
     public IActor Actor { get; private set; }
     public BamAuthentication Authentication { get; private set; }
     public ICommand Command { get; private set; }

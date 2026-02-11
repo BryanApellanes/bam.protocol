@@ -32,11 +32,7 @@ public class BamRequestReader : Loggable, IBamRequestReader
     public IBamRequest ReadRequest(TcpClient client)
     {
         NetworkStream stream = client.GetStream();
-        byte[] readBuffer = new byte[client.Available];
-        stream.Read(readBuffer, 0, readBuffer.Length);
-        string request = Encoding.UTF8.GetString(readBuffer);
-
-        return new BamRequest(){Content = request};
+        return ReadRequest(stream);
     }
     
     public virtual IBamRequest ReadRequest(Stream stream)

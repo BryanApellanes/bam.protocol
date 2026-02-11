@@ -283,29 +283,47 @@ test body
     }
 
     [UnitTest]
-    public void UdpClientRequestThrowsUnsupportedRequestType()
+    public void UdpRequestSendsViaHandler()
     {
+        int udpPort = GetAvailablePort();
+        byte[]? receivedData = null;
+        ManualResetEventSlim received = new ManualResetEventSlim(false);
+
         After.Setup(reg =>
         {
-            reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder()));
+            reg.For<BamClient>()
+                .Use(new BamClient(
+                    new JsonObjectDataEncoder(),
+                    BamClient.DefaultHttpBaseAddress,
+                    BamClient.DefaultTcpBaseAddress,
+                    new BamHostBinding("localhost", udpPort)));
         })
-        .When<BamClient>("throws UnsupportedRequestTypeException for UDP response handling", (client) =>
+        .When<BamClient>("sends UDP request through ReceiveResponseAsync", (client) =>
         {
+            UdpClient listener = new UdpClient(udpPort);
+            Task receiveTask = Task.Run(() =>
+            {
+                IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
+                receivedData = listener.Receive(ref remoteEp);
+                received.Set();
+            });
+
             IBamClientRequest request = client.CreateUdpRequest("/udp/path", "test content");
-            try
-            {
-                client.ReceiveResponseAsync(request).GetAwaiter().GetResult();
-                return false;
-            }
-            catch (UnsupportedRequestTypeException)
-            {
-                return true;
-            }
+            IBamClientResponse response = client.ReceiveResponseAsync(request).GetAwaiter().GetResult();
+
+            received.Wait(TimeSpan.FromSeconds(5));
+            listener.Close();
+
+            string receivedString = receivedData != null ? Encoding.UTF8.GetString(receivedData) : "";
+            return new object[] { response.Content, receivedString };
         })
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("UnsupportedRequestTypeException was thrown for UdpClientRequest", b => b);
+            because.TheResult
+                .As<object[]>("response indicates UDP_SENT", r => "UDP_SENT".Equals(r[0]))
+                .As<object[]>("server received data", r => !string.IsNullOrEmpty((string)r[1]))
+                .As<object[]>("received data contains BAM/2.0", r => ((string)r[1]).Contains("BAM/2.0"));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -458,6 +476,63 @@ test body
                 .As<string>("has nonce hash header", raw => raw!.Contains($"{Headers.NonceHash}:"))
                 .As<string>("plaintext body is not present (encrypted)", raw => !raw!.Contains("secure payload"));
             Message.PrintLine($"[TCP Security Headers] Raw request:\n{because.Result}", ConsoleColor.Green);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void UdpRequestIncludesSecurityHeaders()
+    {
+        int udpPort = GetAvailablePort();
+        EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair serverKeyPair = new EccPublicPrivateKeyPair();
+        byte[]? receivedData = null;
+        ManualResetEventSlim received = new ManualResetEventSlim(false);
+
+        After.Setup(reg =>
+        {
+            BamClient client = new BamClient(
+                new JsonObjectDataEncoder(),
+                BamClient.DefaultHttpBaseAddress,
+                BamClient.DefaultTcpBaseAddress,
+                new BamHostBinding("localhost", udpPort));
+            client.SessionState = new ClientSessionState(
+                "udp-session-id",
+                "udp-nonce-value",
+                serverKeyPair.GetEccPublicKey(),
+                clientKeyPair);
+            reg.For<BamClient>().Use(client);
+        })
+        .When<BamClient>("sends UDP request with security headers when SessionState is set", (client) =>
+        {
+            UdpClient listener = new UdpClient(udpPort);
+            Task receiveTask = Task.Run(() =>
+            {
+                IPEndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
+                receivedData = listener.Receive(ref remoteEp);
+                received.Set();
+            });
+
+            IBamClientRequest request = client.CreateUdpRequest("/secure/udp", "secure udp payload");
+            client.ReceiveResponseAsync(request).GetAwaiter().GetResult();
+
+            received.Wait(TimeSpan.FromSeconds(5));
+            listener.Close();
+
+            return receivedData != null ? Encoding.UTF8.GetString(receivedData) : "";
+        })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<string>("has session ID header", raw => raw!.Contains($"{Headers.SessionId}:"))
+                .As<string>("has body signature header", raw => raw!.Contains($"{Headers.BodySignature}:"))
+                .As<string>("has nonce header", raw => raw!.Contains($"{Headers.Nonce}:"))
+                .As<string>("has nonce hash header", raw => raw!.Contains($"{Headers.NonceHash}:"))
+                .As<string>("plaintext body is not present (encrypted)", raw => !raw!.Contains("secure udp payload"));
+            Message.PrintLine($"[UDP Security Headers] Raw request:\n{because.Result}", ConsoleColor.Green);
         })
         .SoBeHappy()
         .UnlessItFailed();

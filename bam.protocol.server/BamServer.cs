@@ -310,32 +310,31 @@ namespace Bam.Protocol.Server
 
         protected internal virtual void HandleTcpRequest(TcpClient client, string requestId)
         {
-            int retryCount = 3;
-            while (client.Connected)
+            try
             {
-                try
-                {
-                    if (retryCount > 0)
-                    {
-                        FireEvent(CreateContextStarted, new BamServerEventArgs(client));
-                        
-                        IBamServerContext serverContext = ServerContextProvider.CreateServerContext(client, requestId);
-                        serverContext.RequestType = RequestType.Tcp;
-                        
-                        BamServerEventArgs args = new BamServerEventArgs(client, serverContext) { Server = this };
-                        InitializeServerContext(serverContext, args);
-                        
-                        FireEvent(CreateContextComplete, new BamServerEventArgs(client, serverContext){Server = this});
-                    }
-                }
-                catch (Exception ex)
-                {
-                    FireEvent(RequestExceptionThrown, new ErrorEventArgs(ex));
-                    Logger.AddEntry("Error processing request (retryCount={0}): {1}", ex, retryCount.ToString(), ex.Message);
-                    Thread.Sleep(30);
-                    --retryCount;
-                }
-            }            
+                FireEvent(CreateContextStarted, new BamServerEventArgs(client));
+
+                IBamServerContext serverContext = ServerContextProvider.CreateServerContext(client, requestId);
+                serverContext.RequestType = RequestType.Tcp;
+
+                BamServerEventArgs args = new BamServerEventArgs(client, serverContext) { Server = this };
+                BamServerInitializationContext initialization = InitializeServerContext(serverContext, args);
+
+                FireEvent(CreateContextComplete, new BamServerEventArgs(client, serverContext){Server = this});
+
+                IBamResponse response = initialization.ServerContext.BamResponse
+                    ?? ResponseProvider.CreateResponse(initialization);
+                response.Send();
+            }
+            catch (Exception ex)
+            {
+                FireEvent(RequestExceptionThrown, new ErrorEventArgs(ex));
+                Logger.AddEntry("Error processing tcp request (CorrelationId={0}): {1}", ex, requestId, ex.Message);
+            }
+            finally
+            {
+                try { client.Close(); } catch { }
+            }
         }
 
         public void Configure(IConfigurer configurer)

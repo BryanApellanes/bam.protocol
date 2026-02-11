@@ -16,7 +16,9 @@ namespace Bam.Protocol.Server
         string RequestId { get; }
         IBamRequest BamRequest { get; }
         IBamResponse BamResponse { get; set; }
-        
+
+        Stream? OutputStream { get; set; }
+
         IServerSessionState ServerSessionState { get; }
         IActor Actor { get; }
         ICommand Command { get; }

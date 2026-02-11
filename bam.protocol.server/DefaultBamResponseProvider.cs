@@ -9,7 +9,8 @@ public class DefaultBamResponseProvider : BamResponseProvider
         this.FailureResponseProviders =
             new Dictionary<RequestType, Func<BamServerInitializationContext, IBamResponse>>()
             {
-                { RequestType.Http, (initialization) => new HttpRequestInitializationFailedResponse(initialization) }
+                { RequestType.Http, (initialization) => new HttpRequestInitializationFailedResponse(initialization) },
+                { RequestType.Tcp, (initialization) => new TcpRequestInitializationFailedResponse(initialization) }
             };
     }
 

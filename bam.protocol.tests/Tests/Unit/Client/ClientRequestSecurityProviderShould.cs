@@ -178,7 +178,7 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
                     clientKeyPair);
 
                 TcpClientRequest tcpRequest = new TcpClientRequest();
-                string encryptedBody = provider.PrepareTcpRequest(tcpRequest, body, sessionState);
+                string encryptedBody = provider.PrepareRequest(tcpRequest, body, sessionState);
 
                 bool hasSessionId = tcpRequest.Headers.ContainsKey(Headers.SessionId);
                 bool hasBodySignature = tcpRequest.Headers.ContainsKey(Headers.BodySignature);

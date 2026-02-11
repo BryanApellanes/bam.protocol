@@ -25,7 +25,7 @@ public class ClientRequestSecurityProvider
         return Convert.ToBase64String(hash);
     }
 
-    public string PrepareTcpRequest(BamClientRequest request, string body, IClientSessionState sessionState)
+    public string PrepareRequest(BamClientRequest request, string body, IClientSessionState sessionState)
     {
         request.Headers ??= new Dictionary<string, string>();
         request.Headers[Headers.SessionId] = sessionState.SessionId;

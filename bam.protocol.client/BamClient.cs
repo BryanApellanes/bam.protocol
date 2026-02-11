@@ -63,7 +63,7 @@ public class BamClient : IBamClient
         {
             { typeof(HttpClientRequest), ReceiveHttpResponseAsync},
             { typeof(TcpClientRequest), ReceiveTcpResponseAsync},
-            
+            { typeof(UdpClientRequest), SendUdpAsync},
         };
     }
 
@@ -186,7 +186,16 @@ public class BamClient : IBamClient
         return new BamClientResponse(response);
     }
 
-    private byte[] CreateRequestData(TcpClientRequest request)
+    public async Task<IBamClientResponse> SendUdpAsync(IBamClientRequest bamRequest)
+    {
+        UdpClientRequest request = (UdpClientRequest)bamRequest;
+        byte[] data = CreateRequestData(request);
+        using UdpClient client = new UdpClient();
+        await client.SendAsync(data, data.Length, UdpBaseAddress.HostName, UdpBaseAddress.Port);
+        return new BamClientResponse("UDP_SENT");
+    }
+
+    private byte[] CreateRequestData(BamClientRequest request)
     {
         StringBuilder data = new StringBuilder();
         data.AppendLine(request.GetRequestLine().ToString());
@@ -200,7 +209,7 @@ public class BamClient : IBamClient
 
         if (SessionState != null && body != null)
         {
-            body = SecurityProvider.PrepareTcpRequest(request, body, SessionState);
+            body = SecurityProvider.PrepareRequest(request, body, SessionState);
         }
 
         if (request.Headers?.Count > 0)
