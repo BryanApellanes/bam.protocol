@@ -33,7 +33,7 @@
 - `BamServerContextInitializer` runs the full pipeline (session → actor → authentication → command → authorization) with before/after hooks
 - `BamRequestProcessor` deserializes `MethodInvocationRequest` JSON and invokes methods reflectively via `ServiceRegistry`
 - `DefaultBamResponseProvider` generates denied (403), read (200), and write (200) responses with status code mapping
-- `ActorResolver` resolves actor identity from session ID
+- `ActorResolver` resolves actor identity from client public key via `IProfileManager` — looks up `ClientPublicKey` from session state, finds matching profile by SHA256 hash, returns `ActorData` with `PersonHandle`/`Name`
 - `AuthorizationCalculator` returns authorization (currently hardcoded to `BamAccess.Write`)
 - `ProfileManager` registers person profiles, creates/gets/finds profiles by handle or public key
 - `KeyManager` retrieves signing (RSA) and encryption (ECC) keys, derives shared AES keys via ECDH
@@ -46,7 +46,7 @@
 - `AuthenticationInitializationHandler` integrates authentication into the server context initializer pipeline
 - `RequestSecurityValidator` provides body signature validation, nonce hash validation, and body decryption
 - `EccSignatureProvider` implements ECC signing via BouncyCastle
-- **69 unit tests pass** (0 failures)
+- **80 unit tests pass** (0 failures)
 
 ## What's Stubbed / Remaining Work
 
@@ -56,7 +56,6 @@
 
 ### Minimal/placeholder implementations
 
-- **`ActorResolver.ResolveActor()`** — maps session ID to actor Handle/Name; no real identity lookup against profiles or accounts
 - **`AuthorizationCalculator.CalculateAuthorization()`** — hardcodes `BamAccess.Write` for all requests; no real permission model
 - **`KeyManager.GenerateRsaKeyPair()`/`GenerateEccKeyPair()`/`GenerateAesKey()`** — return `new` instances (key generation happens in constructors); no persistence of the generated keys
 
@@ -96,12 +95,11 @@
 ## Suggested Next Steps (priority order)
 
 1. **`AuthorizationCalculator`** — currently hardcodes `BamAccess.Write`; needs a real permission model
-2. **`ActorResolver`** — maps session ID to actor Handle/Name but doesn't look up profiles or accounts
-3. **`BamClient<T>.Invoke<TR>()`** — typed RPC stub
+2. **`BamClient<T>.Invoke<TR>()`** — typed RPC stub
 4. **`DeviceRegistrationData` subclasses** — platform-specific device registration
 5. **Integration tests** — full authenticated roundtrip (session start → authentication → method invocation → response)
 6. **`IClientKeySetDataManager` / `IClientKeySource`** — client-side key persistence
 
 ## Bottom Line
 
-The framework is **substantially implemented** — the server listens across 3 transports, the full initialization pipeline runs (including JWT authentication with ECC body signatures, nonce hashing, and AES body decryption), sessions are managed end-to-end, requests are processed via reflective method invocation, profiles and keys are persisted, accounts can be registered, and certificates can be created and loaded. The remaining gaps are: a real authorization model (currently everything gets Write access), real actor resolution from profiles (currently uses session ID as identity), the generic `BamClient<T>.Invoke<TR>()` RPC method, and integration tests proving a full authenticated roundtrip.
+The framework is **substantially implemented** — the server listens across 3 transports, the full initialization pipeline runs (including JWT authentication with ECC body signatures, nonce hashing, and AES body decryption), sessions are managed end-to-end, requests are processed via reflective method invocation, profiles and keys are persisted, accounts can be registered, certificates can be created and loaded, and actor resolution maps client public keys to real profile identities. The remaining gaps are: a real authorization model (currently everything gets Write access), the generic `BamClient<T>.Invoke<TR>()` RPC method, and integration tests proving a full authenticated roundtrip.

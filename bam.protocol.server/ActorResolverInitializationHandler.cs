@@ -13,7 +13,7 @@ public class ActorResolverInitializationHandler: IBamServerContextInitialization
     public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
-        IActor actor = ActorResolver.ResolveActor(context.BamRequest);
+        IActor actor = ActorResolver.ResolveActor(context);
         if (actor == null)
         {
             initialization.CanContinue = false;
