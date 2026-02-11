@@ -1,33 +1,27 @@
-﻿using Bam.Console;
-using Bam.Data.Objects;
-using Bam.DependencyInjection;
+﻿using Bam.Data.Objects;
 using Bam.Encryption;
 using Bam.Test;
 using NSubstitute;
-using Org.BouncyCastle.X509;
-using Bam.Encryption;
 using Bam.Protocol;
 using Bam.Protocol.Data;
 using Bam.Protocol.Profile;
-using Org.BouncyCastle.Asn1.X509;
-using ThirdParty.BouncyCastle.Math;
-using KeyManager = Bam.Protocol.Profile.KeyManager;
 
 namespace Bam.Application.Unit;
 
-[UnitTestMenu("CertificateManager Should", Selector = "cms")]
+[UnitTestMenu("CertificateAuthority Should", Selector = "cas")]
 public class CertificateAuthorityShould : UnitTestMenuContainer
 {
-    public CertificateAuthorityShould()
+    private static CertificateAuthority CreateCertificateAuthority(IActor issuer, IKeyManager keyManager)
     {
-        Configure(svcRegistry =>
-        {
-            svcRegistry.For<IX509NameProvider>().Use<BamX509NameProvider>()
-                .For<ICertificateManager>().Use<CertificateManager>()
-                .For<IKeyManager>().Use<KeyManager>()
-                .For<ICompositeKeyCalculator>().Use<CompositeKeyCalculator>()
-                .For<ICertificateSerialNumberProvider>().Use<CertificateSerialNumberProvider>();
-        });
+        ICertificateManager certManager = Substitute.For<ICertificateManager>();
+        return new CertificateAuthority(
+            issuer,
+            keyManager,
+            certManager,
+            new BamX509NameProvider(),
+            new CompositeKeyCalculator(),
+            new CertificateSerialNumberProvider()
+        );
     }
 
     [UnitTest]
@@ -40,11 +34,13 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
         RsaKeyPair issuerKeyPair = new RsaKeyPair();
         RsaKeyPair subjectKeyPair = new RsaKeyPair();
 
-        ServiceRegistry testRegistry = Configure(svcRegistry => svcRegistry.For<IActor>().UseSingleton(issuer));
-        IX509NameProvider x509NameProvider = testRegistry.Get<IX509NameProvider>();
+        IX509NameProvider x509NameProvider = new BamX509NameProvider();
+
+        IKeyManager keyManager = Substitute.For<IKeyManager>();
+        keyManager.GetSigningKey(issuer).Returns(issuerKeyPair.PrivateKey);
 
         When.A<CertificateAuthority>("generates certificate from options",
-            () => DependencyProvider.Get<CertificateAuthority>(),
+            () => CreateCertificateAuthority(issuer, keyManager),
             (ca) =>
             {
                 GenerateCertificateOptions generationOptions = GenerateCertificateOptions
@@ -74,11 +70,13 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
         RsaKeyPair issuerKeyPair = new RsaKeyPair();
         RsaKeyPair subjectKeyPair = new RsaKeyPair();
 
-        ServiceRegistry testRegistry = Configure(svcRegistry => svcRegistry.For<IActor>().UseSingleton(issuer));
-        IX509NameProvider x509NameProvider = testRegistry.Get<IX509NameProvider>();
+        IX509NameProvider x509NameProvider = new BamX509NameProvider();
+
+        IKeyManager keyManager = Substitute.For<IKeyManager>();
+        keyManager.GetSigningKey(issuer).Returns(issuerKeyPair.PrivateKey);
 
         When.A<CertificateAuthority>("generates a certificate",
-            () => DependencyProvider.Get<CertificateAuthority>(),
+            () => CreateCertificateAuthority(issuer, keyManager),
             (ca) =>
             {
                 GenerateCertificateOptions generationOptions = GenerateCertificateOptions
