@@ -37,7 +37,7 @@ public class DefaultBamResponseProvider : BamResponseProvider
             return this.FailureResponseProviders[initialization.ServerContext.RequestType](initialization);
         }
 
-        return new BamResponse<BamProtocolException>(initialization, GetStatusCode(initialization))
+        return new BamResponse<BamProtocolException>(initialization, GetStatusCode(initialization.Status))
         {
             Content = new BamProtocolException("Request context initialization failed")
         };
@@ -68,9 +68,9 @@ public class DefaultBamResponseProvider : BamResponseProvider
         // Default no-op; can be overridden for logging
     }
 
-    private int GetStatusCode(BamServerInitializationContext initialization)
+    public static int GetStatusCode(InitializationStatus status)
     {
-        switch (initialization.Status)
+        switch (status)
         {
             case InitializationStatus.SessionInitializationFailed:
                 return 419;

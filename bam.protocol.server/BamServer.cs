@@ -31,17 +31,12 @@ namespace Bam.Protocol.Server
             ServerName = options.ServerName;
             HttpHostBinding = options.HttpHostBinding;
             Options = options;
+            _pipeline = new BamRequestPipeline(options);
             Started += (o, a) => Subscribe(Logger);
             Options.SubscribeEventHandlers(this);
         }
 
-        protected Dictionary<RequestType, Func<BamServerInitializationContext>> RequestTypeInitializationInstantiators =
-            new Dictionary<RequestType, Func<BamServerInitializationContext>>()
-            {
-                { RequestType.Http, () => new HttpBamServerInitializationContext() },
-                { RequestType.Tcp, () => new TcpBamServerInitializationContext() },
-                { RequestType.Udp, () => new UdpBamServerInitializationContext() }
-            };
+        private readonly BamRequestPipeline _pipeline;
         
         Encoding _encoding;
         readonly object _encodingLock = new object();
@@ -351,13 +346,7 @@ namespace Bam.Protocol.Server
 
         private BamServerInitializationContext InitializeServerContext(IBamServerContext serverContext, BamServerEventArgs args)
         {
-            IBamServerContextInitializer initializer = Options.GetServerContextInitializer();
-            BamServerInitializationContext initialization =
-                RequestTypeInitializationInstantiators[serverContext.RequestType]();
-            initialization.Server = this;
-            initialization.ServerContext = serverContext;
-            initialization.EventArgs = args;
-            return initializer.InitializeServerContext(initialization);
+            return _pipeline.RunPipeline(serverContext, args, this);
         }
     }
 }
