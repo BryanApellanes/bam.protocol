@@ -27,9 +27,8 @@ public class InvocationRequestShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            TestMethodInvocationRequest result = because.TheResult.As<TestMethodInvocationRequest>();
             because.TheResult.IsNotNull();
-            because.TheResult.Is<TestMethodInvocationRequest>();
+            TestMethodInvocationRequest result = because.TheResult.As<TestMethodInvocationRequest>();
             because.ItsTrue(
                 "result.OperationIdentifier.Equals(\"Bam.Protocol.Tests.TestClass+TestMethod, bam.protocol.tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null\")",
                 result.OperationIdentifier.Equals("Bam.Protocol.Tests.TestClass+TestMethod, bam.protocol.tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"));

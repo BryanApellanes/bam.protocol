@@ -41,7 +41,7 @@ public class BamServerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("server handled request", b => b);
+            because.TheResult.As<bool>("server handled request", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -164,9 +164,7 @@ public class BamServerShould : UnitTestMenuContainer
         .ShouldPass(because =>
         {
             because.TheResult.IsNotNull();
-            because.TheResult.Is<IBamClientResponse>();
             IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
-            because.ItsTrue("response is not null", response != null, "response is null");
             because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
             because.IllLookAtIt(response.Content);
         })

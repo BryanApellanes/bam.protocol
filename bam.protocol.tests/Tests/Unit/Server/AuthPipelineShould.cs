@@ -124,7 +124,7 @@ public class AuthPipelineShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("body signature is valid", b => b);
+            because.TheResult.As<bool>("body signature is valid", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -160,7 +160,7 @@ public class AuthPipelineShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("nonce hash is valid", b => b);
+            because.TheResult.As<bool>("nonce hash is valid", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

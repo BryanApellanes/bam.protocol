@@ -235,7 +235,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("threw InvalidOperationException", b => b);
+            because.TheResult.As<bool>("threw InvalidOperationException", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

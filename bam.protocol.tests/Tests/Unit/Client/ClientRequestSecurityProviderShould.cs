@@ -76,7 +76,7 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("server validated the signature", b => b);
+            because.TheResult.As<bool>("server validated the signature", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -112,7 +112,7 @@ public class ClientRequestSecurityProviderShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("server validated the nonce hash", b => b);
+            because.TheResult.As<bool>("server validated the nonce hash", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

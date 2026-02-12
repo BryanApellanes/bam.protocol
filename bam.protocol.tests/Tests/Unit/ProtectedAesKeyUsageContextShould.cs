@@ -145,7 +145,7 @@ public class ProtectedAesKeyUsageContextShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<int>("returned key length is 32", n => n == 32);
+            because.TheResult.As<int>("returned key length is 32", n => n == 32);
         })
         .SoBeHappy()
         .UnlessItFailed();

@@ -75,7 +75,7 @@ public class BamClientShould : UnitTestMenuContainer
         {
             because.TheResult
                 .IsNotNull()
-                .Is<HttpClientRequest>()
+                .IsOfType<HttpClientRequest>()
                 .As<IBamClientRequest>("Host equals default HTTP address", r => BamClient.DefaultHttpBaseAddress.Equals(r.Host))
                 .As<IBamClientRequest>("Path equals expected", r => httpPath.Equals(r.Path))
                 .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
@@ -101,7 +101,7 @@ public class BamClientShould : UnitTestMenuContainer
         {
             because.TheResult
                 .IsNotNull()
-                .Is<TcpClientRequest>()
+                .IsOfType<TcpClientRequest>()
                 .As<IBamClientRequest>("Host equals default TCP address", r => BamClient.DefaultTcpBaseAddress.Equals(r.Host))
                 .As<IBamClientRequest>("Path equals expected", r => tcpPath.Equals(r.Path))
                 .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
@@ -128,7 +128,7 @@ public class BamClientShould : UnitTestMenuContainer
         {
             because.TheResult
                 .IsNotNull()
-                .Is<UdpClientRequest>()
+                .IsOfType<UdpClientRequest>()
                 .As<IBamClientRequest>("Host equals default UDP address", r => BamClient.DefaultUdpBaseAddress.Equals(r.Host))
                 .As<IBamClientRequest>("Path equals expected", r => udpPath.Equals(r.Path))
                 .As<IBamClientRequest>("QueryString is null or empty", r => string.IsNullOrEmpty(r.QueryString))
@@ -164,9 +164,7 @@ public class BamClientShould : UnitTestMenuContainer
         .ShouldPass(because =>
         {
             because.TheResult.IsNotNull();
-            because.TheResult.Is<IBamClientResponse>();
             IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
-            because.ItsTrue("response is not null", response != null, "response is null");
             because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
             because.IllLookAtIt(response.Content);
         })
@@ -201,9 +199,7 @@ public class BamClientShould : UnitTestMenuContainer
         .ShouldPass(because =>
         {
             because.TheResult.IsNotNull();
-            because.TheResult.Is<IBamClientResponse>();
             IBamClientResponse response = because.TheResult.As<IBamClientResponse>();
-            because.ItsTrue("response is not null", response != null, "response is null");
             because.ItsTrue("status code was 400", response.StatusCode == 400, $"status code was NOT 400 but was {response.StatusCode}");
             because.IllLookAtIt(response.Content);
         })

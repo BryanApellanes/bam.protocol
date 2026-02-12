@@ -161,7 +161,7 @@ test body
         .TheTest
         .ShouldPass(because =>
         {
-            because.TheResult.Is<bool>("TcpClientConnected event was fired", b => b);
+            because.TheResult.As<bool>("TcpClientConnected event was fired", b => b);
         })
         .SoBeHappy()
         .UnlessItFailed();

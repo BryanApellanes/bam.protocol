@@ -119,10 +119,7 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         .It.ShouldPass(because =>
         {
             because.TheResult.IsNotNull();
-            because.TheResult.Is<StartSessionResponse>();
-
             StartSessionResponse response = because.TheResult.As<StartSessionResponse>();
-            if (response == null) return;
 
             because.ItsTrue("SessionId is not null", !string.IsNullOrEmpty(response.SessionId), $"SessionId was null or empty");
             because.ItsTrue("Nonce is not null", !string.IsNullOrEmpty(response.Nonce), $"Nonce was null or empty");
@@ -274,8 +271,6 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         .It
         .ShouldPass(because =>
         {
-            because.TheResult.Is<IServerSessionState>();
-            
             IServerSessionState state = because.TheResult.As<IServerSessionState>();
             because.ItsTrue("there were two keys", state.Keys.Length == 2, $"there were NOT 2 keys instead there were ({state.Keys.Length})");
             because.ItsTrue("there were two values", state.Values.Length == 2, $"there were NOT 2 values instead there were ({state.Values.Length})");
