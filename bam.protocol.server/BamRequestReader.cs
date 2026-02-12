@@ -56,11 +56,11 @@ public class BamRequestReader : Loggable, IBamRequestReader
     
     protected Dictionary<string, string> ReadHeaders(Stream stream)
     {
-        Dictionary<string, string> headers = new Dictionary<string, string>();
+        Dictionary<string, string> headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         string line = ReadLineString(stream);
         while (!string.IsNullOrEmpty(line))
         {
-            string[] split = line.DelimitSplit(":");
+            string[] split = line.DelimitSplit(":", true);
             if (split.Length == 2)
             {
                 headers.Add(split[0].ToLowerInvariant(), split[1]);
@@ -131,7 +131,7 @@ public class BamRequestReader : Loggable, IBamRequestReader
     
     private Dictionary<string, string> ReadHeaders(HttpListenerRequest request)
     {
-        Dictionary<string, string>  result = new Dictionary<string, string>();
+        Dictionary<string, string>  result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (string key in request.Headers.AllKeys)
         {
             result.Add(key, request.Headers[key]);

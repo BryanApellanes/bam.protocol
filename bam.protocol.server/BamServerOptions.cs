@@ -49,7 +49,7 @@ public class BamServerOptions
         {
             if (_tcpPort <= 0 || UseNameBasedPort)
             {
-                _tcpPort = ServerName.ToHashIntBetween(HashAlgorithms.SHA256, 1024, 65535);
+                _tcpPort = ServerName.ToHashIntBetween(HashAlgorithms.SHA256, 1024, 65534);
             }
 
             return _tcpPort;
