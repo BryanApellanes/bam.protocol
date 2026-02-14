@@ -1,7 +1,6 @@
-﻿using Bam;
+using Bam;
 using Bam.Encryption;
 using Bam.Protocol.Data.Profile;
-using Bam.Protocol.Data.Profile.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Protocol.Profile.Registration;
 
@@ -9,13 +8,12 @@ namespace Bam.Protocol.Data;
 
 public class ProfileManager : IProfileManager
 {
-    public ProfileManager(ProfileSchemaRepository repository)
+    public ProfileManager(IProfileRepository repository)
     {
         this.Repository = repository;
-        repository.Initialize();
     }
 
-    protected ProfileSchemaRepository Repository { get; }
+    protected IProfileRepository Repository { get; }
 
     public IProfile RegisterPersonProfile(PersonRegistrationData personRegistrationData)
     {
@@ -34,7 +32,7 @@ public class ProfileManager : IProfileManager
                 : personRegistrationData.Name,
         };
 
-        personData = Repository.Save(personData);
+        personData = Repository.SavePerson(personData);
 
         ProfileData profileData = new ProfileData
         {
@@ -42,7 +40,7 @@ public class ProfileManager : IProfileManager
             Name = personData.Name,
         };
 
-        profileData = Repository.Save(profileData);
+        profileData = Repository.SaveProfile(profileData);
 
         return profileData;
     }
@@ -50,7 +48,7 @@ public class ProfileManager : IProfileManager
     public IProfile CreateProfile()
     {
         ProfileData profileData = new ProfileData();
-        profileData = Repository.Save(profileData);
+        profileData = Repository.SaveProfile(profileData);
         return profileData;
     }
 
@@ -67,10 +65,10 @@ public class ProfileManager : IProfileManager
 
     public IProfile FindProfileByHandle(string handle)
     {
-        ProfileData result = Repository.OneProfileDataWhere(c => c.ProfileHandle == handle);
+        ProfileData result = Repository.FindProfileByHandle(handle);
         if (result == null)
         {
-            result = Repository.OneProfileDataWhere(c => c.PersonHandle == handle);
+            result = Repository.FindProfileByPersonHandle(handle);
         }
 
         return result;
@@ -83,7 +81,7 @@ public class ProfileManager : IProfileManager
 
     public IProfile FindProfileByPublicKey(string publicKeyPemSha)
     {
-        IEnumerable<PublicKeySetData> keySets = Repository.PublicKeySetDatasWhere(c => c.Id > 0);
+        IEnumerable<PublicKeySetData> keySets = Repository.GetAllPublicKeySets();
         foreach (PublicKeySetData keySet in keySets)
         {
             if ((!string.IsNullOrEmpty(keySet.PublicRsaKey) && keySet.PublicRsaKey.Sha256() == publicKeyPemSha) ||

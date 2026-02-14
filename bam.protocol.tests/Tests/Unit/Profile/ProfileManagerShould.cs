@@ -1,9 +1,11 @@
-using Bam.Data.SQLite;
+using Bam.Data.Dynamic.Objects;
+using Bam.Data.Objects;
+using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
-using Bam.Protocol.Data.Profile.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Protocol.Profile.Registration;
+using Bam.Storage;
 using Bam.Test;
 
 namespace Bam.Protocol.Tests.Unit.Profile;
@@ -11,12 +13,26 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 [UnitTestMenu("ProfileManager Should", Selector = "pms")]
 public class ProfileManagerShould : UnitTestMenuContainer
 {
-    private static ProfileSchemaRepository CreateRepository(string testName)
+    private static IProfileRepository CreateRepository(string testName)
     {
-        return new ProfileSchemaRepository()
-        {
-            Database = new SQLiteDatabase(new FileInfo($"./.bam/tests/{testName}.sqlite"))
-        };
+        string rootPath = $"./.bam/tests/{testName}";
+        AesKey aesKey = new AesKey();
+        ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
+        IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();
+        IObjectDataLocatorFactory locatorFactory = new ObjectDataLocatorFactory(identityCalculator);
+        IObjectEncoderDecoder encoderDecoder = new JsonObjectDataEncoder();
+        IObjectDataFactory factory = new ObjectDataFactory(locatorFactory, encoderDecoder);
+        IRootStorageHolder rootStorage = new RootStorageHolder(rootPath);
+        IObjectDataStorageManager storageManager = new EncryptedFsObjectDataStorageManager(rootStorage, factory, new AesEncryptor(aesKey), new AesDecryptor(aesKey));
+        IObjectDataWriter writer = new ObjectDataWriter(factory, storageManager);
+        IObjectDataReader reader = new ObjectDataReader(storageManager);
+        IObjectDataIndexer indexer = new ObjectDataIndexer(storageManager, compositeKeyCalculator);
+        IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
+        IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
+        IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
+        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        ObjectDataRepository repo = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
+        return new EncryptedProfileRepository(repo);
     }
 
     [UnitTest]

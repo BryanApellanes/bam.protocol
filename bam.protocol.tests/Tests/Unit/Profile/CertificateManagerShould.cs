@@ -1,10 +1,10 @@
+using Bam.Data.Dynamic.Objects;
 using Bam.Data.Objects;
-using Bam.Data.SQLite;
 using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
-using Bam.Protocol.Data.Profile.Dao.Repository;
 using Bam.Protocol.Profile;
+using Bam.Storage;
 using Bam.Test;
 using NSubstitute;
 using Org.BouncyCastle.X509;
@@ -14,14 +14,26 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 [UnitTestMenu("CertificateManager Should", Selector = "certms")]
 public class CertificateManagerShould : UnitTestMenuContainer
 {
-    private static ProfileSchemaRepository CreateRepository(string testName)
+    private static IProfileRepository CreateRepository(string testName)
     {
-        ProfileSchemaRepository repo = new ProfileSchemaRepository()
-        {
-            Database = new SQLiteDatabase(new FileInfo($"./.bam/tests/{testName}.sqlite"))
-        };
-        repo.Initialize();
-        return repo;
+        string rootPath = $"./.bam/tests/{testName}";
+        AesKey aesKey = new AesKey();
+        ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
+        IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();
+        IObjectDataLocatorFactory locatorFactory = new ObjectDataLocatorFactory(identityCalculator);
+        IObjectEncoderDecoder encoderDecoder = new JsonObjectDataEncoder();
+        IObjectDataFactory factory = new ObjectDataFactory(locatorFactory, encoderDecoder);
+        IRootStorageHolder rootStorage = new RootStorageHolder(rootPath);
+        IObjectDataStorageManager storageManager = new EncryptedFsObjectDataStorageManager(rootStorage, factory, new AesEncryptor(aesKey), new AesDecryptor(aesKey));
+        IObjectDataWriter writer = new ObjectDataWriter(factory, storageManager);
+        IObjectDataReader reader = new ObjectDataReader(storageManager);
+        IObjectDataIndexer indexer = new ObjectDataIndexer(storageManager, compositeKeyCalculator);
+        IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
+        IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
+        IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
+        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        ObjectDataRepository repo = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
+        return new EncryptedProfileRepository(repo);
     }
 
     private static CertificateAuthority CreateCertificateAuthority(
@@ -54,8 +66,8 @@ public class CertificateManagerShould : UnitTestMenuContainer
         When.A<CertificateManager>("creates a root CA certificate",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(CreateRootCACertificate));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(CreateRootCACertificate));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "rootCaActor",
                     PublicRsaKey = issuerKeyPair.PublicPem,
@@ -96,8 +108,8 @@ public class CertificateManagerShould : UnitTestMenuContainer
         When.A<CertificateManager>("creates then loads a root CA certificate",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(CreateAndLoadRootCACertificate));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(CreateAndLoadRootCACertificate));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "loadCaActor",
                     PublicRsaKey = issuerKeyPair.PublicPem,
@@ -148,8 +160,8 @@ public class CertificateManagerShould : UnitTestMenuContainer
         When.A<CertificateManager>("creates a signed certificate",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(CreateSignedCertificate));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(CreateSignedCertificate));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "signedActor",
                     PublicRsaKey = subjectKeyPair.PublicPem,
@@ -182,7 +194,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
         When.A<CertificateManager>("returns null for unknown actor",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(LoadReturnsNullWhenNoCertificateExists));
+                IProfileRepository repo = CreateRepository(nameof(LoadReturnsNullWhenNoCertificateExists));
                 return new CertificateManager(repo, null!);
             },
             (certManager) =>
@@ -207,7 +219,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
         When.A<CertificateManager>("throws when actor has no RSA key",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(ThrowsWhenActorHasNoPublicKey));
+                IProfileRepository repo = CreateRepository(nameof(ThrowsWhenActorHasNoPublicKey));
 
                 IActor issuer = Substitute.For<IActor>();
                 issuer.Handle.Returns("noKeyIssuer");

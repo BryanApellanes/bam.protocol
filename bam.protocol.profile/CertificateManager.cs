@@ -1,7 +1,6 @@
-﻿using Bam.Encryption;
+using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
-using Bam.Protocol.Data.Profile.Dao.Repository;
 using Bam.Protocol.Profile;
 using Org.BouncyCastle.X509;
 
@@ -9,24 +8,24 @@ namespace Bam.Protocol;
 
 public class CertificateManager : ICertificateManager
 {
-    public CertificateManager(ProfileSchemaRepository repository, CertificateAuthority certificateAuthority)
+    public CertificateManager(IProfileRepository repository, CertificateAuthority certificateAuthority)
     {
         this.Repository = repository;
         this.CertificateAuthority = certificateAuthority;
     }
 
-    protected ProfileSchemaRepository Repository { get; }
+    protected IProfileRepository Repository { get; }
     protected CertificateAuthority CertificateAuthority { get; }
 
     public X509Certificate LoadRootCACertificate(IActor actor)
     {
-        AgentCertificateData agentCert = Repository.OneAgentCertificateDataWhere(c => c.AgentHandle == actor.Handle);
+        AgentCertificateData agentCert = Repository.FindAgentCertificateByHandle(actor.Handle);
         if (agentCert == null)
         {
             return null;
         }
 
-        CertificateData certData = Repository.OneCertificateDataWhere(c => c.Hash == agentCert.CertificateHash);
+        CertificateData certData = Repository.FindCertificateByHash(agentCert.CertificateHash);
         if (certData == null)
         {
             return null;
@@ -51,7 +50,7 @@ public class CertificateManager : ICertificateManager
 
     private string GetOrCreatePublicKey(IActor actor)
     {
-        PublicKeySetData keySet = Repository.OnePublicKeySetDataWhere(c => c.KeySetHandle == actor.Handle);
+        PublicKeySetData keySet = Repository.FindPublicKeySetByHandle(actor.Handle);
         if (keySet != null && !string.IsNullOrEmpty(keySet.PublicRsaKey))
         {
             return keySet.PublicRsaKey;
@@ -71,7 +70,7 @@ public class CertificateManager : ICertificateManager
             Hash = hash,
             HashAlgorithm = "SHA256",
         };
-        Repository.Save(certData);
+        Repository.SaveCertificate(certData);
 
         AgentCertificateData agentCert = new AgentCertificateData
         {
@@ -79,7 +78,7 @@ public class CertificateManager : ICertificateManager
             CertificateHash = hash,
             CertificateHashAlgorithm = "SHA256",
         };
-        Repository.Save(agentCert);
+        Repository.SaveAgentCertificate(agentCert);
 
         return certificate;
     }

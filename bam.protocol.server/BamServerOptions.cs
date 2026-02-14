@@ -104,6 +104,7 @@ public class BamServerOptions
     {
         ServerEventHandlers = new BamServerEventHandlers();
         RequestEventHandlers = new BamRequestEventHandlers();
+        ComponentRegistry.AddEncryptedProfileRepository("./.bam/profile");
         ComponentRegistry
             .For<ITcpIPAddressProvider>().UseSingleton(new BamTcpIPAddressProvider(IPAddress.Any))
             .For<IUdpIPAddressProvider>().UseSingleton(new BamUdpIPAddressProvider(IPAddress.Any))

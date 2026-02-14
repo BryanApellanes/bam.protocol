@@ -1,9 +1,11 @@
 using System.Text;
-using Bam.Data.SQLite;
+using Bam.Data.Dynamic.Objects;
+using Bam.Data.Objects;
 using Bam.Encryption;
+using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
-using Bam.Protocol.Data.Profile.Dao.Repository;
 using Bam.Protocol.Profile;
+using Bam.Storage;
 using Bam.Test;
 using NSubstitute;
 using Org.BouncyCastle.Crypto;
@@ -13,14 +15,26 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 [UnitTestMenu("KeyManager Should", Selector = "kms")]
 public class KeyManagerShould : UnitTestMenuContainer
 {
-    private static ProfileSchemaRepository CreateRepository(string testName)
+    private static IProfileRepository CreateRepository(string testName)
     {
-        ProfileSchemaRepository repo = new ProfileSchemaRepository()
-        {
-            Database = new SQLiteDatabase(new FileInfo($"./.bam/tests/{testName}.sqlite"))
-        };
-        repo.Initialize();
-        return repo;
+        string rootPath = $"./.bam/tests/{testName}";
+        AesKey aesKey = new AesKey();
+        ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
+        IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();
+        IObjectDataLocatorFactory locatorFactory = new ObjectDataLocatorFactory(identityCalculator);
+        IObjectEncoderDecoder encoderDecoder = new JsonObjectDataEncoder();
+        IObjectDataFactory factory = new ObjectDataFactory(locatorFactory, encoderDecoder);
+        IRootStorageHolder rootStorage = new RootStorageHolder(rootPath);
+        IObjectDataStorageManager storageManager = new EncryptedFsObjectDataStorageManager(rootStorage, factory, new AesEncryptor(aesKey), new AesDecryptor(aesKey));
+        IObjectDataWriter writer = new ObjectDataWriter(factory, storageManager);
+        IObjectDataReader reader = new ObjectDataReader(storageManager);
+        IObjectDataIndexer indexer = new ObjectDataIndexer(storageManager, compositeKeyCalculator);
+        IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
+        IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
+        IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
+        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        ObjectDataRepository repo = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
+        return new EncryptedProfileRepository(repo);
     }
 
     [UnitTest]
@@ -101,8 +115,8 @@ public class KeyManagerShould : UnitTestMenuContainer
         When.A<KeyManager>("retrieves signing key for actor",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(GetSigningKey));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(GetSigningKey));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "signingActor",
                     PublicRsaKey = rsaKeyPair.PublicKeyPem,
@@ -138,8 +152,8 @@ public class KeyManagerShould : UnitTestMenuContainer
         When.A<KeyManager>("retrieves encryption key for actor",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(GetEncryptionKey));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(GetEncryptionKey));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "encryptionActor",
                     PublicEccKey = eccKeyPair.PublicKeyPem,
@@ -182,13 +196,13 @@ public class KeyManagerShould : UnitTestMenuContainer
         When.A<KeyManager>("generates shared AES key between two actors",
             () =>
             {
-                ProfileSchemaRepository repo = CreateRepository(nameof(GenerateSharedAesKey));
-                repo.Save(new PublicKeySetData
+                IProfileRepository repo = CreateRepository(nameof(GenerateSharedAesKey));
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "fromActor",
                     PublicEccKey = fromPublicPem,
                 });
-                repo.Save(new PublicKeySetData
+                repo.SavePublicKeySet(new PublicKeySetData
                 {
                     KeySetHandle = "toActor",
                     PublicEccKey = toPublicPem,
