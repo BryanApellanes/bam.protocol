@@ -22,6 +22,6 @@ public class AgentData : RepoData, IActor, IAgent, IHasHandle
     [JsonIgnore]
     public virtual ProcessDescriptorData ProcessDescriptorData { get; set; }
     
-    public string Handle { get; }
-    public string Name { get; }
+    public string Handle { get; set; }
+    public string Name { get; set; }
 }

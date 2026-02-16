@@ -34,5 +34,5 @@ public class ProfileData : KeyedAuditRepoData, IProfile
     public bool ShowEmail { get; set; }
     public bool ShowPhone { get; set; }
     public string MailingAddressHandles { get; set; }
-    public string DeviceHandle { get; }
+    public string DeviceHandle { get; set; }
 }

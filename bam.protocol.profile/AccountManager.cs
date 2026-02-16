@@ -36,4 +36,31 @@ public class AccountManager : IAccountManager
             PersonHandle = profile.PersonHandle,
         };
     }
+
+    public AccountData RegisterAccountWithDevice(PersonRegistrationData personData, DeviceRegistrationData deviceData)
+    {
+        IProfile profile = ProfileManager.RegisterPersonProfile(personData);
+
+        IProfile updatedProfile = ProfileManager.RegisterDeviceProfile(deviceData, profile.PersonHandle);
+
+        AgentRegistrationData agentRegistrationData = new AgentRegistrationData
+        {
+            Name = $"{profile.Name}@{deviceData.Name ?? Environment.MachineName}",
+            PersonHandle = profile.PersonHandle,
+            DeviceHandle = updatedProfile?.DeviceHandle,
+        };
+        ProfileManager.RegisterAgent(agentRegistrationData);
+
+        ServerAccountData serverAccountData = new ServerAccountData
+        {
+            Issuer = ServerName,
+            ProfileHandle = profile.ProfileHandle,
+        };
+        ServerSessionRepository.Save(serverAccountData);
+
+        return new AccountData
+        {
+            PersonHandle = profile.PersonHandle,
+        };
+    }
 }

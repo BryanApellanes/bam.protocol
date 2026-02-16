@@ -22,9 +22,9 @@ In addition to data types, the project defines key service interfaces: `IProfile
 | `IGroup` | Group with `Name`, `Description`, and associated `PersonDatas`. |
 | `IMachine` | Machine with `Name`, `DnsName`, `HostAddresses`, and `NetworkInterfaces`. |
 | `IProfile` | Profile: `ProfileHandle`, `Name`, privacy toggles, `DeviceHandle`, `PersonHandle`. |
-| `IProfileRepository` | Repository interface for CRUD on profiles, persons, public key sets, certificates, and agent certificates. |
-| `IProfileManager` | High-level profile management: registration, lookup by handle, lookup by public key. |
-| `IAccountManager` | Account registration from person registration data. |
+| `IProfileRepository` | Repository interface for CRUD on profiles, persons, devices, organizations, agents, public key sets, certificates, and agent certificates. |
+| `IProfileManager` | High-level profile management: registration of persons, devices, organizations, and agents; lookup by handle or public key. |
+| `IAccountManager` | Account registration from person registration data; combined person+device registration via `RegisterAccountWithDevice`. |
 | `IKeyManager` | Key generation (RSA, ECC, AES) and actor key retrieval (signing + encryption). |
 | `ICertificateManager` | X.509 certificate creation (root CA, signed) and loading. |
 | `IApplicationKeySet` | Marker for application-scoped key sets with `ApplicationName`. |
@@ -46,7 +46,9 @@ In addition to data types, the project defines key service interfaces: `IProfile
 | `PublicKeySetData` | Public RSA and ECC keys with a `KeySetHandle`. |
 | `PersonData` | Person POCO implementing `IPerson`. |
 | `PersonRegistrationData` | Registration DTO for new person profiles. |
-| `DeviceRegistrationData` | Abstract registration DTO for device registration. |
+| `DeviceRegistrationData` | Registration DTO for device registration with handle, name, and device type. |
+| `OrganizationRegistrationData` | Registration DTO for organizations with handle and name. |
+| `AgentRegistrationData` | Registration DTO for agents binding a person to a device. |
 | `KeySetFile` | File-based key set persistence in `~/.bam/data/`. |
 | `MachineInfo` | Simple `IMachine` implementation. |
 
@@ -122,8 +124,24 @@ DeviceData device = new DeviceData(initialize: true);
 // device.ProcessDescriptorData is set to ProcessDescriptorData.Current
 ```
 
+## Registration Chain
+
+The protocol defines a natural identity hierarchy for registration:
+
+```
+1. Person       → the human identity (name, email, phone)
+2. Device       → the machine a person uses (auto-detected OS type)
+3. Agent        → the software process (Person + Device binding)
+4. Organization → a group of people
+```
+
+Registration flows:
+- **Person**: `IProfileManager.RegisterPersonProfile()` creates a `PersonData` and associated `ProfileData`.
+- **Device**: `IProfileManager.RegisterDeviceProfile()` creates a `DeviceData` (auto-detecting `DeviceType` from the OS if not specified) and links it to an existing profile via `DeviceHandle`.
+- **Agent**: `IProfileManager.RegisterAgent()` creates an `AgentData` binding a person and device together.
+- **Organization**: `IProfileManager.RegisterOrganization()` creates an `OrganizationData`.
+- **Combined**: `IAccountManager.RegisterAccountWithDevice()` performs person + device + agent registration in a single call.
+
 ## Known Gaps / Not Yet Implemented
 
-- **`DeviceRegistrationData` TODO** -- Contains a comment: "TODO: set this using OSInfo.Current for Windows, Mac and Linux. For android or iOS use specific class definitions from within those platform client apps." The `DeviceType` property defaults to `DeviceTypes.Invalid` and requires platform-specific subclasses.
 - **`InboxData` and `OutboxData` are stubs** -- These classes contain only an `AccountDataId` foreign key and an `AccountData` navigation property with no additional fields or behavior, suggesting a messaging feature that is not yet implemented.
-- **`DeviceRegistrationData.InitializeAsync()` is abstract** -- Declared but has no concrete implementations in this project; platform-specific subclasses must provide implementations.

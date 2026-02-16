@@ -7,5 +7,5 @@ namespace Bam.Protocol;
 public interface IAccountManager
 {
     AccountData RegisterAccount(PersonRegistrationData data);
-    
+    AccountData RegisterAccountWithDevice(PersonRegistrationData personData, DeviceRegistrationData deviceData);
 }

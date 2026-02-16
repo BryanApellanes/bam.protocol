@@ -1,5 +1,6 @@
 using Bam.Data.Objects;
 using Bam.Protocol.Data;
+using Bam.Protocol.Data.Common;
 using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol.Profile;
@@ -36,6 +37,36 @@ public class EncryptedProfileRepository : IProfileRepository
     public PersonData FindPersonByHandle(string handle)
     {
         return Repository.Query<PersonData>(p => p.Handle == handle).FirstOrDefault();
+    }
+
+    public DeviceData SaveDevice(DeviceData deviceData)
+    {
+        return Repository.Create(deviceData);
+    }
+
+    public DeviceData FindDeviceByHandle(string handle)
+    {
+        return Repository.Query<DeviceData>(d => d.Handle == handle).FirstOrDefault();
+    }
+
+    public OrganizationData SaveOrganization(OrganizationData organizationData)
+    {
+        return Repository.Create(organizationData);
+    }
+
+    public OrganizationData FindOrganizationByHandle(string handle)
+    {
+        return Repository.Query<OrganizationData>(o => o.Handle == handle).FirstOrDefault();
+    }
+
+    public AgentData SaveAgent(AgentData agentData)
+    {
+        return Repository.Create(agentData);
+    }
+
+    public AgentData FindAgentByHandle(string handle)
+    {
+        return Repository.Query<AgentData>(a => a.Handle == handle).FirstOrDefault();
     }
 
     public PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData)

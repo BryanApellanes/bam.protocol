@@ -28,8 +28,10 @@ public class DeviceData : MachineData, IDevice, IHasHandle
         {
             base.Initialize();
             this.ProcessDescriptorData = ProcessDescriptorData.Current;
-            this.Handle = Guid.NewGuid().ToString();
-            this.DeviceType = DeviceTypes.Invalid;
+            if (string.IsNullOrEmpty(_handle))
+            {
+                this.Handle = Guid.NewGuid().ToString();
+            }
             this.IsInitialized = true;
         }
     }

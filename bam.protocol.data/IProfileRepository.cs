@@ -1,3 +1,4 @@
+using Bam.Protocol.Data.Common;
 using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol.Data;
@@ -10,6 +11,15 @@ public interface IProfileRepository
 
     PersonData SavePerson(PersonData personData);
     PersonData FindPersonByHandle(string handle);
+
+    DeviceData SaveDevice(DeviceData deviceData);
+    DeviceData FindDeviceByHandle(string handle);
+
+    OrganizationData SaveOrganization(OrganizationData organizationData);
+    OrganizationData FindOrganizationByHandle(string handle);
+
+    AgentData SaveAgent(AgentData agentData);
+    AgentData FindAgentByHandle(string handle);
 
     PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData);
     PublicKeySetData FindPublicKeySetByHandle(string keySetHandle);

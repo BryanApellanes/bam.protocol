@@ -14,14 +14,14 @@ X.509 certificate generation is handled by `CertificateAuthority`, which extends
 
 | Class / Interface | Description |
 |---|---|
-| `ProfileManager` | Implements `IProfileManager`: registers person profiles, creates profiles, looks up by handle or public key SHA. |
+| `ProfileManager` | Implements `IProfileManager`: registers persons, devices, organizations, and agents; creates profiles; looks up by handle or public key SHA. |
 | `Profile` | Simple POCO implementing `IProfile` with handle, name, privacy toggles, device/person handles. |
-| `AccountManager` | Implements `IAccountManager`: registers accounts by creating a profile then saving a `ServerAccountData` record. |
+| `AccountManager` | Implements `IAccountManager`: registers accounts by creating a profile then saving a `ServerAccountData` record; supports combined person+device+agent registration via `RegisterAccountWithDevice`. |
 | `KeyManager` | Implements `IKeyManager`: generates RSA/ECC/AES keys, retrieves actor signing and encryption private keys, derives shared AES keys via ECDH. |
 | `CertificateManager` | Implements `ICertificateManager`: creates root CA and signed X.509 certificates, loads certificates from repository, persists cert + agent-cert associations. |
 | `CertificateAuthority` | Extends `CertificateIssuer`: creates X.509 certificates with configurable options, issuer name, subject name, and key material. |
 | `PrivateKeyManager` | Implements `IPrivateKeyManager`: generates RSA/ECC private keys and stores them in opaque encrypted filesystem storage keyed by public key SHA. |
-| `EncryptedProfileRepository` | Implements `IProfileRepository`: encrypted CRUD for profiles, persons, public key sets, certificates, and agent certificates using `ObjectDataRepository`. |
+| `EncryptedProfileRepository` | Implements `IProfileRepository`: encrypted CRUD for profiles, persons, devices, organizations, agents, public key sets, certificates, and agent certificates using `ObjectDataRepository`. |
 | `ProfileRepositoryServiceRegistration` | Static extension `AddEncryptedProfileRepository` that registers all encrypted profile storage dependencies into a `ServiceRegistry`. |
 | `GenerateCertificateOptions` | Configuration object for certificate generation (issuer name, subject name, keys). |
 | `IX509NameProvider` | Interface for constructing `X509Name` from actor or string subject. |
@@ -68,14 +68,43 @@ IProfile profile = profileManager.RegisterPersonProfile(new PersonRegistrationDa
     Phone = "555-0123"
 });
 
-// Register an account
-IAccountManager accountManager = serviceRegistry.Get<IAccountManager>();
-AccountData account = accountManager.RegisterAccount(new PersonRegistrationData
+// Register a device and link it to the person's profile
+IProfile updatedProfile = profileManager.RegisterDeviceProfile(new DeviceRegistrationData
 {
-    FirstName = "Alice",
-    LastName = "Smith",
-    Email = "alice@example.com"
+    Name = "Alice's Laptop",
+    DeviceType = DeviceTypes.DesktopWindows
+}, profile.PersonHandle);
+
+// Register an agent (binds person + device)
+AgentData agent = profileManager.RegisterAgent(new AgentRegistrationData
+{
+    Name = "Alice@Laptop",
+    PersonHandle = profile.PersonHandle,
+    DeviceHandle = updatedProfile.DeviceHandle
 });
+
+// Register an organization
+OrganizationData org = profileManager.RegisterOrganization(new OrganizationRegistrationData
+{
+    Handle = "acme",
+    Name = "Acme Corp"
+});
+
+// Or do person + device + agent registration in one call
+IAccountManager accountManager = serviceRegistry.Get<IAccountManager>();
+AccountData account = accountManager.RegisterAccountWithDevice(
+    new PersonRegistrationData
+    {
+        FirstName = "Alice",
+        LastName = "Smith",
+        Email = "alice@example.com"
+    },
+    new DeviceRegistrationData
+    {
+        Name = "Alice's Laptop",
+        DeviceType = DeviceTypes.DesktopWindows
+    }
+);
 ```
 
 ### Managing cryptographic keys

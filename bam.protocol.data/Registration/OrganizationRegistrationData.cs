@@ -2,9 +2,8 @@
 
 namespace Bam.Protocol.Profile.Registration;
 
-public class DeviceRegistrationData : RepoData
+public class OrganizationRegistrationData : RepoData
 {
     public string Handle { get; set; }
     public string Name { get; set; }
-    public DeviceTypes DeviceType { get; set; }
 }
