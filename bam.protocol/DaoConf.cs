@@ -7,25 +7,28 @@ using System.Configuration;
 
 namespace Bam.Server
 {
+    /// <summary>
+    /// Represents DAO configuration, including the connection name and registrar caller for database registration.
+    /// </summary>
     public class DaoConf
     {
         /// <summary>
-        /// Get a DaoConf with default settings (uses SQLite)
+        /// Gets a DaoConf with default settings (uses SQLite), deriving the connection name from the specified DAO type.
         /// </summary>
-        /// <param name="daoType"></param>
-        /// <param name="bryanConf"></param>
-        /// <returns></returns>
+        /// <param name="daoType">The DAO type to derive the connection name from.</param>
+        /// <param name="contentRoot">The content root directory for resolving the SQLite database path.</param>
+        /// <returns>A new <see cref="DaoConf"/> configured for SQLite.</returns>
         public static DaoConf GetDefault(Type daoType, string contentRoot)
         {
             return GetDefault(Dao.ConnectionName(daoType), contentRoot);
         }
 
         /// <summary>
-        /// Get a DaoConf with default settings (uses SQLite)
+        /// Gets a DaoConf with default settings (uses SQLite) for the specified connection name.
         /// </summary>
-        /// <param name="connectionName"></param>
-        /// <param name="bryanConf"></param>
-        /// <returns></returns>
+        /// <param name="connectionName">The database connection name.</param>
+        /// <param name="contentRoot">The content root directory for resolving the SQLite database path.</param>
+        /// <returns>A new <see cref="DaoConf"/> configured for SQLite.</returns>
         public static DaoConf GetDefault(string connectionName, string contentRoot)
         {
             SQLiteConnectionStringResolver connResolver = new SQLiteConnectionStringResolver()
@@ -66,6 +69,10 @@ namespace Bam.Server
             RegistrarCallerInstance.Register(ConnectionName);
         }
 
+        /// <summary>
+        /// Returns a string representation of this DAO configuration.
+        /// </summary>
+        /// <returns>A string containing the connection name and registrar caller.</returns>
         public override string ToString()
         {
             return $"DaoConf::{ConnectionName}::{RegistrarCaller}";

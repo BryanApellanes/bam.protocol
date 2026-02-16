@@ -11,18 +11,39 @@ using Bam.Server;
 
 namespace Bam.Protocol.Server
 {
+    /// <summary>
+    /// The main BAM protocol server that listens for HTTP, TCP, and UDP requests and processes them through an initialization pipeline.
+    /// </summary>
     public class BamServer: Loggable, IAsyncManagedServer, IConfigurable, IDisposable
     {
         private bool _stopRequested;
         
+        /// <summary>
+        /// The default HTTP port.
+        /// </summary>
         public const int DefaultHttpPort = 8080;
+
+        /// <summary>
+        /// The default TCP port.
+        /// </summary>
         public const int DefaultTcpPort = 8413;
+
+        /// <summary>
+        /// The default UDP port.
+        /// </summary>
         public const int DefaultUdpPort = 8414;
-        
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BamServer"/> class with default options.
+        /// </summary>
         public BamServer() : this(new BamServerOptions())
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BamServer"/> class with the specified options.
+        /// </summary>
+        /// <param name="options">The server options.</param>
         public BamServer(BamServerOptions options)
         {
             Logger = options.Logger;
@@ -41,6 +62,9 @@ namespace Bam.Protocol.Server
         Encoding _encoding;
         readonly object _encodingLock = new object();
 
+        /// <summary>
+        /// Gets or sets the text encoding used for request and response serialization. Defaults to UTF-8.
+        /// </summary>
         public Encoding Encoding
         {
             get
@@ -62,75 +86,147 @@ namespace Bam.Protocol.Server
         protected IServerSessionManager ServerSessionManager => CommunicationHandler.ServerSessionManager;
         protected IAuthorizationCalculator AuthorizationCalculator => CommunicationHandler.AuthorizationCalculator;
         protected IBamRequestProcessor RequestProcessor => CommunicationHandler.RequestProcessor;
-        public IObjectEncoderDecoder ObjectEncoderDecoder => CommunicationHandler.ObjectEncoderDecoder;  
+        /// <summary>
+        /// Gets the object encoder/decoder used for serializing and deserializing request/response content.
+        /// </summary>
+        public IObjectEncoderDecoder ObjectEncoderDecoder => CommunicationHandler.ObjectEncoderDecoder;
+
         /// <summary>
         /// Gets or sets the name of this server to aid in identifying the process in logs.
         /// </summary>
         public string ServerName { get; set; }
 
+        /// <summary>
+        /// Gets the HTTP host binding for this server.
+        /// </summary>
         public HostBinding HttpHostBinding { get; }
-        
+
+        /// <summary>
+        /// Gets or sets the TCP port number.
+        /// </summary>
         public int TcpPort
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets the TCP IP address from the TCP IP address provider.
+        /// </summary>
         public IPAddress TcpIPAddress => TcpIpAddressProvider.GetTcpIPAddress();
 
+        /// <summary>
+        /// Gets the UDP IP address from the UDP IP address provider.
+        /// </summary>
         public IPAddress UdpIPAddress => UdpIpAddressProvider.GetUdpIPAddress();
 
+        /// <summary>
+        /// Gets or sets the UDP port number.
+        /// </summary>
         public int UdpPort
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets the required property names for configuration validation.
+        /// </summary>
         public string[] RequiredProperties => [nameof(TcpPort)];
 
+        /// <summary>
+        /// Gets or sets the message from the last exception that occurred.
+        /// </summary>
         public string LastExceptionMessage
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Occurs when the server is about to start.
+        /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Started")]
         public event EventHandler<BamServerEventArgs> Starting;
 
+        /// <summary>
+        /// Occurs when the server has started successfully.
+        /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Started")]
         public event EventHandler<BamServerEventArgs> Started;
 
+        /// <summary>
+        /// Occurs when the server is about to stop.
+        /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Stopping")]
-        public event EventHandler<BamServerEventArgs> Stopping;        
-        
+        public event EventHandler<BamServerEventArgs> Stopping;
+
+        /// <summary>
+        /// Occurs when the server has stopped.
+        /// </summary>
 		[Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Stopped")]
         public event EventHandler<BamServerEventArgs> Stopped;
 
+        /// <summary>
+        /// Occurs when an exception is thrown during server listener startup.
+        /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
         public event EventHandler StartExceptionThrown;
 
+        /// <summary>
+        /// Occurs when an exception is thrown while processing a request.
+        /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
         public event EventHandler RequestExceptionThrown;
-        
+
+        /// <summary>
+        /// Occurs when an exception is thrown during the overall server start operation.
+        /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
         public event EventHandler ServerStartException;
 
+        /// <summary>
+        /// Occurs when an HTTP request is received.
+        /// </summary>
         public event EventHandler HttpRequestReceived;
         
+        /// <summary>
+        /// Occurs when a TCP client connects to the server.
+        /// </summary>
         [Verbosity(LogEventType.Information,
             SenderMessageFormat =
                 "Client Connected: LocalEndpoint={LocalEndpoint}, RemoteEndpoint={RemoteEndpoint}")]
         public event EventHandler<BamServerEventArgs> TcpClientConnected;
 
-        public event EventHandler<BamServerEventArgs> UdpDataReceived; 
+        /// <summary>
+        /// Occurs when UDP data is received.
+        /// </summary>
+        public event EventHandler<BamServerEventArgs> UdpDataReceived;
 
+        /// <summary>
+        /// Occurs when server context creation starts for a request.
+        /// </summary>
         public event EventHandler<BamServerEventArgs> CreateContextStarted;
-        public event EventHandler<BamServerEventArgs> CreateContextComplete; 
-        
+
+        /// <summary>
+        /// Occurs when server context creation completes for a request.
+        /// </summary>
+        public event EventHandler<BamServerEventArgs> CreateContextComplete;
+
+        /// <summary>
+        /// Occurs when server context initialization starts for a request.
+        /// </summary>
         public event EventHandler<BamServerEventArgs> InitializeContextStarted;
-        
+
+        /// <summary>
+        /// Occurs when server context initialization completes for a request.
+        /// </summary>
         public event EventHandler<BamServerEventArgs> InitializeContextComplete;
 
+        /// <summary>
+        /// Gets an informational snapshot of this server's configuration.
+        /// </summary>
+        /// <returns>A <see cref="BamServerInfo"/> containing the server's current configuration.</returns>
         public BamServerInfo GetInfo()
         {
             BamServerInfo info = new BamServerInfo();
@@ -140,11 +236,17 @@ namespace Bam.Protocol.Server
             return info;
         }
         
+        /// <summary>
+        /// Disposes of the server by attempting to stop it.
+        /// </summary>
         public void Dispose()
         {
             TryStop();
         }
 
+        /// <summary>
+        /// Stops the server and all listeners (HTTP, TCP, UDP).
+        /// </summary>
         public void Stop()
         {
             FireEvent(Stopping);
@@ -155,6 +257,9 @@ namespace Bam.Protocol.Server
             FireEvent(Stopped);
         }
 
+        /// <summary>
+        /// Attempts to stop the server, logging any exceptions.
+        /// </summary>
         public void TryStop()
         {
             try
@@ -167,21 +272,36 @@ namespace Bam.Protocol.Server
             }
         }
 
+        /// <summary>
+        /// Stops the server asynchronously.
+        /// </summary>
+        /// <returns>A task representing the asynchronous stop operation.</returns>
         public Task StopAsync()
         {
             return Task.Run(Stop);
         }
 
+        /// <summary>
+        /// Attempts to stop the server asynchronously, swallowing any exceptions.
+        /// </summary>
+        /// <returns>A task representing the asynchronous try-stop operation.</returns>
         public Task TryStopAsync()
         {
             return Task.Run(TryStop);
         }
         
+        /// <summary>
+        /// Starts the server asynchronously.
+        /// </summary>
+        /// <returns>A task representing the asynchronous start operation.</returns>
         public Task StartAsync()
         {
             return Task.Run(Start);
         }
         
+        /// <summary>
+        /// Starts the server, initializing HTTP, TCP, and UDP listeners.
+        /// </summary>
         public void Start()
         {
             try
@@ -332,12 +452,20 @@ namespace Bam.Protocol.Server
             }
         }
 
+        /// <summary>
+        /// Configures this server using the specified configurer.
+        /// </summary>
+        /// <param name="configurer">The configurer to apply.</param>
         public void Configure(IConfigurer configurer)
         {
             configurer.Configure(this);
             this.CheckRequiredProperties();
         }
 
+        /// <summary>
+        /// Configures this server by copying properties from the specified configuration object.
+        /// </summary>
+        /// <param name="configuration">The configuration object to copy properties from.</param>
         public void Configure(object configuration)
         {
             this.CopyProperties(configuration);

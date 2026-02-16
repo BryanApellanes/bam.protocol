@@ -2,8 +2,15 @@ using Bam.Protocol;
 
 namespace Bam.Server
 {
+    /// <summary>
+    /// A host binding that derives its port from the managed server's name.
+    /// </summary>
     public class ManagedServerHostBinding : HostBinding
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ManagedServerHostBinding"/> class for the specified server.
+        /// </summary>
+        /// <param name="server">The managed server to bind to.</param>
         public ManagedServerHostBinding(IManagedServer server)
         {
             this.Server = server;
@@ -39,6 +46,9 @@ namespace Bam.Server
             set => _serverName = value;
         }
 
+        /// <summary>
+        /// Gets or sets the port, always derived from the server name.
+        /// </summary>
         public override int Port
         {
             get => ServerName.GetUnprivilegedPortForName();

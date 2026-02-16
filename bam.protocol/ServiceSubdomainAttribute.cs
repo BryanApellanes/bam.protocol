@@ -20,6 +20,7 @@
         /// Gets the subdomain value.
         /// </summary>
         public string Subdomain { get; }
+        /// <inheritdoc />
         public override bool Equals(object? obj)
         {
             if (obj is ServiceSubdomainAttribute a)
@@ -28,6 +29,8 @@
             }
             return false;
         }
+
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return Subdomain.ToSha1Int();

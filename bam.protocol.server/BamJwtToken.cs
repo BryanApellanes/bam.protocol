@@ -5,8 +5,18 @@ using Org.BouncyCastle.Security;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Represents a BAM JWT token for session-based authentication using ECDSA signatures.
+/// </summary>
 public class BamJwtToken
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BamJwtToken"/> class.
+    /// </summary>
+    /// <param name="sessionId">The session identifier.</param>
+    /// <param name="actorHandle">The actor handle (subject).</param>
+    /// <param name="issuer">The token issuer.</param>
+    /// <param name="expiry">The token lifetime. Defaults to one hour.</param>
     public BamJwtToken(string sessionId, string actorHandle, string issuer, TimeSpan? expiry = null)
     {
         SessionId = sessionId;
@@ -16,12 +26,36 @@ public class BamJwtToken
         Expiry = IssuedAt + (expiry ?? TimeSpan.FromHours(1));
     }
 
+    /// <summary>
+    /// Gets or sets the session identifier.
+    /// </summary>
     public string SessionId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the actor handle (subject claim).
+    /// </summary>
     public string ActorHandle { get; set; }
+
+    /// <summary>
+    /// Gets or sets the token issuer.
+    /// </summary>
     public string Issuer { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time at which the token was issued.
+    /// </summary>
     public DateTimeOffset IssuedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the token expiration time.
+    /// </summary>
     public DateTimeOffset Expiry { get; set; }
 
+    /// <summary>
+    /// Encodes this token as a signed JWT string using the specified private key.
+    /// </summary>
+    /// <param name="privateKey">The ECDSA private key to sign the token with.</param>
+    /// <returns>The encoded JWT string.</returns>
     public string Encode(AsymmetricKeyParameter privateKey)
     {
         string header = Base64UrlEncode(JsonSerializer.Serialize(new { alg = "ES256", typ = "JWT" }));
@@ -46,6 +80,11 @@ public class BamJwtToken
         return $"{header}.{payload}.{signature}";
     }
 
+    /// <summary>
+    /// Decodes a JWT string into a <see cref="BamJwtToken"/> without verifying the signature.
+    /// </summary>
+    /// <param name="token">The JWT string to decode.</param>
+    /// <returns>The decoded token.</returns>
     public static BamJwtToken Decode(string token)
     {
         string[] parts = token.Split('.');
@@ -71,6 +110,12 @@ public class BamJwtToken
         };
     }
 
+    /// <summary>
+    /// Verifies the signature of a JWT string using the specified public key.
+    /// </summary>
+    /// <param name="token">The JWT string to verify.</param>
+    /// <param name="publicKey">The ECDSA public key to verify the signature against.</param>
+    /// <returns>True if the signature is valid; otherwise false.</returns>
     public static bool Verify(string token, AsymmetricKeyParameter publicKey)
     {
         string[] parts = token.Split('.');

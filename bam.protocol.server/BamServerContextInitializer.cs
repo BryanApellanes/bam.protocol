@@ -2,8 +2,19 @@
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Orchestrates the server context initialization pipeline, running session, actor, authentication, command, and authorization handlers in sequence.
+/// </summary>
 public class BamServerContextInitializer : Loggable, IBamServerContextInitializer
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BamServerContextInitializer"/> class with the required initialization handlers.
+    /// </summary>
+    /// <param name="actorResolverInitializationHandler">The actor resolver initialization handler.</param>
+    /// <param name="authorizationCalculatorInitializationHandler">The authorization calculator initialization handler.</param>
+    /// <param name="serverSessionInitializationHandler">The server session initialization handler.</param>
+    /// <param name="commandInitializationHandler">The command initialization handler.</param>
+    /// <param name="authenticationInitializationHandler">The authentication initialization handler.</param>
     public BamServerContextInitializer(ActorResolverInitializationHandler actorResolverInitializationHandler, AuthorizationCalculatorInitializationHandler authorizationCalculatorInitializationHandler,
         ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler,
         AuthenticationInitializationHandler authenticationInitializationHandler)
@@ -18,29 +29,86 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     protected HashSet<IBamServerContextInitializationHandler> BeforeInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
     protected HashSet<IBamServerContextInitializationHandler> AfterInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
     
+    /// <summary>
+    /// Occurs when session state resolution starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveSessionStateStarted;
+
+    /// <summary>
+    /// Occurs when session state resolution completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveSessionStateComplete;
-    
+
+    /// <summary>
+    /// Occurs when actor resolution starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveActorStarted;
+
+    /// <summary>
+    /// Occurs when actor resolution completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveActorComplete;
-    
+
+    /// <summary>
+    /// Occurs when request authentication starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AuthenticateRequestStarted;
+
+    /// <summary>
+    /// Occurs when request authentication completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AuthenticateRequestComplete;
 
+    /// <summary>
+    /// Occurs when command resolution starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveCommandStarted;
+
+    /// <summary>
+    /// Occurs when command resolution completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> ResolveCommandComplete;
 
+    /// <summary>
+    /// Occurs when request authorization starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AuthorizeRequestStarted;
+
+    /// <summary>
+    /// Occurs when request authorization completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AuthorizeRequestComplete;
-    
+
+    /// <summary>
+    /// Occurs when the before-initialization phase starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> BeforeInitializationStarted;
+
+    /// <summary>
+    /// Occurs when the before-initialization phase completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> BeforeInitializationComplete;
-    
+
+    /// <summary>
+    /// Occurs when the after-initialization phase starts.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AfterInitializationStarted;
+
+    /// <summary>
+    /// Occurs when the after-initialization phase completes.
+    /// </summary>
     public event EventHandler<BamServerEventArgs> AfterInitializationComplete;
-    
+
+    /// <summary>
+    /// Occurs when an exception is thrown during initialization.
+    /// </summary>
     public event EventHandler<InitializationExceptionEventArgs>? InitializationException;
     
+    /// <summary>
+    /// Runs the full initialization pipeline for the specified server context.
+    /// </summary>
+    /// <param name="initialization">The initialization context to process.</param>
+    /// <returns>The fully processed initialization context.</returns>
     public BamServerInitializationContext InitializeServerContext(BamServerInitializationContext initialization)
     {
         IBamServerContext serverContext = initialization.ServerContext;
@@ -137,12 +205,22 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
+    /// <summary>
+    /// Adds a handler to run before the main initialization steps.
+    /// </summary>
+    /// <param name="handler">The handler to add.</param>
+    /// <returns>This initializer for fluent chaining.</returns>
     public IBamServerContextInitializer AddBeforeInitializationHandler(IBamServerContextInitializationHandler handler)
     {
         BeforeInitializationHandlers.Add(handler);
         return this;
     }
 
+    /// <summary>
+    /// Adds a handler to run after the main initialization steps.
+    /// </summary>
+    /// <param name="handler">The handler to add.</param>
+    /// <returns>This initializer for fluent chaining.</returns>
     public IBamServerContextInitializer AddAfterInitializationHandler(IBamServerContextInitializationHandler handler)
     {
         AfterInitializationHandlers.Add(handler);

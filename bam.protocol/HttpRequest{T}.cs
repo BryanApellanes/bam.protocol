@@ -8,6 +8,9 @@
     {
         TContent content;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpRequest{TContent}"/> class with default settings.
+        /// </summary>
         public HttpRequest():base()
         {
         }

@@ -8,6 +8,9 @@ using Bam.Protocol;
 
 namespace Bam.Server
 {
+    /// <summary>
+    /// Represents a network host binding, consisting of a hostname, port, and SSL setting.
+    /// </summary>
     public class HostBinding
     {
         /// <summary>
@@ -60,12 +63,14 @@ namespace Bam.Server
         /// </summary>
         public bool Ssl { get; set; }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             string protocol = Ssl ? "https://" : "http://";
             return $"{protocol}{HostName}:{Port}";
         }
 
+        /// <inheritdoc />
         public override bool Equals(object? obj)
         {
             if (obj is HostBinding compareTo)
@@ -76,6 +81,7 @@ namespace Bam.Server
             return false;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return ToString().ToSha1Int();

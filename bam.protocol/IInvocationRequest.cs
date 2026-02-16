@@ -1,5 +1,8 @@
 ﻿namespace Bam.Protocol;
 
+/// <summary>
+/// Defines an invocation request containing operation identifier, serialized context, and arguments.
+/// </summary>
 public interface IInvocationRequest
 {
     /// <summary>

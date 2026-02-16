@@ -2,8 +2,15 @@
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Handles session initialization during server context setup, including session creation and validation.
+/// </summary>
 public class ServerSessionInitializationHandler : IBamServerContextInitializationHandler
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ServerSessionInitializationHandler"/> class.
+    /// </summary>
+    /// <param name="sessionManager">The session manager for session operations.</param>
     public ServerSessionInitializationHandler(IServerSessionManager sessionManager)
     {
         this.SessionManager = sessionManager;
@@ -11,6 +18,11 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
 
     protected IServerSessionManager SessionManager { get; }
 
+    /// <summary>
+    /// Handles the initialization step by resolving or creating a session for the current request.
+    /// </summary>
+    /// <param name="initialization">The initialization context to process.</param>
+    /// <returns>The updated initialization context.</returns>
     public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;

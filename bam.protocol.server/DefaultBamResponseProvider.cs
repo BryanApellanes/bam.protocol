@@ -1,7 +1,15 @@
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Default response provider that creates responses based on initialization status and access level, executing commands for successful requests.
+/// </summary>
 public class DefaultBamResponseProvider : BamResponseProvider
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultBamResponseProvider"/> class.
+    /// </summary>
+    /// <param name="authorizationCalculator">The authorization calculator.</param>
+    /// <param name="requestProcessor">The request processor for executing commands.</param>
     public DefaultBamResponseProvider(IAuthorizationCalculator authorizationCalculator, IBamRequestProcessor requestProcessor)
         : base(authorizationCalculator)
     {
@@ -43,18 +51,33 @@ public class DefaultBamResponseProvider : BamResponseProvider
         };
     }
 
+    /// <summary>
+    /// Creates a response for a write access request by processing the request context.
+    /// </summary>
+    /// <param name="serverContext">The server context for the write request.</param>
+    /// <returns>The write response.</returns>
     public override IBamResponse CreateWriteResponse(IBamServerContext serverContext)
     {
         object result = RequestProcessor.ProcessRequestContext(serverContext);
         return new BamResponse<object>(_currentInitialization, 200) { Content = result };
     }
 
+    /// <summary>
+    /// Creates a response for a read access request by processing the request context.
+    /// </summary>
+    /// <param name="serverContext">The server context for the read request.</param>
+    /// <returns>The read response.</returns>
     public override IBamResponse CreateReadResponse(IBamServerContext serverContext)
     {
         object result = RequestProcessor.ProcessRequestContext(serverContext);
         return new BamResponse<object>(_currentInitialization, 200) { Content = result };
     }
 
+    /// <summary>
+    /// Creates a 403 response for a denied access request.
+    /// </summary>
+    /// <param name="serverContext">The server context for the denied request.</param>
+    /// <returns>The denied response.</returns>
     public override IBamResponse CreateDeniedResponse(IBamServerContext serverContext)
     {
         return new BamResponse<object>(_currentInitialization, 403)
@@ -63,11 +86,20 @@ public class DefaultBamResponseProvider : BamResponseProvider
         };
     }
 
+    /// <summary>
+    /// Logs when access is denied. Default implementation is a no-op.
+    /// </summary>
+    /// <param name="serverContext">The server context for the denied request.</param>
     public override void LogAccessDenied(IBamServerContext serverContext)
     {
         // Default no-op; can be overridden for logging
     }
 
+    /// <summary>
+    /// Maps an initialization status to an HTTP status code.
+    /// </summary>
+    /// <param name="status">The initialization status.</param>
+    /// <returns>The corresponding HTTP status code.</returns>
     public static int GetStatusCode(InitializationStatus status)
     {
         switch (status)

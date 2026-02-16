@@ -2,8 +2,16 @@ using Bam.Logging;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Resolves commands from BAM requests by parsing method invocation request content.
+/// </summary>
 public class CommandResolver : Loggable, ICommandResolver
 {
+    /// <summary>
+    /// Resolves the command from the request content by deserializing it as a method invocation request.
+    /// </summary>
+    /// <param name="request">The BAM request to resolve a command from.</param>
+    /// <returns>The resolved command, or null if the content is empty or cannot be parsed.</returns>
     public ICommand ResolveCommand(IBamRequest request)
     {
         string content = request.Content;

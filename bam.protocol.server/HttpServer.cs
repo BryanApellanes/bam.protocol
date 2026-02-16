@@ -8,6 +8,9 @@ using System.Collections.Concurrent;
 
 namespace Bam.Server
 {
+    /// <summary>
+    /// An HTTP server that listens on specified host bindings and dispatches requests to a handler delegate.
+    /// </summary>
     public class HttpServer : IDisposable
     {
         private static readonly ConcurrentDictionary<HostBinding, HttpServer> _listening = new ConcurrentDictionary<HostBinding, HttpServer>();
@@ -15,6 +18,11 @@ namespace Bam.Server
         private readonly Thread _handlerThread;
         private readonly ILogger _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpServer"/> class with the specified request handler.
+        /// </summary>
+        /// <param name="requestHandler">The delegate invoked for each incoming HTTP request.</param>
+        /// <param name="logger">An optional logger. Defaults to <see cref="Log.Default"/>.</param>
         public HttpServer(Action<HttpListenerContext> requestHandler, ILogger? logger = null)
         {
             _logger = logger ?? Log.Default;
@@ -28,6 +36,9 @@ namespace Bam.Server
         }
 
         HashSet<HostBinding> _hostPrefixes;
+        /// <summary>
+        /// Gets or sets the host binding prefixes this server listens on.
+        /// </summary>
         public HostBinding[] HostPrefixes
         {
             get => _hostPrefixes.ToArray();
@@ -45,17 +56,29 @@ namespace Bam.Server
             set;
         }
 
+        /// <summary>
+        /// Starts the server using the configured host prefixes.
+        /// </summary>
         public void Start()
         {
             Start(HostPrefixes);
         }
 
+        /// <summary>
+        /// Starts the server on the specified host prefixes.
+        /// </summary>
+        /// <param name="hostPrefixes">The host bindings to listen on.</param>
         public void Start(params HostBinding[] hostPrefixes)
         {
             Start(Usurped, hostPrefixes);
         }
 
         static object _startLock = new object();
+        /// <summary>
+        /// Starts the server on the specified host prefixes, optionally stopping other servers on the same bindings.
+        /// </summary>
+        /// <param name="usurped">If true, stops other HttpServers already listening on the same bindings.</param>
+        /// <param name="hostPrefixes">The host bindings to listen on.</param>
         public void Start(bool usurped, params HostBinding[] hostPrefixes)
         {
             if (hostPrefixes.Length == 0)
@@ -99,18 +122,30 @@ namespace Bam.Server
             _listener.Prefixes.Add(path);
         }
 
+        /// <summary>
+        /// Disposes of the server and stops listening.
+        /// </summary>
         public void Dispose()
         {
             IsDisposed = true;
             Stop();
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this server has been disposed.
+        /// </summary>
         public bool IsDisposed { get; private set; }
 
+        /// <summary>
+        /// Gets a value indicating whether the underlying listener is actively listening for connections.
+        /// </summary>
         public bool IsListening => _listener.IsListening;
 
         private bool _stopping;
         private object _stopLock = new object();
+        /// <summary>
+        /// Stops the HTTP server and releases all associated resources.
+        /// </summary>
         public void Stop()
         {
             lock (_stopLock)
@@ -169,6 +204,9 @@ namespace Bam.Server
             }
         }
 
+        /// <summary>
+        /// The delegate invoked to process each incoming HTTP listener context request.
+        /// </summary>
         public Action<HttpListenerContext> ProcessHttpContextListenerRequest;
     }
 }

@@ -1,5 +1,8 @@
 ﻿namespace Bam.Protocol
 {
+    /// <summary>
+    /// Implements a secret exchange for securely sharing secrets between server and client.
+    /// </summary>
     public class SecretExchange : ISecretExchange
     {
         /// <inheritdoc />

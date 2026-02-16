@@ -6,6 +6,10 @@
 public class InvocationContextSerializer : IInvocationContextSerializer
 {
     Dictionary<string, IInvocationContextSerializer> serializers = new Dictionary<string, IInvocationContextSerializer>();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InvocationContextSerializer"/> class with JSON as the default format.
+    /// </summary>
     public InvocationContextSerializer()
     {
         this.SetFormat("json");

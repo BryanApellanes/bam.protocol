@@ -3,10 +3,17 @@ using System.Reflection;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Calculates authorization by comparing the actor's access level against the required access for the resolved command.
+/// </summary>
 public class AuthorizationCalculator : IAuthorizationCalculator
 {
     private static readonly ConcurrentDictionary<string, Type> TypeCache = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthorizationCalculator"/> class.
+    /// </summary>
+    /// <param name="accessLevelProvider">The access level provider for determining actor access.</param>
     public AuthorizationCalculator(IAccessLevelProvider accessLevelProvider)
     {
         AccessLevelProvider = accessLevelProvider;
@@ -14,6 +21,11 @@ public class AuthorizationCalculator : IAuthorizationCalculator
 
     private IAccessLevelProvider AccessLevelProvider { get; }
 
+    /// <summary>
+    /// Calculates the authorization for the specified server context by comparing the actor's access level against the command's required access.
+    /// </summary>
+    /// <param name="serverContext">The server context to authorize.</param>
+    /// <returns>The authorization calculation result.</returns>
     public IAuthorizationCalculation CalculateAuthorization(IBamServerContext serverContext)
     {
         ICommand command = serverContext.Command;

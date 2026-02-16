@@ -5,8 +5,15 @@ using Bam.Web;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Default authenticator that verifies JWT tokens, body signatures, and nonce hashes for BAM requests.
+/// </summary>
 public class BamAuthenticator : IAuthenticator
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BamAuthenticator"/> class.
+    /// </summary>
+    /// <param name="profileManager">The profile manager for looking up actor profiles.</param>
     public BamAuthenticator(IProfileManager profileManager)
     {
         ProfileManager = profileManager;
@@ -16,6 +23,11 @@ public class BamAuthenticator : IAuthenticator
     protected IProfileManager ProfileManager { get; set; }
     protected RequestSecurityValidator SecurityValidator { get; set; }
 
+    /// <summary>
+    /// Authenticates the specified server context by verifying the JWT token, body signature, and nonce hash.
+    /// </summary>
+    /// <param name="serverContext">The server context to authenticate.</param>
+    /// <returns>The authentication result indicating success or failure with diagnostic messages.</returns>
     public BamAuthentication Authenticate(IBamServerContext serverContext)
     {
         IBamRequest request = serverContext.BamRequest;

@@ -10,8 +10,14 @@ using Bam.Services;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Configuration options for a <see cref="BamServer"/>, including ports, IP addresses, service registrations, and event handlers.
+/// </summary>
 public class BamServerOptions
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BamServerOptions"/> class with default settings.
+    /// </summary>
     public BamServerOptions()
     {
         this.ComponentRegistry = new ServiceRegistry();
@@ -27,22 +33,50 @@ public class BamServerOptions
         this.HttpHostBinding = new HostBinding(HttpPort);
     }
     
+    /// <summary>
+    /// Gets or sets the service registry for dependency injection.
+    /// </summary>
     public ServiceRegistry ComponentRegistry { get; set; }
+
+    /// <summary>
+    /// Gets or sets the server event handlers.
+    /// </summary>
     public BamServerEventHandlers ServerEventHandlers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the request event handlers.
+    /// </summary>
     public BamRequestEventHandlers RequestEventHandlers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the HTTP host binding.
+    /// </summary>
     public HostBinding HttpHostBinding { get; set; }
-    
+
+    /// <summary>
+    /// Gets or sets the buffer size for reading requests.
+    /// </summary>
     public int RequestBufferSize { get; set; }
-    
+
+    /// <summary>
+    /// Gets or sets the logger for server operations.
+    /// </summary>
     public ILogger? Logger { get; set; }
 
     private int _tcpPort;
 
+    /// <summary>
+    /// Gets or sets the HTTP port number.
+    /// </summary>
     public int HttpPort
     {
         get;
         set;
     }
+
+    /// <summary>
+    /// Gets or sets the TCP port number. When UseNameBasedPort is true, the port is derived from the server name.
+    /// </summary>
     public int TcpPort
     {
         get
@@ -58,6 +92,9 @@ public class BamServerOptions
     }
 
     private IPAddress? _tcpIpAddress;
+    /// <summary>
+    /// Gets or sets the TCP IP address. Setting this also updates the TCP IP address provider in the component registry.
+    /// </summary>
     public IPAddress? TcpIPAddress
     {
         get => _tcpIpAddress;
@@ -69,6 +106,9 @@ public class BamServerOptions
     }
 
     private int _udpPort;
+    /// <summary>
+    /// Gets or sets the UDP port number. Defaults to TcpPort + 1 when not explicitly set or when UseNameBasedPort is true.
+    /// </summary>
     public int UdpPort
     {
         get
@@ -84,6 +124,9 @@ public class BamServerOptions
     }
 
     private IPAddress _udpIpAddress;
+    /// <summary>
+    /// Gets or sets the UDP IP address. Setting this also updates the UDP IP address provider in the component registry.
+    /// </summary>
     public IPAddress UdpIPAddress
     {
         get => _udpIpAddress;
@@ -93,6 +136,9 @@ public class BamServerOptions
             ComponentRegistry.For<IUdpIPAddressProvider>().UseSingleton(new BamUdpIPAddressProvider(_udpIpAddress));
         }
     }
+    /// <summary>
+    /// Gets or sets the server name for identification.
+    /// </summary>
     public string ServerName { get; set; }
 
     /// <summary>
@@ -132,6 +178,10 @@ public class BamServerOptions
             .For<IBamServerContextInitializer>().Use<BamServerContextInitializer>();
     }
 
+    /// <summary>
+    /// Subscribes both server and request event handlers to the specified server instance.
+    /// </summary>
+    /// <param name="server">The server to subscribe event handlers to.</param>
     public void SubscribeEventHandlers(object server)
     {
         if (ServerEventHandlers.HasHandlers)
@@ -145,17 +195,30 @@ public class BamServerOptions
         }
     }
 
+    /// <summary>
+    /// Subscribes server lifecycle event handlers to the specified server instance.
+    /// </summary>
+    /// <param name="server">The server to subscribe server event handlers to.</param>
     public void SubscribeServerEventHandlers(object server)
     {
         ServerEventHandlers.ListenTo(server);
     }
 
+    /// <summary>
+    /// Subscribes request processing event handlers to the specified server instance.
+    /// </summary>
+    /// <param name="server">The server to subscribe request event handlers to.</param>
     public void SubscribeRequestEventHandlers(object server)
     {
         RequestEventHandlers.ListenTo(server);
     }
     
     private ICommunicationHandler? _communicationHandler;
+    /// <summary>
+    /// Gets the communication handler, resolving it from the component registry if not already initialized.
+    /// </summary>
+    /// <param name="reinit">If true, forces re-resolution of the communication handler.</param>
+    /// <returns>The communication handler instance, or null if not resolved.</returns>
     public virtual ICommunicationHandler? GetCommunicationHandler(bool reinit = false)
     {
         if (_communicationHandler == null || reinit)
@@ -166,6 +229,11 @@ public class BamServerOptions
         return _communicationHandler;
     }
 
+    /// <summary>
+    /// Configures group access settings using the provided configuration action.
+    /// </summary>
+    /// <param name="configure">The action to configure group access.</param>
+    /// <returns>This instance for fluent chaining.</returns>
     public BamServerOptions ConfigureGroupAccess(Action<IGroupAccessConfiguration> configure)
     {
         IGroupAccessConfiguration config = ComponentRegistry.Get<IGroupAccessConfiguration>();
@@ -173,6 +241,10 @@ public class BamServerOptions
         return this;
     }
 
+    /// <summary>
+    /// Gets the server context initializer from the component registry.
+    /// </summary>
+    /// <returns>The server context initializer.</returns>
     public IBamServerContextInitializer GetServerContextInitializer()
     {
         return ComponentRegistry.Get<IBamServerContextInitializer>();

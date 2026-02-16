@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Bam.Protocol
 {
+    /// <summary>
+    /// Represents an HTTP request that carries a method invocation payload.
+    /// </summary>
     public class MethodInvocationHttpRequest
     {
     }

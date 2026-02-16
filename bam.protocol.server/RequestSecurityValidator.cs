@@ -6,8 +6,16 @@ using Org.BouncyCastle.Security;
 
 namespace Bam.Protocol.Server;
 
+/// <summary>
+/// Validates request security including body signatures, nonce hashes, and body decryption.
+/// </summary>
 public class RequestSecurityValidator
 {
+    /// <summary>
+    /// Validates the body signature of the request using the client's public key from session state.
+    /// </summary>
+    /// <param name="context">The server context containing the request to validate.</param>
+    /// <returns>True if the body signature is valid; otherwise false.</returns>
     public bool ValidateBodySignature(IBamServerContext context)
     {
         IBamRequest request = context.BamRequest;
@@ -43,6 +51,11 @@ public class RequestSecurityValidator
         }
     }
 
+    /// <summary>
+    /// Validates the nonce hash of the request by computing HMAC-SHA256 of the body with the nonce.
+    /// </summary>
+    /// <param name="context">The server context containing the request to validate.</param>
+    /// <returns>True if the nonce hash is valid; otherwise false.</returns>
     public bool ValidateNonceHash(IBamServerContext context)
     {
         IBamRequest request = context.BamRequest;
@@ -71,6 +84,11 @@ public class RequestSecurityValidator
         }
     }
 
+    /// <summary>
+    /// Decrypts the request body using the session's derived AES key.
+    /// </summary>
+    /// <param name="context">The server context containing the encrypted request body.</param>
+    /// <returns>The decrypted body string, or null if decryption fails.</returns>
     public string DecryptBody(IBamServerContext context)
     {
         using AesKey aesKey = DeriveSessionAesKey(context.ServerSessionState);
@@ -89,6 +107,11 @@ public class RequestSecurityValidator
         }
     }
 
+    /// <summary>
+    /// Derives an AES key from the server's private key and the client's public key stored in session state.
+    /// </summary>
+    /// <param name="state">The session state containing the key material.</param>
+    /// <returns>The derived AES key, or null if keys are not available.</returns>
     public AesKey DeriveSessionAesKey(IServerSessionState state)
     {
         string serverPrivateKeyPem = state.Get<string>("ServerPrivateKey");

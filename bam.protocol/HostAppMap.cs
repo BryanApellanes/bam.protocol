@@ -17,11 +17,13 @@
         /// </summary>
         public string AppName { get; set; }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return this.GetHashCode(Host, AppName);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             if (obj is HostAppMap hostMapping)
@@ -32,11 +34,17 @@
             return false;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return $"Host={Host}, AppName={AppName}";
         }
 
+        /// <summary>
+        /// Loads an array of <see cref="HostAppMap"/> instances from a JSON file, removing duplicates.
+        /// </summary>
+        /// <param name="filePath">The path to the JSON file.</param>
+        /// <returns>An array of unique <see cref="HostAppMap"/> instances.</returns>
         public static HostAppMap[] Load(string filePath)
         {
             return new HashSet<HostAppMap>(filePath.FromJsonFile<HostAppMap[]>()).ToArray();
