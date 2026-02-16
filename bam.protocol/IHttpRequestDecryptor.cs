@@ -2,10 +2,19 @@
 
 namespace Bam.Protocol
 {
+    /// <summary>
+    /// Defines a component that decrypts encrypted HTTP requests.
+    /// </summary>
     public interface IHttpRequestDecryptor
     {
+        /// <summary>
+        /// Gets the decryptor used for the content body.
+        /// </summary>
         IDecryptor ContentDecryptor { get; }
 
+        /// <summary>
+        /// Gets the header decryptor used for cipher headers.
+        /// </summary>
         IHttpRequestHeaderDecryptor HeaderDecryptor { get; }
 
         /// <summary>

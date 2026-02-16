@@ -2,6 +2,9 @@ using System.Text;
 
 namespace Bam.Protocol;
 
+/// <summary>
+/// Provides extension methods for byte array operations.
+/// </summary>
 public static class ByteExtensions
 {
     /// <summary>
@@ -9,7 +12,7 @@ public static class ByteExtensions
     /// </summary>
     /// <param name="buffer">The buffer whose end the values are returned from.</param>
     /// <param name="count">The number of bytes to return.</param>
-    /// <returns></returns>
+    /// <returns>A byte array containing the last <paramref name="count"/> bytes, or an empty array if the buffer is too short.</returns>
     public static byte[] PeekBack(this byte[] buffer, int count)
     {
         if (buffer.Length < count)
@@ -33,7 +36,7 @@ public static class ByteExtensions
     /// <param name="buffer">The buffer whose end is compared.</param>
     /// <param name="valueToCheck">The value to compare to the end of the buffer.</param>
     /// <param name="encoding">The encoding used to read the tail of the buffer.</param>
-    /// <returns></returns>
+    /// <returns>True if the end of the buffer matches the specified value; otherwise, false.</returns>
     public static bool TailEquals(this byte[] buffer, string valueToCheck, Encoding encoding = null)
     {
         encoding = encoding ?? Encoding.ASCII;

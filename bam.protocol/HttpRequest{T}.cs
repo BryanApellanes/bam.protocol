@@ -1,5 +1,9 @@
 ﻿namespace Bam.Encryption
 {
+    /// <summary>
+    /// Represents a strongly-typed HTTP request that automatically serializes and deserializes the content body as JSON.
+    /// </summary>
+    /// <typeparam name="TContent">The type of the request body content.</typeparam>
     public class HttpRequest<TContent> : HttpRequest, IHttpRequest<TContent>
     {
         TContent content;
@@ -8,6 +12,9 @@
         {
         }
 
+        /// <summary>
+        /// Gets or sets the strongly-typed content. Getting deserializes from JSON if needed; setting serializes to JSON.
+        /// </summary>
         public TContent TypedContent
         {
             get
@@ -25,6 +32,10 @@
             }
         }
 
+        /// <summary>
+        /// Copies all properties from the specified typed request to this instance.
+        /// </summary>
+        /// <param name="request">The typed request to copy from.</param>
         public void Copy(IHttpRequest<TContent> request)
         {
             this.Uri = request.Uri;

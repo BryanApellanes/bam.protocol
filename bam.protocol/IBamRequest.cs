@@ -7,13 +7,29 @@ using System.Net;
 
 namespace Bam.Protocol.Server
 {
+    /// <summary>
+    /// Defines the properties of a server-side HTTP request.
+    /// </summary>
     public interface IBamRequest
     {
+        /// <summary>
+        /// Gets the protocol version string (e.g., "HTTP/1.1").
+        /// </summary>
         string ProtocolVersion { get; }
+
+        /// <summary>
+        /// Gets or sets the request body content.
+        /// </summary>
         string Content { get; set; }
 
+        /// <summary>
+        /// Gets or sets the MIME types accepted by the client.
+        /// </summary>
         string[] AcceptTypes { get; set; }
 
+        /// <summary>
+        /// Gets or sets the encoding of the request content.
+        /// </summary>
         Encoding ContentEncoding { get; set; }
         
         /// <summary>

@@ -7,6 +7,9 @@ using System.Net;
 
 namespace Bam.Protocol
 {
+    /// <summary>
+    /// Defines the properties and methods of a Bam HTTP response.
+    /// </summary>
     public interface IBamResponse
     {
         /// <summary>
@@ -49,6 +52,11 @@ namespace Bam.Protocol
         /// </summary>
         int StatusCode { get; set; }
 
+        /// <summary>
+        /// Sets the specified header, replacing any existing values for that header name.
+        /// </summary>
+        /// <param name="name">The name of the header.</param>
+        /// <param name="value">The value for the header.</param>
         void SetHeader(string name, string value);
         
         /// <summary>

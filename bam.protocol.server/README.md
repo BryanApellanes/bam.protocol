@@ -1,165 +1,216 @@
-# bam.protocol.server — Request Processing Pipeline
+# bam.protocol.server
+
+Server-side implementation of the Bam Framework protocol, providing HTTP, TCP, and UDP listeners with a full request processing pipeline including session management, authentication, authorization, and command resolution.
 
 ## Overview
+
+`bam.protocol.server` implements the Bam protocol server, handling concurrent HTTP, TCP, and UDP requests. The central class `BamServer` listens on all three transports simultaneously (default ports: HTTP 8080, TCP 8413, UDP 8414) and processes each request through a configurable initialization pipeline. The `BamServerBuilder` provides a fluent API for constructing servers with custom ports, IP addresses, event handlers, and service registrations.
+
+The request processing pipeline (`BamRequestPipeline`) is orchestrated by `BamServerContextInitializer`, which runs five ordered initialization stages: session resolution, actor resolution, authentication, command resolution, and authorization. Each stage is handled by a dedicated `IBamServerContextInitializationHandler` and can short-circuit the pipeline if it fails. The pipeline emits events at each stage boundary, enabling fine-grained observability. Successful requests are dispatched to `DefaultBamResponseProvider`, which delegates to `BamRequestProcessor` for method invocation via deserialized `MethodInvocationRequest` payloads.
+
+Security is built-in: `ServerSessionManager` manages server-side session state with ECC key exchange and nonce generation; `BamAuthenticator` validates JWT tokens (ECC-signed, custom `BamJwtToken` format), body signatures, and nonce hashes; `AuthorizationCalculator` checks `[RequiredAccess]` attributes against actor access levels configured through `GroupAccessConfiguration`. The `RequestSecurityValidator` handles body decryption (AES from ECDH-derived keys), signature verification (ECDSA), and nonce hash validation (HMAC-SHA256).
+
+## Request Processing Pipeline
 
 When `BamServer` receives an HTTP, TCP, or UDP request, it flows through a five-stage initialization pipeline before the method is invoked. Each stage can short-circuit the pipeline by setting `CanContinue = false`, which causes the server to return an error response immediately.
 
 ```
 Request
-  │
-  ▼
-┌─────────────────────────┐
-│  1. Session Resolution  │──▶ 419 Session Init Failed / 420 Session Required
-├─────────────────────────┤
-│  2. Actor Resolution    │──▶ 460 Actor Resolution Failed
-├─────────────────────────┤
-│  3. Authentication      │──▶ 401 Authentication Failed
-│    a. AES body decrypt  │
-│    b. ECDSA signature   │
-│    c. HMAC nonce hash   │
-│    d. JWT verification  │
-├─────────────────────────┤
-│  4. Command Resolution  │──▶ 461 Command Resolution Failed
-├─────────────────────────┤
-│  5. Authorization       │──▶ 462 Authorization Failed / 403 Denied
-└─────────────┬───────────┘
-              │
-              ▼
-┌─────────────────────────┐
-│  Method Invocation      │──▶ 200 + JSON result
-└─────────────────────────┘
+  |
+  v
++-------------------------+
+|  1. Session Resolution  |-->  419 Session Init Failed / 420 Session Required
++-------------------------+
+|  2. Actor Resolution    |-->  460 Actor Resolution Failed
++-------------------------+
+|  3. Authentication      |-->  401 Authentication Failed
+|    a. AES body decrypt  |
+|    b. ECDSA signature   |
+|    c. HMAC nonce hash   |
+|    d. JWT verification  |
++-------------------------+
+|  4. Command Resolution  |-->  461 Command Resolution Failed
++-------------------------+
+|  5. Authorization       |-->  462 Authorization Failed / 403 Denied
++----------+--------------+
+           |
+           v
++-------------------------+
+|  Method Invocation      |-->  200 + JSON result
++-------------------------+
 ```
 
-## Entry Point
+### Stage 1: Session Resolution
 
-`BamServer.HandleHttpRequests()` (`BamServer.cs:223`) is the HTTP entry point. It:
+Checks whether the request carries a `SessionId` header:
 
-1. Generates a unique request ID (`BamServer.cs:227`)
-2. Creates an `IBamServerContext` via `ServerContextProvider.CreateServerContext()` (`BamServer.cs:232`)
-3. Passes it to `InitializeServerContext()` (`BamServer.cs:239`), which creates a `BamServerInitializationContext` and delegates to `BamServerContextInitializer.InitializeServerContext()` (`BamServer.cs:353-362`)
-4. Gets a response — either one set during initialization (e.g., session creation) or one created by `ResponseProvider.CreateResponse()` (`BamServer.cs:242-243`)
-5. Sends the response (`BamServer.cs:244`)
+- **Has session ID** -- retrieves existing session via `SessionManager.GetSession()`. If the session is not found, sets `InitializationStatus.SessionInitializationFailed` (HTTP 419).
+- **No session ID, path is `/bam/session/create`** -- creates a new session via `SessionManager.StartSession()`, which generates a CUID session ID, persists to database, stores the client's ECC public key, generates a server ECC key pair, and returns a `StartSessionResponse` with session ID, nonce, and server public key. The pipeline short-circuits here.
+- **No session ID, other path** -- sets `InitializationStatus.SessionRequired` (HTTP 420).
 
-TCP and UDP follow the same pipeline via `HandleTcpRequest()` (`BamServer.cs:311`) and `HandleUdpRequests()` (`BamServer.cs:264`).
+### Stage 2: Actor Resolution
 
-## Pipeline Orchestration
+Reads `ClientPublicKey` from server session state, computes its SHA256 hash, looks up the profile via `ProfileManager.FindProfileByPublicKey()`, and returns an `ActorData` with handle and name. If null, HTTP 460.
 
-`BamServerContextInitializer.InitializeServerContext()` (`BamServerContextInitializer.cs:44-93`) runs the five stages in order. Between each stage it checks `initialization.CanContinue` and returns early if any stage fails. Events are fired before and after each stage.
+### Stage 3: Authentication
 
-```
-OnBeforeInitialization()      ← custom handlers (line 51)
-InitializeSession()           ← line 53
-InitializeActor()             ← line 59
-InitializeAuthentication()    ← line 65
-InitializeCommand()           ← line 71
-InitializeAuthorization()     ← line 77
-OnAfterInitialization()       ← custom handlers (line 85)
-```
+Performs four checks in order:
+1. **AES Body Decryption** -- Derives a shared AES key via ECDH (server private key + client public key) and decrypts the request body in-place.
+2. **ECDSA Body Signature** -- Verifies the `X-Bam-Body-Signature` header against the (decrypted) body using the client's public key.
+3. **HMAC Nonce Hash** -- Computes HMAC-SHA256 of the body using the nonce as key and compares against the `X-Bam-Nonce-Hash` header.
+4. **JWT Verification** -- Decodes the `Authorization: Bearer <token>` JWT, checks expiry, looks up the actor profile, and verifies the ECDSA signature.
 
-## Stage 1: Session Resolution
+### Stage 4: Command Resolution
 
-**Handler:** `ServerSessionInitializationHandler` (`ServerSessionInitializationHandler.cs:14-45`)
+Parses the request body as `MethodInvocationRequest` to extract the target type, method, and arguments. If parsing fails, HTTP 461.
 
-Checks whether the request carries a `SessionId` header (`line 18`):
+### Stage 5: Authorization
 
-- **Has session ID** — retrieves existing session via `SessionManager.GetSession()` (`line 20`). If the session is not found, sets `InitializationStatus.SessionInitializationFailed` (`line 24`) → HTTP 419.
-- **No session ID, path is `/bam/session/create`** — creates a new session via `HandleSessionCreation()` (`line 34`). This calls `SessionManager.StartSession()` (`line 59`), which:
-  - Generates a `Cuid` session ID (`ServerSessionManager.cs:33`)
-  - Persists the session to the database (`ServerSessionManager.cs:36`)
-  - Stores the client's public key in session state (`ServerSessionManager.cs:39`)
-  - Generates a server ECC key pair and stores the private key (`ServerSessionManager.cs:41-42`)
-  - Returns a `StartSessionResponse` with session ID, nonce, and server public key (`ServerSessionManager.cs:46-47`)
+Checks `[RequiredAccess]` attributes (method-level first, then class-level) against the actor's access level from `AccessLevelProvider`. Access levels are ordered: `Denied < Read < Write`. If access is insufficient, HTTP 462 or 403.
 
-  The response is set directly on the context (`ServerSessionInitializationHandler.cs:65`) and `CanContinue` is set to `false` (`line 66`) — the pipeline ends here for session creation requests.
-- **No session ID, other path** — sets `InitializationStatus.SessionRequired` (`line 39`) → HTTP 420.
+### Response Generation
 
-## Stage 2: Actor Resolution
+After the pipeline completes:
+- **Pipeline failed** -- maps `InitializationStatus` to an HTTP status code and returns an error response.
+- **Pipeline succeeded** -- routes based on `AuthorizationCalculation.Access`: `Read` or `Write` invokes `BamRequestProcessor.ProcessRequestContext()` (deserializes `MethodInvocationRequest`, resolves instance via `ServiceRegistry`, invokes method, returns JSON result with status 200); `Denied` returns HTTP 403.
 
-**Handler:** `ActorResolverInitializationHandler` (`ActorResolverInitializationHandler.cs:13-25`)
-
-Delegates to `ActorResolver.ResolveActor()` (`line 16`), which:
-
-1. Reads `ClientPublicKey` from server session state (`ActorResolver.cs:18`)
-2. Computes its SHA256 hash and looks up the profile via `ProfileManager.FindProfileByPublicKey()` (`ActorResolver.cs:24`)
-3. Returns an `ActorData` with `Handle` and `Name` from the profile (`ActorResolver.cs:30`)
-
-If the actor is `null`, sets `InitializationStatus.ActorResolutionFailed` (`ActorResolverInitializationHandler.cs:20`) → HTTP 460.
-
-## Stage 3: Authentication
-
-**Handler:** `AuthenticationInitializationHandler` (`AuthenticationInitializationHandler.cs:12-24`)
-
-Delegates to `BamAuthenticator.Authenticate()` (`line 15`), which performs four checks in order (`BamAuthenticator.cs:19-109`):
-
-### 3a. AES Body Decryption (`BamAuthenticator.cs:26-39`)
-
-If the session has both `ServerPrivateKey` and `ClientPublicKey`, calls `RequestSecurityValidator.DecryptBody()` (`line 32`). This derives a shared AES key via ECDH (`RequestSecurityValidator.cs:92-104`) — combining the server's private key with the client's public key — and decrypts the request body (`RequestSecurityValidator.cs:84`). The decrypted plaintext **replaces** the request content (`BamAuthenticator.cs:35`), so all subsequent checks operate on the plaintext.
-
-### 3b. ECDSA Body Signature (`BamAuthenticator.cs:42-49`)
-
-If the `X-Bam-Body-Signature` header is present, calls `RequestSecurityValidator.ValidateBodySignature()` (`line 44`). This retrieves the client's public key from session state (`RequestSecurityValidator.cs:22`), uses BouncyCastle to verify the ECDSA signature against the (now-decrypted) body (`RequestSecurityValidator.cs:35-38`). Failure returns immediately with `Success = false`.
-
-### 3c. HMAC Nonce Hash (`BamAuthenticator.cs:52-59`)
-
-If the `X-Bam-Nonce-Hash` header is present, calls `RequestSecurityValidator.ValidateNonceHash()` (`line 54`). This computes HMAC-SHA256 of the body using the nonce as the key (`RequestSecurityValidator.cs:63`) and compares against the header value (`RequestSecurityValidator.cs:66`). Failure returns immediately.
-
-### 3d. JWT Verification (`BamAuthenticator.cs:62-108`)
-
-Requires an `Authorization: Bearer <token>` header (`line 62`). Decodes the JWT (`line 77`), checks expiry (`line 84`), looks up the actor's profile by handle (`line 90`), retrieves the client's public key from session state (`line 97`), and verifies the JWT's ECDSA signature (`line 103`). Any failure returns `Success = false` with a specific message.
-
-If authentication fails, the handler sets `InitializationStatus.AuthenticationFailed` (`AuthenticationInitializationHandler.cs:19`).
-
-## Stage 4: Command Resolution
-
-**Handler:** `CommandInitializationHandler` (`CommandInitializationHandler.cs:10-22`)
-
-Delegates to `CommandResolver.ResolveCommand()` (`line 13`), which parses the request to determine the target type, method, and arguments. If the command is `null`, sets `InitializationStatus.CommandResolutionFailed` (`line 17`) → HTTP 461.
-
-## Stage 5: Authorization
-
-**Handler:** `AuthorizationCalculatorInitializationHandler` (`AuthorizationCalculatorInitializationHandler.cs:10-22`)
-
-Delegates to `AuthorizationCalculator.CalculateAuthorization()` (`line 13`), which:
-
-1. Gets the required access level from the command's target type/method via `[RequiredAccess]` attribute — checks the method first, then the class (`AuthorizationCalculator.cs:36-61`). Uses a `ConcurrentDictionary` type cache for performance (`line 8`).
-2. Gets the actor's access level from `AccessLevelProvider.GetAccessLevel()` (`AuthorizationCalculator.cs:26`)
-3. Compares: if `actorAccess >= requiredAccess`, authorization succeeds (`line 28-30`). Access levels are ordered: `Denied < Read < Write`.
-
-If authorization is `null`, the handler sets `InitializationStatus.AuthorizationCalculationFailed` (`AuthorizationCalculatorInitializationHandler.cs:17`) → HTTP 462.
-
-## Response Generation
-
-After the pipeline completes, `BamResponseProvider` routes the response (`BamResponseProvider.cs:22-30`, `33-48`):
-
-- **Pipeline failed** (`Status != Success`) — `DefaultBamResponseProvider.CreateFailureResponse()` (`DefaultBamResponseProvider.cs:26-43`) maps the `InitializationStatus` to an HTTP status code (`line 70-91`) and returns an error response.
-- **Pipeline succeeded** — routes based on `AuthorizationCalculation.Access` (`BamResponseProvider.cs:35-47`):
-  - `BamAccess.Read` → `CreateReadResponse()` (`DefaultBamResponseProvider.cs:51-55`)
-  - `BamAccess.Write` → `CreateWriteResponse()` (`DefaultBamResponseProvider.cs:45-49`)
-  - `BamAccess.Denied` → `CreateDeniedResponse()` → HTTP 403 (`DefaultBamResponseProvider.cs:57-63`)
-
-Both `CreateReadResponse` and `CreateWriteResponse` invoke `BamRequestProcessor.ProcessRequestContext()` (`DefaultBamResponseProvider.cs:47,53`), which:
-
-1. Deserializes the request body as `MethodInvocationRequest` (`BamRequestProcessor.cs:19`)
-2. Calls `ServerInitialize()` to resolve the target method and instance via `ServiceRegistry` (`line 20`)
-3. Invokes the method reflectively and returns the result (`line 21`)
-
-The result is wrapped in `BamResponse<object>` with status 200 and serialized as JSON.
-
-## Status Code Summary
+### Status Code Summary
 
 | Status Code | Meaning | Pipeline Stage |
 |---|---|---|
 | 200 | Success | Method invoked, result returned |
-| 403 | Access Denied | Authorization — actor lacks required access |
-| 419 | Session Init Failed | Session — ID present but session not found |
-| 420 | Session Required | Session — no session ID on non-creation request |
-| 460 | Actor Resolution Failed | Actor — public key not found or no matching profile |
-| 461 | Command Resolution Failed | Command — could not parse target type/method |
-| 462 | Authorization Calculation Failed | Authorization — calculator returned null |
+| 403 | Access Denied | Authorization -- actor lacks required access |
+| 419 | Session Init Failed | Session -- ID present but session not found |
+| 420 | Session Required | Session -- no session ID on non-creation request |
+| 460 | Actor Resolution Failed | Actor -- public key not found or no matching profile |
+| 461 | Command Resolution Failed | Command -- could not parse target type/method |
+| 462 | Authorization Calculation Failed | Authorization -- calculator returned null |
 | 500 | Internal Server Error | Unhandled exception or unknown status |
+
+## Key Classes
+
+| Class / Interface | Description |
+|---|---|
+| `BamServer` | Main server class: starts HTTP/TCP/UDP listeners, dispatches requests through the pipeline, fires lifecycle events. |
+| `BamServerBuilder` | Fluent builder for configuring ports, IP addresses, server name, event handlers, and service registrations. |
+| `BamServerOptions` | Configuration object holding all server options including a `ServiceRegistry` pre-wired with default implementations. |
+| `HttpServer` | Low-level `HttpListener` wrapper that manages host bindings, thread-based request handling, and listener deconfliction. |
+| `BamRequestReader` | Parses raw HTTP/TCP/stream requests into `BamRequest` instances (request line, headers, content). |
+| `BamRequestPipeline` | Runs the server initialization pipeline for a request, creating protocol-appropriate initialization contexts. |
+| `BamServerContextInitializer` | Orchestrates five pipeline stages with before/after extension points and event emission. |
+| `BamServerContext` | Mutable server context carrying request, response, actor, session state, authentication, command, and authorization results. |
+| `BamServerContextProvider` | Creates `BamServerContext` instances from HTTP, TCP, or stream inputs. |
+| `BamRequestProcessor` | Deserializes `MethodInvocationRequest`, server-initializes it, and invokes the method. |
+| `DefaultBamResponseProvider` | Creates responses based on authorization and initialization status with status code mapping. |
+| `BamResponseProvider` | Abstract base for response creation with access-level dispatching. |
+| `ServerSessionManager` | Manages server-side sessions: creates sessions with ECC key exchange, stores session state, validates session IDs. |
+| `ServerSessionState` | Dictionary-backed session state persisted via `ServerSessionSchemaRepository`. |
+| `ServerSessionInitializationHandler` | Pipeline handler that resolves or creates session state from request headers. |
+| `BamAuthenticator` | Full authentication: body decryption, signature verification, nonce hash validation, JWT verification. |
+| `AuthenticationInitializationHandler` | Pipeline handler that runs `BamAuthenticator.Authenticate`. |
+| `BamAuthentication` | Authentication result with success flag, actor, request, and messages. |
+| `BamJwtToken` | Custom JWT implementation using ES256 (ECDSA with SHA-256) for encode, decode, and verify. |
+| `ActorResolver` | Resolves an `IActor` from session state by looking up the client's public key in the profile manager. |
+| `CommandResolver` | Extracts an `ICommand` from a `MethodInvocationRequest` in the request body. |
+| `AuthorizationCalculator` | Checks `[RequiredAccess]` attributes against actor access levels with type caching. |
+| `GroupAccessConfiguration` | Configures group-to-access-level mappings for authorization. |
+| `GroupAccessLevelProvider` | Provides access levels based on group membership configuration. |
+| `RequestSecurityValidator` | Validates body signatures (ECDSA), nonce hashes (HMAC-SHA256), and decrypts bodies (AES from ECDH). |
+| `NonceProvider` | Generates cryptographically secure random nonces (default 32 characters). |
+| `CommunicationHandler` | Aggregates all server-side service providers (request reader, session manager, actor resolver, etc.). |
+| `BamHostBinding` | Server-specific host binding. |
+| `BamProxyServer` | Proxy server for forwarding requests. |
+| `InitializationStatus` | Enum tracking pipeline stage outcomes. |
+
+## Dependencies
+
+### Project References
+- `bam.protocol` -- Core protocol types (`IBamRequest`, `IBamResponse`, `MethodInvocationRequest`, `ICommand`, etc.)
+- `bam.protocol.data` -- Data types (`ServerSession`, `ServerAccountData`, `IActor`, `ProcessDescriptorData`, etc.)
+- `bam.protocol.profile` -- Profile management (`IProfileManager`, `IKeyManager`, `EncryptedProfileRepository`, etc.)
+
+### Package References
+None (BouncyCastle for JWT signing is provided transitively).
+
+## Usage Examples
+
+### Building and starting a server with defaults
+```csharp
+using Bam.Protocol.Server;
+
+BamServer server = new BamServer();
+await server.StartAsync();
+
+// Server is now listening on HTTP:8080, TCP:8413, UDP:8414
+// Press any key to stop...
+server.Stop();
+```
+
+### Using the fluent builder with custom configuration
+```csharp
+using Bam.Protocol.Server;
+
+BamServer server = new BamServerBuilder()
+    .ServerName("MyAppServer")
+    .TcpPort(9000)
+    .UdpPort(9001)
+    .TcpIPAddress("0.0.0.0")
+    .UdpIPAddress("0.0.0.0")
+    .OnStarted((sender, args) => Console.WriteLine("Server started!"))
+    .OnTcpClientConnected((sender, args) => Console.WriteLine("TCP client connected"))
+    .OnCreateContextStarted((sender, args) => Console.WriteLine("Processing request..."))
+    .Build();
+
+await server.StartAsync();
+```
+
+### Configuring group-based authorization
+```csharp
+using Bam.Protocol.Server;
+
+BamServerOptions options = new BamServerOptions();
+options.ConfigureGroupAccess(config =>
+{
+    config.SetAccessLevel("admin", BamAccess.Write);
+    config.SetAccessLevel("viewer", BamAccess.Read);
+});
+
+BamServer server = new BamServer(options);
+```
+
+### Server-side session management
+```csharp
+using Bam.Protocol.Server;
+
+IServerSessionManager sessionManager = serviceRegistry.Get<IServerSessionManager>();
+
+// Start a session (typically triggered by a StartSessionRequest)
+StartSessionResponse response = sessionManager.StartSession(startSessionRequest, outputStream);
+
+// Look up a session from a request
+IServerSessionState state = sessionManager.GetSession(bamRequest);
+string clientPublicKey = state.Get<string>("ClientPublicKey");
+```
+
+### Processing a remote method invocation on the server
+```csharp
+using Bam.Protocol.Server;
+
+IBamRequestProcessor processor = serviceRegistry.Get<IBamRequestProcessor>();
+
+// Deserializes MethodInvocationRequest, resolves instance, invokes method
+object result = processor.ProcessRequestContext(serverContext);
+```
 
 ## Extensibility
 
-- **Before/after handlers** — `BamServerContextInitializer.AddBeforeInitializationHandler()` (`BamServerContextInitializer.cs:140`) and `AddAfterInitializationHandler()` (`line 146`) allow inserting custom `IBamServerContextInitializationHandler` steps.
-- **Events** — each pipeline stage fires Started/Complete event pairs (e.g., `ResolveSessionStateStarted`/`ResolveSessionStateComplete`), plus `InitializationException` on errors.
-- **Dependency injection** — all handlers, resolvers, calculators, and providers are injected via `BamServerOptions.ComponentRegistry`, allowing any component to be replaced.
+- **Before/after handlers** -- `BamServerContextInitializer.AddBeforeInitializationHandler()` and `AddAfterInitializationHandler()` allow inserting custom `IBamServerContextInitializationHandler` steps.
+- **Events** -- Each pipeline stage fires Started/Complete event pairs (e.g., `ResolveSessionStateStarted`/`ResolveSessionStateComplete`), plus `InitializationException` on errors.
+- **Dependency injection** -- All handlers, resolvers, calculators, and providers are injected via `BamServerOptions.ComponentRegistry`, allowing any component to be replaced.
+
+## Known Gaps / Not Yet Implemented
+
+- **TODO in `BamRequestReader.ReadRequest(Stream)`** -- Contains comment "TODO: ensure other request properties are set". The stream-based request reader sets headers and content but does not populate `QueryString`, `Cookies`, `UserHostAddress`, `UserHostName`, `UserLanguages`, or `RawUrl`.
+- **`DefaultBamResponseProvider.LogAccessDenied` is a no-op** -- The method body is a comment with no default logging implementation.
+- **UDP response handling is unidirectional** -- UDP requests are received and processed but no response is sent back to the sender; the pipeline fires events and initializes context but does not write a response.
+- **`BamProxyServer` is early-stage** -- The proxy server class exists but its integration with the main pipeline is minimal.

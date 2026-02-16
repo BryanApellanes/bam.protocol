@@ -4,8 +4,14 @@ using Bam.Protocol;
 
 namespace Bam.Encryption
 {
+    /// <summary>
+    /// Represents an HTTP request with URI, headers, content, verb, and encoding, and supports conversion to <see cref="HttpRequestMessage"/>.
+    /// </summary>
     public class HttpRequest : IHttpRequest
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpRequest"/> class with default settings (localhost, UTF-8, JSON content type).
+        /// </summary>
         public HttpRequest()
         {
             this.Uri = new Uri("https://localhost");
@@ -14,42 +20,64 @@ namespace Bam.Encryption
             this.ContentType = MediaTypes.Json;
         }
 
+        /// <summary>
+        /// Gets or sets the URI for this request.
+        /// </summary>
         public Uri Uri
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets the collection of request headers.
+        /// </summary>
         public IDictionary<string, string> Headers
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Gets or sets the MIME content type.
+        /// </summary>
         public virtual string ContentType
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets or sets the HTTP verb (GET, POST, etc.).
+        /// </summary>
         public HttpVerbs Verb
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets or sets the request body content as a string.
+        /// </summary>
         public virtual string Content
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Gets or sets the character encoding for the request content.
+        /// </summary>
         public Encoding Encoding
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Copies all properties from the specified request to this instance.
+        /// </summary>
+        /// <param name="request">The request to copy from.</param>
         public virtual void Copy(IHttpRequest request)
         {
             this.Uri = request.Uri;
@@ -62,6 +90,11 @@ namespace Bam.Encryption
             }
         }
 
+        /// <summary>
+        /// Converts this request to an <see cref="HttpRequestMessage"/> with the specified URL.
+        /// </summary>
+        /// <param name="url">The URL to use for the request message.</param>
+        /// <returns>An <see cref="HttpRequestMessage"/> configured with this request's properties.</returns>
         public HttpRequestMessage ToHttpRequestMessage(string url)
         {
             HttpRequestMessage requestMessage = ToHttpRequestMessage();
@@ -69,6 +102,10 @@ namespace Bam.Encryption
             return requestMessage;
         }
 
+        /// <summary>
+        /// Converts this request to an <see cref="HttpRequestMessage"/> using the current URI.
+        /// </summary>
+        /// <returns>An <see cref="HttpRequestMessage"/> configured with this request's properties.</returns>
         public virtual HttpRequestMessage ToHttpRequestMessage()
         {
             HttpRequestMessage result = new HttpRequestMessage(MethodsByVerbs[Verb], Uri)
@@ -82,6 +119,11 @@ namespace Bam.Encryption
             return result;
         }
 
+        /// <summary>
+        /// Creates an <see cref="HttpRequest"/> from an <see cref="HttpRequestMessage"/>.
+        /// </summary>
+        /// <param name="httpRequestMessage">The HTTP request message to convert.</param>
+        /// <returns>A new <see cref="HttpRequest"/> populated from the message.</returns>
         public static HttpRequest FromHttpRequestMessage(HttpRequestMessage httpRequestMessage)
         {
             HttpRequest request = new HttpRequest
@@ -98,6 +140,12 @@ namespace Bam.Encryption
             return request;
         }
 
+        /// <summary>
+        /// Creates a strongly-typed <see cref="HttpRequest{TContent}"/> from an <see cref="HttpRequestMessage"/>, deserializing the body as JSON.
+        /// </summary>
+        /// <typeparam name="TContent">The type to deserialize the request body into.</typeparam>
+        /// <param name="httpRequestMessage">The HTTP request message to convert.</param>
+        /// <returns>A new <see cref="HttpRequest{TContent}"/> populated from the message.</returns>
         public static HttpRequest<TContent> FromHttpRequestMessage<TContent>(HttpRequestMessage httpRequestMessage)
         {
             HttpRequest<TContent> request = new HttpRequest<TContent>

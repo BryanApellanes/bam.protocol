@@ -2,15 +2,29 @@
 
 namespace Bam.Encryption
 {
+    /// <summary>
+    /// Encrypts plain-text headers on an HTTP request by replacing them with cipher header equivalents.
+    /// </summary>
     public class HttpRequestHeaderEncryptor : IHttpRequestHeaderEncryptor
     {
+        /// <summary>
+        /// Initializes a new instance with the specified encryptor.
+        /// </summary>
+        /// <param name="encryptor">The encryptor to use for header values.</param>
         public HttpRequestHeaderEncryptor(IEncryptor encryptor)
         {
             this.Encryptor = encryptor;
         }
 
+        /// <summary>
+        /// Gets the encryptor used for header values.
+        /// </summary>
         public IEncryptor Encryptor { get; private set; }
 
+        /// <summary>
+        /// Encrypts plain-text headers on the specified request, replacing them with cipher header equivalents and adding a Content-Type cipher.
+        /// </summary>
+        /// <param name="request">The request whose headers should be encrypted.</param>
         public void EncryptHeaders(IHttpRequest request)
         {
             Args.ThrowIfNull(request, nameof(request));
