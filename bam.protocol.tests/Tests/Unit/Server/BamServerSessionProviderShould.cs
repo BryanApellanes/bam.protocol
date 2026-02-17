@@ -212,9 +212,9 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
                 because.ItsTrue("Status code is success", httpResponse.IsSuccessStatusCode, $"Expected success status code, got {httpResponse.StatusCode}");
 
                 var doc = System.Text.Json.JsonDocument.Parse(responseJson);
-                string sessionId = doc.RootElement.GetProperty("SessionId").GetString();
-                string nonce = doc.RootElement.GetProperty("Nonce").GetString();
-                string serverPublicKey = doc.RootElement.GetProperty("ServerPublicKey").GetString();
+                string sessionId = doc.RootElement.GetProperty("SessionId").GetString()!;
+                string nonce = doc.RootElement.GetProperty("Nonce").GetString()!;
+                string serverPublicKey = doc.RootElement.GetProperty("ServerPublicKey").GetString()!;
 
                 because.ItsTrue("SessionId is not null", !string.IsNullOrEmpty(sessionId), "SessionId was null or empty");
                 because.ItsTrue("Nonce is not null", !string.IsNullOrEmpty(nonce), "Nonce was null or empty");

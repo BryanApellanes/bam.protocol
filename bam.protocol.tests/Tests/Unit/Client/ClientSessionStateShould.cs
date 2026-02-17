@@ -31,8 +31,8 @@ public class ClientSessionStateShould : UnitTestMenuContainer
             AesKey key = because.TheResult.As<AesKey>();
             because.ItsTrue("key bytes are not null", key.Key != null);
             because.ItsTrue("IV bytes are not null", key.IV != null);
-            because.ItsTrue("key has 32 bytes", key.Key.Length == 32);
-            because.ItsTrue("IV has 16 bytes", key.IV.Length == 16);
+            because.ItsTrue("key has 32 bytes", key.Key!.Length == 32);
+            because.ItsTrue("IV has 16 bytes", key.IV!.Length == 16);
         })
         .SoBeHappy()
         .UnlessItFailed();

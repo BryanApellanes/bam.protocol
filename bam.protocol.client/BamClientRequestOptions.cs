@@ -11,10 +11,10 @@ public class BamClientRequestOptions
         Method = HttpMethods.GET;
     }
     public HostBinding Host { get; set; }
-    public string Path { get; set; }
+    public string Path { get; set; } = null!;
     public IEnumerable<KeyValuePair<string, object>> QueryString { get; set; }
     public HttpMethods Method { get; set; }
-    public object Content { get; set; }
+    public object Content { get; set; } = null!;
 
     public string GetQueryString()
     {

@@ -22,13 +22,13 @@ public class CertificateManager : ICertificateManager
         AgentCertificateData agentCert = Repository.FindAgentCertificateByHandle(actor.Handle);
         if (agentCert == null)
         {
-            return null;
+            return null!;
         }
 
         CertificateData certData = Repository.FindCertificateByHash(agentCert.CertificateHash);
         if (certData == null)
         {
-            return null;
+            return null!;
         }
 
         return ParseCertificate(certData.Pem);

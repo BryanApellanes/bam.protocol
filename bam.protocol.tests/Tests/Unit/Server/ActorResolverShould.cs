@@ -58,7 +58,7 @@ public class ActorResolverShould : UnitTestMenuContainer
             {
                 IBamServerContext context = Substitute.For<IBamServerContext>();
                 IServerSessionState sessionState = Substitute.For<IServerSessionState>();
-                sessionState.Get<string>("ClientPublicKey").Returns((string)null);
+                sessionState.Get<string>("ClientPublicKey").Returns((string)null!);
                 context.ServerSessionState.Returns(sessionState);
                 return resolver.ResolveActor(context);
             })
@@ -80,7 +80,7 @@ public class ActorResolverShould : UnitTestMenuContainer
             () =>
             {
                 IProfileManager profileManager = Substitute.For<IProfileManager>();
-                profileManager.FindProfileByPublicKey(clientPublicKey.Sha256()).Returns((IProfile)null);
+                profileManager.FindProfileByPublicKey(clientPublicKey.Sha256()).Returns((IProfile)null!);
                 return new ActorResolver(profileManager);
             },
             (resolver) =>
@@ -109,7 +109,7 @@ public class ActorResolverShould : UnitTestMenuContainer
             (resolver) =>
             {
                 IBamServerContext context = Substitute.For<IBamServerContext>();
-                context.ServerSessionState.Returns((IServerSessionState)null);
+                context.ServerSessionState.Returns((IServerSessionState)null!);
                 return resolver.ResolveActor(context);
             })
         .TheTest

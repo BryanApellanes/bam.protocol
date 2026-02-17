@@ -69,39 +69,39 @@ public class BamClient : IBamClient
 
     public HttpClient HttpClient // content
     {
-        get; 
+        get;
         set;
-    }
+    } = null!;
 
     private TcpClient TcpClient // rpc
     {
         get;
         set;
-    }
-    
+    } = null!;
+
     private Socket UdpSocket // data and event broadcast
     {
         get;
         set;
-    }
-    
+    } = null!;
+
     private Dictionary<HttpMethods, HttpMethod> HttpMethods
     {
         get;
         set;
-    }
+    } = null!;
 
     private Dictionary<BamClientProtocols, Func<IBamClientRequestBuilder>> RequestBuilders
     {
         get;
         set;
-    }
+    } = null!;
 
     private Dictionary<Type, Func<IBamClientRequest, Task<IBamClientResponse>>> ResponseHandlers
     {
         get;
         set;
-    }
+    } = null!;
     
     private IObjectEncoderDecoder ObjectEncoderDecoder { get; }
 
@@ -109,7 +109,7 @@ public class BamClient : IBamClient
     public HostBinding BaseAddress { get; set; }
     public HostBinding UdpBaseAddress { get; set; }
 
-    public IClientSessionState SessionState { get; set; }
+    public IClientSessionState SessionState { get; set; } = null!;
     private ClientRequestSecurityProvider SecurityProvider { get; } = new ClientRequestSecurityProvider();
 
     public IBamClientRequest CreateHttpRequest(string path)
@@ -200,7 +200,7 @@ public class BamClient : IBamClient
         StringBuilder data = new StringBuilder();
         data.AppendLine(request.GetRequestLine().ToString());
 
-        string body = null;
+        string? body = null;
         if (request.Content != null)
         {
             IObjectEncoding encoding = ObjectEncoderDecoder.Encode(request.Content);
@@ -238,7 +238,7 @@ public class BamClient : IBamClient
         requestMessage.Headers.Add(Headers.ProcessLocalIdentifier, ProcessDescriptorData.LocalIdentifier);
         requestMessage.Headers.Add(Headers.ProcessDescriptor, ProcessDescriptorData.Current.ToString());
 
-        string body = null;
+        string? body = null;
         if (request.Content != null)
         {
             body = request.Content is string s ? s : System.Text.Json.JsonSerializer.Serialize(request.Content);

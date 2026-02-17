@@ -23,7 +23,7 @@ namespace Bam.Protocol.Data
 
         protected IPrivateKeyManager PrivateKeyManager { get; }
 
-        public string ClientKeySetHandle { get; }
+        public string ClientKeySetHandle { get; } = null!;
 
         public IPrivateKey GetRsaPrivateKey()
         {
@@ -34,12 +34,12 @@ namespace Bam.Protocol.Data
         {
             return PrivateKeyManager.GetPrivateEccKey(new EccPublicKey(ClientEccKey));
         }
-        
-        public string ServerRsaKey { get; }
-        
 
-        public string ServerEccKey { get; }
-        public string ClientEccKey { get; }
+        public new string ServerRsaKey { get; } = null!;
+
+
+        public new string ServerEccKey { get; } = null!;
+        public new string ClientEccKey { get; } = null!;
         public string EncryptAsymmetric(string value)
         {
             return value.EncryptWithPublicKey(ServerRsaKey);
@@ -56,9 +56,9 @@ namespace Bam.Protocol.Data
         }
 
         /// <inheritdoc />
-        public string ApplicationName { get; set; }
+        public string ApplicationName { get; set; } = null!;
 
-        public string Secret { get; set; }
+        public string Secret { get; set; } = null!;
 
 
         public RsaPublicKey GetRsaPublicKey()

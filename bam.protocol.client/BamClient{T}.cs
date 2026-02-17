@@ -39,7 +39,7 @@ namespace Bam.Protocol.Client
                 throw new BamInvocationException(typeof(T), methodName, response.StatusCode, response.Content);
             }
 
-            return JsonConvert.DeserializeObject<TR>(response.Content);
+            return JsonConvert.DeserializeObject<TR>(response.Content)!;
         }
     }
 }

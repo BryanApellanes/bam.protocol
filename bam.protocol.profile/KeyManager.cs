@@ -14,8 +14,8 @@ public class KeyManager : IKeyManager
         this.PrivateKeyManager = privateKeyManager;
     }
 
-    protected IProfileRepository Repository { get; }
-    protected IPrivateKeyManager PrivateKeyManager { get; }
+    protected IProfileRepository Repository { get; } = null!;
+    protected IPrivateKeyManager PrivateKeyManager { get; } = null!;
 
     public RsaPublicPrivateKeyPair GenerateRsaKeyPair()
     {

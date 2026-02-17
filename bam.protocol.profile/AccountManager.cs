@@ -47,7 +47,7 @@ public class AccountManager : IAccountManager
         {
             Name = $"{profile.Name}@{deviceData.Name ?? Environment.MachineName}",
             PersonHandle = profile.PersonHandle,
-            DeviceHandle = updatedProfile?.DeviceHandle,
+            DeviceHandle = updatedProfile?.DeviceHandle!,
         };
         ProfileManager.RegisterAgent(agentRegistrationData);
 

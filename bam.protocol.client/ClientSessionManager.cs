@@ -28,9 +28,9 @@ public class ClientSessionManager : IClientSessionManager
         string responseJson = await httpResponse.Content.ReadAsStringAsync();
 
         var doc = System.Text.Json.JsonDocument.Parse(responseJson);
-        string sessionId = doc.RootElement.GetProperty("SessionId").GetString();
-        string nonce = doc.RootElement.GetProperty("Nonce").GetString();
-        string serverPublicKeyPem = doc.RootElement.GetProperty("ServerPublicKey").GetString();
+        string sessionId = doc.RootElement.GetProperty("SessionId").GetString()!;
+        string nonce = doc.RootElement.GetProperty("Nonce").GetString()!;
+        string serverPublicKeyPem = doc.RootElement.GetProperty("ServerPublicKey").GetString()!;
 
         EccPublicKey serverPublicKey = new EccPublicKey(serverPublicKeyPem);
         StartSessionResponse response = new StartSessionResponse(nonce, serverPublicKey, Stream.Null, (int)httpResponse.StatusCode);

@@ -8,10 +8,10 @@ namespace Bam.Encryption;
 
 public class GenerateCertificateOptions
 {
-    private X509Name _issuerX509Name = null;
-    private X509Name _subjectX509Name = null;
-    private Func<AsymmetricKeyParameter> _getPrivateKey;
-    private Func<AsymmetricKeyParameter> _getPublicKey;
+    private X509Name _issuerX509Name = null!;
+    private X509Name _subjectX509Name = null!;
+    private Func<AsymmetricKeyParameter> _getPrivateKey = null!;
+    private Func<AsymmetricKeyParameter> _getPublicKey = null!;
     
     public GenerateCertificateOptions()
     {

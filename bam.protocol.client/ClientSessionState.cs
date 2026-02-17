@@ -5,7 +5,7 @@ namespace Bam.Protocol.Client;
 public class ClientSessionState : IClientSessionState
 {
     private bool _disposed = false;
-    private ProtectedAesKeyUsageContext _protectedSessionKey;
+    private ProtectedAesKeyUsageContext _protectedSessionKey = null!;
     private readonly object _keyLock = new object();
 
     public ClientSessionState(string sessionId, string nonce, EccPublicKey serverPublicKey, EccPublicPrivateKeyPair clientKeyPair)
@@ -18,7 +18,7 @@ public class ClientSessionState : IClientSessionState
 
     public string SessionId { get; }
     public string Nonce { get; }
-    public string AuthorizationToken { get; set; }
+    public string AuthorizationToken { get; set; } = null!;
     public EccPublicKey ServerPublicKey { get; }
     protected internal EccPublicPrivateKeyPair ClientKeyPair { get; }
 

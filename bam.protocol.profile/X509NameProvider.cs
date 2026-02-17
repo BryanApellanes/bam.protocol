@@ -64,7 +64,7 @@ public class X509NameProvider : IX509NameProvider
         return new X509Name(string.Join(",", segments.ToArray()));
     }
 
-    static IX509NameProvider _x509NameProvider = null;
+    static IX509NameProvider _x509NameProvider = null!;
     private static object _currentLock = new object();
     public static IX509NameProvider Current
     {

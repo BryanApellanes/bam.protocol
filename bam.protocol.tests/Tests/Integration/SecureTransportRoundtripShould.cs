@@ -220,7 +220,7 @@ public class SecureTransportRoundtripShould : UnitTestMenuContainer
         string actorHandle = "test-udp-roundtrip-actor";
         var (server, sessionState, info) = await StartServerWithSession(actorHandle);
 
-        IBamServerContext capturedContext = null;
+        IBamServerContext capturedContext = null!;
         ManualResetEventSlim contextReceived = new ManualResetEventSlim(false);
 
         // Hook CreateContextComplete to capture the server context after pipeline runs
@@ -304,7 +304,7 @@ public class SecureTransportRoundtripShould : UnitTestMenuContainer
         // Create session with expired JWT (60 seconds in the past)
         var (server, sessionState, info) = await StartServerWithSession(actorHandle, TimeSpan.FromSeconds(-60));
 
-        IBamServerContext capturedContext = null;
+        IBamServerContext capturedContext = null!;
         ManualResetEventSlim contextReceived = new ManualResetEventSlim(false);
 
         // Hook CreateContextComplete to capture the server context

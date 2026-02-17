@@ -2,8 +2,8 @@
 
 public class Country
 {
-    public string Code { get; set; }
-    public string Name { get; set; }
-    public string Latitude { get; set; }
-    public string Longitude { get; set; }
+    public string Code { get; set; } = null!;
+    public string Name { get; set; } = null!;
+    public string Latitude { get; set; } = null!;
+    public string Longitude { get; set; } = null!;
 }

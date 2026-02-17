@@ -24,7 +24,7 @@ public class BamServerShould : UnitTestMenuContainer
         When.A<HttpServer>("handles HTTP request",
             () => new HttpServer(context =>
             {
-                byte[] output = Encoding.UTF8.GetBytes(context.Request.Url.ToString());
+                byte[] output = Encoding.UTF8.GetBytes(context.Request.Url!.ToString());
                 context.Response.OutputStream.Write(output, 0, output.Length);
                 context.Response.Close();
             }),

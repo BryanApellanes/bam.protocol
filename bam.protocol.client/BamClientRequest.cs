@@ -5,14 +5,14 @@ namespace Bam.Protocol.Client;
 
 public abstract class BamClientRequest : IBamClientRequest
 {
-    public Dictionary<string, string> Headers { get; set; }
-    public HostBinding Host { get; set; }
-    public string Path { get; set; }
-    public string QueryString { get; set; }
+    public Dictionary<string, string> Headers { get; set; } = null!;
+    public HostBinding Host { get; set; } = null!;
+    public string Path { get; set; } = null!;
+    public string QueryString { get; set; } = null!;
     public HttpMethods HttpMethod { get; set; }
-    public string ProtocolVersion { get; set; }
-    public string Protocol { get; set; }
-    public object? Content { get; set; }
+    public string ProtocolVersion { get; set; } = null!;
+    public string Protocol { get; set; } = null!;
+    public object Content { get; set; } = null!;
     public virtual Uri GetUrl(IBamClient client)
     {
         TcpClientRequest copy = new TcpClientRequest();

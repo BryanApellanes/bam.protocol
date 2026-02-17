@@ -12,7 +12,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
     public void ClientInitialize()
     {
         Type type = typeof(TestClass);
-        MethodInfo methodInfo = type.GetMethod("TestMethod");
+        MethodInfo methodInfo = type.GetMethod("TestMethod")!;
 
         After.Setup(reg =>
         {
@@ -42,7 +42,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
     public void ServerInitializeForOperationIdentifier()
     {
         Type type = typeof(TestClass);
-        MethodInfo methodInfo = type.GetMethod("TestMethod");
+        MethodInfo methodInfo = type.GetMethod("TestMethod")!;
         string operationIdentifier = OperationIdentifier.For(methodInfo);
 
         After.Setup(reg =>
@@ -62,9 +62,9 @@ public class InvocationRequestShould : UnitTestMenuContainer
             TestMethodInvocationRequest result = because.TheResult.As<TestMethodInvocationRequest>();
             because.ItsTrue("result was not null", result != null);
             because.ItsTrue($"OperationIdentifier = {operationIdentifier}",
-                result.OperationIdentifier.Equals(operationIdentifier));
+                result!.OperationIdentifier.Equals(operationIdentifier));
             because.ItsTrue("Instance was not null", result.GetInstance() != null);
-            because.ItsTrue("Instance was of type TestClass", result.GetInstance().GetType() == typeof(TestClass));
+            because.ItsTrue("Instance was of type TestClass", result.GetInstance()!.GetType() == typeof(TestClass));
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -74,7 +74,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
     public void ServerInitializeForMethodInfo()
     {
         Type type = typeof(TestClass);
-        MethodInfo methodInfo = type.GetMethod("TestMethod");
+        MethodInfo methodInfo = type.GetMethod("TestMethod")!;
         string operationIdentifier = OperationIdentifier.For(methodInfo);
         TestClass instance = new TestClass() { Name = 16.RandomLetters() };
 

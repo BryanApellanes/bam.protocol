@@ -14,7 +14,7 @@ public class BamServerSessionStateShould : UnitTestMenuContainer
         string name = 8.RandomLetters();
 
         When.A<ServerSessionState>("sets and gets an object value",
-            () => new ServerSessionState(new ServerSession(), null),
+            () => new ServerSessionState(new ServerSession(), null!),
             (state) =>
             {
                 state.Set(name, obj);
@@ -36,7 +36,7 @@ public class BamServerSessionStateShould : UnitTestMenuContainer
         string name = 8.RandomLetters();
 
         When.A<ServerSessionState>("sets and gets a generic value",
-            () => new ServerSessionState(new ServerSession(), null),
+            () => new ServerSessionState(new ServerSession(), null!),
             (state) =>
             {
                 state.Set<TestClass>(name, testObj);

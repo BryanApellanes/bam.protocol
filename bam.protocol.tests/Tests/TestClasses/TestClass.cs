@@ -2,7 +2,7 @@
 
 public class TestClass
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     public string TestMethod(string argument1, string argument2)
     {

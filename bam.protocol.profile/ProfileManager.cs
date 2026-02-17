@@ -72,7 +72,7 @@ public class ProfileManager : IProfileManager
             profileData = Repository.SaveProfile(profileData);
         }
 
-        return profileData;
+        return profileData!;
     }
 
     public DeviceData FindDeviceByHandle(string handle)
@@ -147,7 +147,7 @@ public class ProfileManager : IProfileManager
             result = CreateProfile();
         }
 
-        return result;
+        return result!;
     }
 
     public IProfile FindProfileByHandle(string handle)
@@ -178,7 +178,7 @@ public class ProfileManager : IProfileManager
             }
         }
 
-        return null;
+        return null!;
     }
 
     private static DeviceTypes DetectDeviceType()

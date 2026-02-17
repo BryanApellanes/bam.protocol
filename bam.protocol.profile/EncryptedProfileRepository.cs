@@ -21,12 +21,12 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public ProfileData FindProfileByHandle(string handle)
     {
-        return Repository.Query<ProfileData>(p => p.ProfileHandle == handle).FirstOrDefault();
+        return Repository.Query<ProfileData>(p => p.ProfileHandle == handle).FirstOrDefault()!;
     }
 
     public ProfileData FindProfileByPersonHandle(string personHandle)
     {
-        return Repository.Query<ProfileData>(p => p.PersonHandle == personHandle).FirstOrDefault();
+        return Repository.Query<ProfileData>(p => p.PersonHandle == personHandle).FirstOrDefault()!;
     }
 
     public PersonData SavePerson(PersonData personData)
@@ -36,7 +36,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public PersonData FindPersonByHandle(string handle)
     {
-        return Repository.Query<PersonData>(p => p.Handle == handle).FirstOrDefault();
+        return Repository.Query<PersonData>(p => p.Handle == handle).FirstOrDefault()!;
     }
 
     public DeviceData SaveDevice(DeviceData deviceData)
@@ -46,7 +46,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public DeviceData FindDeviceByHandle(string handle)
     {
-        return Repository.Query<DeviceData>(d => d.Handle == handle).FirstOrDefault();
+        return Repository.Query<DeviceData>(d => d.Handle == handle).FirstOrDefault()!;
     }
 
     public OrganizationData SaveOrganization(OrganizationData organizationData)
@@ -56,7 +56,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public OrganizationData FindOrganizationByHandle(string handle)
     {
-        return Repository.Query<OrganizationData>(o => o.Handle == handle).FirstOrDefault();
+        return Repository.Query<OrganizationData>(o => o.Handle == handle).FirstOrDefault()!;
     }
 
     public AgentData SaveAgent(AgentData agentData)
@@ -66,7 +66,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public AgentData FindAgentByHandle(string handle)
     {
-        return Repository.Query<AgentData>(a => a.Handle == handle).FirstOrDefault();
+        return Repository.Query<AgentData>(a => a.Handle == handle).FirstOrDefault()!;
     }
 
     public PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData)
@@ -76,7 +76,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public PublicKeySetData FindPublicKeySetByHandle(string keySetHandle)
     {
-        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle).FirstOrDefault();
+        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle).FirstOrDefault()!;
     }
 
     public IEnumerable<PublicKeySetData> GetAllPublicKeySets()
@@ -91,7 +91,7 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public CertificateData FindCertificateByHash(string hash)
     {
-        return Repository.Query<CertificateData>(c => c.Hash == hash).FirstOrDefault();
+        return Repository.Query<CertificateData>(c => c.Hash == hash).FirstOrDefault()!;
     }
 
     public AgentCertificateData SaveAgentCertificate(AgentCertificateData agentCertificateData)
@@ -101,6 +101,6 @@ public class EncryptedProfileRepository : IProfileRepository
 
     public AgentCertificateData FindAgentCertificateByHandle(string agentHandle)
     {
-        return Repository.Query<AgentCertificateData>(c => c.AgentHandle == agentHandle).FirstOrDefault();
+        return Repository.Query<AgentCertificateData>(c => c.AgentHandle == agentHandle).FirstOrDefault()!;
     }
 }

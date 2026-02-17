@@ -55,7 +55,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void GrantWriteAccessWhenActorHasWrite()
     {
-        string typeName = typeof(ReadService).FullName;
+        string typeName = typeof(ReadService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Write, typeName, "WriteMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Write);
 
@@ -75,7 +75,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void GrantReadAccessWhenActorHasRead()
     {
-        string typeName = typeof(ReadService).FullName;
+        string typeName = typeof(ReadService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Read, typeName, "ReadMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Read);
 
@@ -95,7 +95,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void DenyAccessWhenActorHasDenied()
     {
-        string typeName = typeof(ReadService).FullName;
+        string typeName = typeof(ReadService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Denied, typeName, "WriteMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Denied);
 
@@ -115,7 +115,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void DenyWhenActorHasReadButMethodRequiresWrite()
     {
-        string typeName = typeof(ReadService).FullName;
+        string typeName = typeof(ReadService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Read, typeName, "WriteMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Read);
 
@@ -135,7 +135,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void UseMethodAttributeOverClassAttribute()
     {
-        string typeName = typeof(WriteService).FullName;
+        string typeName = typeof(WriteService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Read, typeName, "ReadMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Read);
 
@@ -155,7 +155,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void DenyByDefaultWhenNoAttribute()
     {
-        string typeName = typeof(NoAttributeService).FullName;
+        string typeName = typeof(NoAttributeService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Write, typeName, "SomeMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Write);
 
@@ -175,7 +175,7 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
     [UnitTest]
     public void GrantWhenActorExceedsRequired()
     {
-        string typeName = typeof(ReadService).FullName;
+        string typeName = typeof(ReadService).FullName!;
         IBamServerContext context = CreateMockContext(BamAccess.Write, typeName, "ReadMethod");
         IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Write);
 
