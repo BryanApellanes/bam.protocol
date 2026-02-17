@@ -8,10 +8,10 @@ public class ServerAccountData : CompositeKeyAuditRepoData
     /// Gets or sets the issuer of this server account, this is typically
     /// the domain name of the issuing server.
     /// </summary>
-    public string Issuer { get; set; }
-    
+    public string Issuer { get; set; } = null!;
+
     /// <summary>
     /// Gets or sets the ProfileAccount handle.
     /// </summary>
-    public string ProfileHandle { get; set; }
+    public string ProfileHandle { get; set; } = null!;
 }

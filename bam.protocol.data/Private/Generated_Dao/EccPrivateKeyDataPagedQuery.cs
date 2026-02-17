@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Private.Dao
 {
     public class EccPrivateKeyDataPagedQuery: PagedQuery<EccPrivateKeyDataColumns, EccPrivateKeyData>
     { 
-		public EccPrivateKeyDataPagedQuery(EccPrivateKeyDataColumns orderByColumn,EccPrivateKeyDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public EccPrivateKeyDataPagedQuery(EccPrivateKeyDataColumns orderByColumn,EccPrivateKeyDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

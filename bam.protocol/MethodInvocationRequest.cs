@@ -21,7 +21,7 @@ public class MethodInvocationRequest : IInvocationRequest
     /// Initializes a new instance of the <see cref="MethodInvocationRequest"/> class for the specified method.
     /// </summary>
     /// <param name="methodInfo">The method to invoke.</param>
-    public MethodInvocationRequest(MethodInfo methodInfo): this(null, methodInfo)
+    public MethodInvocationRequest(MethodInfo methodInfo): this(null!, methodInfo)
     {
     }
 
@@ -57,7 +57,7 @@ public class MethodInvocationRequest : IInvocationRequest
         Args.ThrowIfNull(instance);
         Args.ThrowIfNull(methodName, nameof(methodName));
         this.Instance = instance;
-        this.MethodInfo = instance.GetType().GetMethod(methodName, arguments.Select(arg => arg.GetType()).ToArray());
+        this.MethodInfo = instance.GetType().GetMethod(methodName, arguments.Select(arg => arg.GetType()).ToArray())!;
         Args.ThrowIfNull(this.MethodInfo, nameof(this.MethodInfo));
     }
     
@@ -72,13 +72,13 @@ public class MethodInvocationRequest : IInvocationRequest
     {
         Args.ThrowIfNull(instance, nameof(instance));
         Type type = instance.GetType();
-        MethodInfo methodInfo = type.GetMethod(methodName);
+        MethodInfo? methodInfo = type.GetMethod(methodName);
         Args.ThrowIfNull(methodInfo, nameof(methodInfo));
 
-        string operationIdentifier = Protocol.OperationIdentifier.For(methodInfo);
+        string operationIdentifier = Protocol.OperationIdentifier.For(methodInfo!);
         return new MethodInvocationRequest(instance, operationIdentifier)
         {
-            Arguments = Argument.ListForValues(methodInfo, arguments)
+            Arguments = Argument.ListForValues(methodInfo!, arguments)
         };
     }
 
@@ -103,7 +103,7 @@ public class MethodInvocationRequest : IInvocationRequest
     /// <returns>A new <see cref="MethodInvocationRequest"/> instance.</returns>
     public static MethodInvocationRequest For(Type type, string methodName, params object[] arguments)
     {
-        return For(type.GetMethod(methodName), arguments);
+        return For(type.GetMethod(methodName)!, arguments);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public class MethodInvocationRequest : IInvocationRequest
     /// </summary>
     /// <param name="instanceProvider">The optional service registry used to resolve instances for non-static methods.</param>
     /// <exception cref="InvalidOperationException">Thrown when the instance is null and no service registry is provided for a non-static method.</exception>
-    public void ClientInitialize(ServiceRegistry instanceProvider = null)
+    public void ClientInitialize(ServiceRegistry? instanceProvider = null)
     {
         if (MethodInfo != null)
         {
@@ -145,13 +145,13 @@ public class MethodInvocationRequest : IInvocationRequest
                     Type? type = MethodInfo.DeclaringType;
                     if (type != null)
                     {
-                        Instance = instanceProvider.Get(type);
+                        Instance = instanceProvider!.Get(type);
                     }
                 }
 
                 if (Instance != null)
                 {
-                    InvocationContextSerializer serializer = instanceProvider.Get<InvocationContextSerializer>();
+                    InvocationContextSerializer serializer = instanceProvider!.Get<InvocationContextSerializer>();
                     ContextSerializationFormat = serializer.Format;
                     SerializedContext = serializer.Serialize(Instance);
                 }
@@ -163,41 +163,41 @@ public class MethodInvocationRequest : IInvocationRequest
     /// Initializes the invocation request for server-side execution, resolving the method and instance context.
     /// </summary>
     /// <param name="instanceProvider">The service registry to resolve instances from.</param>
-    public void ServerInitialize(ServiceRegistry instanceProvider = null)
+    public void ServerInitialize(ServiceRegistry? instanceProvider = null)
     {
         if (MethodInfo == null)
         {
             SetMethodInfo(instanceProvider);
         }
 
-        if (!MethodInfo.IsStatic && Instance == null)
+        if (!MethodInfo!.IsStatic && Instance == null)
         {
             if (string.IsNullOrEmpty(SerializedContext))
             {
-                Instance = instanceProvider.Get(MethodInfo.DeclaringType);
+                Instance = instanceProvider!.Get(MethodInfo.DeclaringType!);
             }
             else
             {
-                Instance = instanceProvider.Get<InvocationContextSerializer>().Deserialize(MethodInfo.DeclaringType, SerializedContext);
+                Instance = instanceProvider!.Get<InvocationContextSerializer>().Deserialize(MethodInfo.DeclaringType!, SerializedContext);
             }
         }
     }
     
-    protected object Instance { get; set; }
-    protected MethodInfo MethodInfo { get; set; }
-    
+    protected object Instance { get; set; } = null!;
+    protected MethodInfo MethodInfo { get; set; } = null!;
+
 
     /// <inheritdoc />
-    public string ContextSerializationFormat { get; private set; }
+    public string ContextSerializationFormat { get; private set; } = null!;
 
     /// <inheritdoc />
-    public string OperationIdentifier { get; set; }
+    public string OperationIdentifier { get; set; } = null!;
 
     /// <inheritdoc />
-    public string SerializedContext { get; set; }
+    public string SerializedContext { get; set; } = null!;
 
     /// <inheritdoc />
-    public List<Argument> Arguments { get; set; }
+    public List<Argument> Arguments { get; set; } = null!;
 
     /// <summary>
     /// Invokes the method and returns the result cast to the specified type.
@@ -215,26 +215,26 @@ public class MethodInvocationRequest : IInvocationRequest
     /// <returns>The result of the method invocation.</returns>
     public object Invoke()
     {
-        return MethodInfo.Invoke(Instance, Arguments.Select(a => a.Value).ToArray());
+        return MethodInfo.Invoke(Instance, Arguments.Select(a => a.Value).ToArray())!;
     }
     
     /// <summary>
     /// Resolves the method and instance context before server-side invocation.
     /// </summary>
     /// <param name="instanceProvider">The optional service registry used to resolve instances and deserializers.</param>
-    protected void SetMethodInfo(ServiceRegistry instanceProvider = null)
+    protected void SetMethodInfo(ServiceRegistry? instanceProvider = null)
     {
         MethodInfo = Bam.Protocol.OperationIdentifier.ToMethod(OperationIdentifier);
         if (!MethodInfo.IsStatic)
         {
             if (SerializedContext == null)
             {
-                Instance = instanceProvider.Get(MethodInfo.DeclaringType);
+                Instance = instanceProvider!.Get(MethodInfo.DeclaringType!);
             }
             else
             {
-                InvocationContextSerializer serializer = instanceProvider.Get<InvocationContextSerializer>();
-                Instance = serializer.Deserialize(MethodInfo.DeclaringType, SerializedContext);
+                InvocationContextSerializer serializer = instanceProvider!.Get<InvocationContextSerializer>();
+                Instance = serializer.Deserialize(MethodInfo.DeclaringType!, SerializedContext);
             }
         }
     }

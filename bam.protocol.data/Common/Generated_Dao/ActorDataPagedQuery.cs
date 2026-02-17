@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class ActorDataPagedQuery: PagedQuery<ActorDataColumns, ActorData>
     { 
-		public ActorDataPagedQuery(ActorDataColumns orderByColumn,ActorDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public ActorDataPagedQuery(ActorDataColumns orderByColumn,ActorDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

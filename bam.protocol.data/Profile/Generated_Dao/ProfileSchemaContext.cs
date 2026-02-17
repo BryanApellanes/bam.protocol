@@ -33,48 +33,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 
 	public class AdditionalPropertyQueryContext
 	{
-			public AdditionalPropertyCollection Where(WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public AdditionalPropertyCollection Where(WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.Where(where, db);
 			}
 		   
-			public AdditionalPropertyCollection Where(WhereDelegate<AdditionalPropertyColumns> where, OrderBy<AdditionalPropertyColumns> orderBy = null, Database db = null)
+			public AdditionalPropertyCollection Where(WhereDelegate<AdditionalPropertyColumns> where, OrderBy<AdditionalPropertyColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.Where(where, orderBy, db);
 			}
 
-			public AdditionalProperty OneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public AdditionalProperty OneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.OneWhere(where, db);
 			}
 
-			public static AdditionalProperty GetOneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public static AdditionalProperty GetOneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.GetOneWhere(where, db);
 			}
 		
-			public AdditionalProperty FirstOneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public AdditionalProperty FirstOneWhere(WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.FirstOneWhere(where, db);
 			}
 
-			public AdditionalPropertyCollection Top(int count, WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public AdditionalPropertyCollection Top(int count, WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.Top(count, where, db);
 			}
 
-			public AdditionalPropertyCollection Top(int count, WhereDelegate<AdditionalPropertyColumns> where, OrderBy<AdditionalPropertyColumns> orderBy, Database db = null)
+			public AdditionalPropertyCollection Top(int count, WhereDelegate<AdditionalPropertyColumns> where, OrderBy<AdditionalPropertyColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<AdditionalPropertyColumns> where, Database db = null)
+			public long Count(WhereDelegate<AdditionalPropertyColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AdditionalProperty.Count(where, db);
 			}
 	}
 
-	static AdditionalPropertyQueryContext _additionalProperties;
+	static AdditionalPropertyQueryContext _additionalProperties = null!;
 	static object _additionalPropertiesLock = new object();
 	public static AdditionalPropertyQueryContext AdditionalProperties
 	{
@@ -85,48 +85,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class AgentAdditionalPropertiesQueryContext
 	{
-			public AgentAdditionalPropertiesCollection Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public AgentAdditionalPropertiesCollection Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.Where(where, db);
 			}
 		   
-			public AgentAdditionalPropertiesCollection Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public AgentAdditionalPropertiesCollection Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public AgentAdditionalProperties OneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public AgentAdditionalProperties OneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static AgentAdditionalProperties GetOneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public static AgentAdditionalProperties GetOneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public AgentAdditionalProperties FirstOneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public AgentAdditionalProperties FirstOneWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public AgentAdditionalPropertiesCollection Top(int count, WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public AgentAdditionalPropertiesCollection Top(int count, WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.Top(count, where, db);
 			}
 
-			public AgentAdditionalPropertiesCollection Top(int count, WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy, Database db = null)
+			public AgentAdditionalPropertiesCollection Top(int count, WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<AgentAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static AgentAdditionalPropertiesQueryContext _agentAdditionalProperties;
+	static AgentAdditionalPropertiesQueryContext _agentAdditionalProperties = null!;
 	static object _agentAdditionalPropertiesLock = new object();
 	public static AgentAdditionalPropertiesQueryContext AgentAdditionalProperties
 	{
@@ -137,48 +137,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class AgentCertificateDataQueryContext
 	{
-			public AgentCertificateDataCollection Where(WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public AgentCertificateDataCollection Where(WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.Where(where, db);
 			}
 		   
-			public AgentCertificateDataCollection Where(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null, Database db = null)
+			public AgentCertificateDataCollection Where(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.Where(where, orderBy, db);
 			}
 
-			public AgentCertificateData OneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public AgentCertificateData OneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.OneWhere(where, db);
 			}
 
-			public static AgentCertificateData GetOneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public static AgentCertificateData GetOneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.GetOneWhere(where, db);
 			}
 		
-			public AgentCertificateData FirstOneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public AgentCertificateData FirstOneWhere(WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.FirstOneWhere(where, db);
 			}
 
-			public AgentCertificateDataCollection Top(int count, WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public AgentCertificateDataCollection Top(int count, WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.Top(count, where, db);
 			}
 
-			public AgentCertificateDataCollection Top(int count, WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy, Database db = null)
+			public AgentCertificateDataCollection Top(int count, WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<AgentCertificateDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<AgentCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.AgentCertificateData.Count(where, db);
 			}
 	}
 
-	static AgentCertificateDataQueryContext _agentCertificateDatas;
+	static AgentCertificateDataQueryContext _agentCertificateDatas = null!;
 	static object _agentCertificateDatasLock = new object();
 	public static AgentCertificateDataQueryContext AgentCertificateDatas
 	{
@@ -189,48 +189,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class CertificateDataQueryContext
 	{
-			public CertificateDataCollection Where(WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public CertificateDataCollection Where(WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.Where(where, db);
 			}
 		   
-			public CertificateDataCollection Where(WhereDelegate<CertificateDataColumns> where, OrderBy<CertificateDataColumns> orderBy = null, Database db = null)
+			public CertificateDataCollection Where(WhereDelegate<CertificateDataColumns> where, OrderBy<CertificateDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.Where(where, orderBy, db);
 			}
 
-			public CertificateData OneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public CertificateData OneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.OneWhere(where, db);
 			}
 
-			public static CertificateData GetOneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public static CertificateData GetOneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.GetOneWhere(where, db);
 			}
 		
-			public CertificateData FirstOneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public CertificateData FirstOneWhere(WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.FirstOneWhere(where, db);
 			}
 
-			public CertificateDataCollection Top(int count, WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public CertificateDataCollection Top(int count, WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.Top(count, where, db);
 			}
 
-			public CertificateDataCollection Top(int count, WhereDelegate<CertificateDataColumns> where, OrderBy<CertificateDataColumns> orderBy, Database db = null)
+			public CertificateDataCollection Top(int count, WhereDelegate<CertificateDataColumns> where, OrderBy<CertificateDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<CertificateDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<CertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.CertificateData.Count(where, db);
 			}
 	}
 
-	static CertificateDataQueryContext _certificateDatas;
+	static CertificateDataQueryContext _certificateDatas = null!;
 	static object _certificateDatasLock = new object();
 	public static CertificateDataQueryContext CertificateDatas
 	{
@@ -241,48 +241,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class DeviceAdditionalPropertiesQueryContext
 	{
-			public DeviceAdditionalPropertiesCollection Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public DeviceAdditionalPropertiesCollection Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.Where(where, db);
 			}
 		   
-			public DeviceAdditionalPropertiesCollection Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public DeviceAdditionalPropertiesCollection Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public DeviceAdditionalProperties OneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public DeviceAdditionalProperties OneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static DeviceAdditionalProperties GetOneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public static DeviceAdditionalProperties GetOneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public DeviceAdditionalProperties FirstOneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public DeviceAdditionalProperties FirstOneWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public DeviceAdditionalPropertiesCollection Top(int count, WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public DeviceAdditionalPropertiesCollection Top(int count, WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.Top(count, where, db);
 			}
 
-			public DeviceAdditionalPropertiesCollection Top(int count, WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy, Database db = null)
+			public DeviceAdditionalPropertiesCollection Top(int count, WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<DeviceAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static DeviceAdditionalPropertiesQueryContext _deviceAdditionalProperties;
+	static DeviceAdditionalPropertiesQueryContext _deviceAdditionalProperties = null!;
 	static object _deviceAdditionalPropertiesLock = new object();
 	public static DeviceAdditionalPropertiesQueryContext DeviceAdditionalProperties
 	{
@@ -293,48 +293,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class DeviceCertificateDataQueryContext
 	{
-			public DeviceCertificateDataCollection Where(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public DeviceCertificateDataCollection Where(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.Where(where, db);
 			}
 		   
-			public DeviceCertificateDataCollection Where(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null, Database db = null)
+			public DeviceCertificateDataCollection Where(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.Where(where, orderBy, db);
 			}
 
-			public DeviceCertificateData OneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public DeviceCertificateData OneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.OneWhere(where, db);
 			}
 
-			public static DeviceCertificateData GetOneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public static DeviceCertificateData GetOneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.GetOneWhere(where, db);
 			}
 		
-			public DeviceCertificateData FirstOneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public DeviceCertificateData FirstOneWhere(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.FirstOneWhere(where, db);
 			}
 
-			public DeviceCertificateDataCollection Top(int count, WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public DeviceCertificateDataCollection Top(int count, WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.Top(count, where, db);
 			}
 
-			public DeviceCertificateDataCollection Top(int count, WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy, Database db = null)
+			public DeviceCertificateDataCollection Top(int count, WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<DeviceCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.Count(where, db);
 			}
 	}
 
-	static DeviceCertificateDataQueryContext _deviceCertificateDatas;
+	static DeviceCertificateDataQueryContext _deviceCertificateDatas = null!;
 	static object _deviceCertificateDatasLock = new object();
 	public static DeviceCertificateDataQueryContext DeviceCertificateDatas
 	{
@@ -345,48 +345,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class GroupAdditionalPropertiesQueryContext
 	{
-			public GroupAdditionalPropertiesCollection Where(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public GroupAdditionalPropertiesCollection Where(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.Where(where, db);
 			}
 		   
-			public GroupAdditionalPropertiesCollection Where(WhereDelegate<GroupAdditionalPropertiesColumns> where, OrderBy<GroupAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public GroupAdditionalPropertiesCollection Where(WhereDelegate<GroupAdditionalPropertiesColumns> where, OrderBy<GroupAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public GroupAdditionalProperties OneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public GroupAdditionalProperties OneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static GroupAdditionalProperties GetOneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public static GroupAdditionalProperties GetOneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public GroupAdditionalProperties FirstOneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public GroupAdditionalProperties FirstOneWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public GroupAdditionalPropertiesCollection Top(int count, WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public GroupAdditionalPropertiesCollection Top(int count, WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.Top(count, where, db);
 			}
 
-			public GroupAdditionalPropertiesCollection Top(int count, WhereDelegate<GroupAdditionalPropertiesColumns> where, OrderBy<GroupAdditionalPropertiesColumns> orderBy, Database db = null)
+			public GroupAdditionalPropertiesCollection Top(int count, WhereDelegate<GroupAdditionalPropertiesColumns> where, OrderBy<GroupAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<GroupAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static GroupAdditionalPropertiesQueryContext _groupAdditionalProperties;
+	static GroupAdditionalPropertiesQueryContext _groupAdditionalProperties = null!;
 	static object _groupAdditionalPropertiesLock = new object();
 	public static GroupAdditionalPropertiesQueryContext GroupAdditionalProperties
 	{
@@ -397,48 +397,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class GroupDataQueryContext
 	{
-			public GroupDataCollection Where(WhereDelegate<GroupDataColumns> where, Database db = null)
+			public GroupDataCollection Where(WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.Where(where, db);
 			}
 		   
-			public GroupDataCollection Where(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null, Database db = null)
+			public GroupDataCollection Where(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.Where(where, orderBy, db);
 			}
 
-			public GroupData OneWhere(WhereDelegate<GroupDataColumns> where, Database db = null)
+			public GroupData OneWhere(WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.OneWhere(where, db);
 			}
 
-			public static GroupData GetOneWhere(WhereDelegate<GroupDataColumns> where, Database db = null)
+			public static GroupData GetOneWhere(WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.GetOneWhere(where, db);
 			}
 		
-			public GroupData FirstOneWhere(WhereDelegate<GroupDataColumns> where, Database db = null)
+			public GroupData FirstOneWhere(WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.FirstOneWhere(where, db);
 			}
 
-			public GroupDataCollection Top(int count, WhereDelegate<GroupDataColumns> where, Database db = null)
+			public GroupDataCollection Top(int count, WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.Top(count, where, db);
 			}
 
-			public GroupDataCollection Top(int count, WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy, Database db = null)
+			public GroupDataCollection Top(int count, WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<GroupDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<GroupDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupData.Count(where, db);
 			}
 	}
 
-	static GroupDataQueryContext _groupDatas;
+	static GroupDataQueryContext _groupDatas = null!;
 	static object _groupDatasLock = new object();
 	public static GroupDataQueryContext GroupDatas
 	{
@@ -449,48 +449,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PersonDataQueryContext
 	{
-			public PersonDataCollection Where(WhereDelegate<PersonDataColumns> where, Database db = null)
+			public PersonDataCollection Where(WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.Where(where, db);
 			}
 		   
-			public PersonDataCollection Where(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null, Database db = null)
+			public PersonDataCollection Where(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.Where(where, orderBy, db);
 			}
 
-			public PersonData OneWhere(WhereDelegate<PersonDataColumns> where, Database db = null)
+			public PersonData OneWhere(WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.OneWhere(where, db);
 			}
 
-			public static PersonData GetOneWhere(WhereDelegate<PersonDataColumns> where, Database db = null)
+			public static PersonData GetOneWhere(WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.GetOneWhere(where, db);
 			}
 		
-			public PersonData FirstOneWhere(WhereDelegate<PersonDataColumns> where, Database db = null)
+			public PersonData FirstOneWhere(WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.FirstOneWhere(where, db);
 			}
 
-			public PersonDataCollection Top(int count, WhereDelegate<PersonDataColumns> where, Database db = null)
+			public PersonDataCollection Top(int count, WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.Top(count, where, db);
 			}
 
-			public PersonDataCollection Top(int count, WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy, Database db = null)
+			public PersonDataCollection Top(int count, WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PersonDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<PersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonData.Count(where, db);
 			}
 	}
 
-	static PersonDataQueryContext _personDatas;
+	static PersonDataQueryContext _personDatas = null!;
 	static object _personDatasLock = new object();
 	public static PersonDataQueryContext PersonDatas
 	{
@@ -501,48 +501,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class OrganizationDataQueryContext
 	{
-			public OrganizationDataCollection Where(WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public OrganizationDataCollection Where(WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.Where(where, db);
 			}
 		   
-			public OrganizationDataCollection Where(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null, Database db = null)
+			public OrganizationDataCollection Where(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.Where(where, orderBy, db);
 			}
 
-			public OrganizationData OneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public OrganizationData OneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.OneWhere(where, db);
 			}
 
-			public static OrganizationData GetOneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public static OrganizationData GetOneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.GetOneWhere(where, db);
 			}
 		
-			public OrganizationData FirstOneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public OrganizationData FirstOneWhere(WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.FirstOneWhere(where, db);
 			}
 
-			public OrganizationDataCollection Top(int count, WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public OrganizationDataCollection Top(int count, WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.Top(count, where, db);
 			}
 
-			public OrganizationDataCollection Top(int count, WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy, Database db = null)
+			public OrganizationDataCollection Top(int count, WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<OrganizationDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<OrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationData.Count(where, db);
 			}
 	}
 
-	static OrganizationDataQueryContext _organizationDatas;
+	static OrganizationDataQueryContext _organizationDatas = null!;
 	static object _organizationDatasLock = new object();
 	public static OrganizationDataQueryContext OrganizationDatas
 	{
@@ -553,48 +553,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class MailingAddressDataQueryContext
 	{
-			public MailingAddressDataCollection Where(WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public MailingAddressDataCollection Where(WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.Where(where, db);
 			}
 		   
-			public MailingAddressDataCollection Where(WhereDelegate<MailingAddressDataColumns> where, OrderBy<MailingAddressDataColumns> orderBy = null, Database db = null)
+			public MailingAddressDataCollection Where(WhereDelegate<MailingAddressDataColumns> where, OrderBy<MailingAddressDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.Where(where, orderBy, db);
 			}
 
-			public MailingAddressData OneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public MailingAddressData OneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.OneWhere(where, db);
 			}
 
-			public static MailingAddressData GetOneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public static MailingAddressData GetOneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.GetOneWhere(where, db);
 			}
 		
-			public MailingAddressData FirstOneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public MailingAddressData FirstOneWhere(WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.FirstOneWhere(where, db);
 			}
 
-			public MailingAddressDataCollection Top(int count, WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public MailingAddressDataCollection Top(int count, WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.Top(count, where, db);
 			}
 
-			public MailingAddressDataCollection Top(int count, WhereDelegate<MailingAddressDataColumns> where, OrderBy<MailingAddressDataColumns> orderBy, Database db = null)
+			public MailingAddressDataCollection Top(int count, WhereDelegate<MailingAddressDataColumns> where, OrderBy<MailingAddressDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<MailingAddressDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<MailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.MailingAddressData.Count(where, db);
 			}
 	}
 
-	static MailingAddressDataQueryContext _mailingAddressDatas;
+	static MailingAddressDataQueryContext _mailingAddressDatas = null!;
 	static object _mailingAddressDatasLock = new object();
 	public static MailingAddressDataQueryContext MailingAddressDatas
 	{
@@ -605,48 +605,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class OrganizationAdditionalPropertiesQueryContext
 	{
-			public OrganizationAdditionalPropertiesCollection Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public OrganizationAdditionalPropertiesCollection Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.Where(where, db);
 			}
 		   
-			public OrganizationAdditionalPropertiesCollection Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public OrganizationAdditionalPropertiesCollection Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public OrganizationAdditionalProperties OneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public OrganizationAdditionalProperties OneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static OrganizationAdditionalProperties GetOneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public static OrganizationAdditionalProperties GetOneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public OrganizationAdditionalProperties FirstOneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public OrganizationAdditionalProperties FirstOneWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public OrganizationAdditionalPropertiesCollection Top(int count, WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public OrganizationAdditionalPropertiesCollection Top(int count, WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.Top(count, where, db);
 			}
 
-			public OrganizationAdditionalPropertiesCollection Top(int count, WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy, Database db = null)
+			public OrganizationAdditionalPropertiesCollection Top(int count, WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static OrganizationAdditionalPropertiesQueryContext _organizationAdditionalProperties;
+	static OrganizationAdditionalPropertiesQueryContext _organizationAdditionalProperties = null!;
 	static object _organizationAdditionalPropertiesLock = new object();
 	public static OrganizationAdditionalPropertiesQueryContext OrganizationAdditionalProperties
 	{
@@ -657,48 +657,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class OrganizationCertificateDataQueryContext
 	{
-			public OrganizationCertificateDataCollection Where(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public OrganizationCertificateDataCollection Where(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.Where(where, db);
 			}
 		   
-			public OrganizationCertificateDataCollection Where(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null, Database db = null)
+			public OrganizationCertificateDataCollection Where(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.Where(where, orderBy, db);
 			}
 
-			public OrganizationCertificateData OneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public OrganizationCertificateData OneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.OneWhere(where, db);
 			}
 
-			public static OrganizationCertificateData GetOneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public static OrganizationCertificateData GetOneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.GetOneWhere(where, db);
 			}
 		
-			public OrganizationCertificateData FirstOneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public OrganizationCertificateData FirstOneWhere(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.FirstOneWhere(where, db);
 			}
 
-			public OrganizationCertificateDataCollection Top(int count, WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public OrganizationCertificateDataCollection Top(int count, WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.Top(count, where, db);
 			}
 
-			public OrganizationCertificateDataCollection Top(int count, WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy, Database db = null)
+			public OrganizationCertificateDataCollection Top(int count, WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<OrganizationCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.Count(where, db);
 			}
 	}
 
-	static OrganizationCertificateDataQueryContext _organizationCertificateDatas;
+	static OrganizationCertificateDataQueryContext _organizationCertificateDatas = null!;
 	static object _organizationCertificateDatasLock = new object();
 	public static OrganizationCertificateDataQueryContext OrganizationCertificateDatas
 	{
@@ -709,48 +709,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class OrganizationMailingAddressQueryContext
 	{
-			public OrganizationMailingAddressCollection Where(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public OrganizationMailingAddressCollection Where(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.Where(where, db);
 			}
 		   
-			public OrganizationMailingAddressCollection Where(WhereDelegate<OrganizationMailingAddressColumns> where, OrderBy<OrganizationMailingAddressColumns> orderBy = null, Database db = null)
+			public OrganizationMailingAddressCollection Where(WhereDelegate<OrganizationMailingAddressColumns> where, OrderBy<OrganizationMailingAddressColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.Where(where, orderBy, db);
 			}
 
-			public OrganizationMailingAddress OneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public OrganizationMailingAddress OneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.OneWhere(where, db);
 			}
 
-			public static OrganizationMailingAddress GetOneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public static OrganizationMailingAddress GetOneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.GetOneWhere(where, db);
 			}
 		
-			public OrganizationMailingAddress FirstOneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public OrganizationMailingAddress FirstOneWhere(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.FirstOneWhere(where, db);
 			}
 
-			public OrganizationMailingAddressCollection Top(int count, WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public OrganizationMailingAddressCollection Top(int count, WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.Top(count, where, db);
 			}
 
-			public OrganizationMailingAddressCollection Top(int count, WhereDelegate<OrganizationMailingAddressColumns> where, OrderBy<OrganizationMailingAddressColumns> orderBy, Database db = null)
+			public OrganizationMailingAddressCollection Top(int count, WhereDelegate<OrganizationMailingAddressColumns> where, OrderBy<OrganizationMailingAddressColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null)
+			public long Count(WhereDelegate<OrganizationMailingAddressColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.Count(where, db);
 			}
 	}
 
-	static OrganizationMailingAddressQueryContext _organizationMailingAddresses;
+	static OrganizationMailingAddressQueryContext _organizationMailingAddresses = null!;
 	static object _organizationMailingAddressesLock = new object();
 	public static OrganizationMailingAddressQueryContext OrganizationMailingAddresses
 	{
@@ -761,48 +761,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PersonAdditionalPropertiesQueryContext
 	{
-			public PersonAdditionalPropertiesCollection Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public PersonAdditionalPropertiesCollection Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.Where(where, db);
 			}
 		   
-			public PersonAdditionalPropertiesCollection Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public PersonAdditionalPropertiesCollection Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public PersonAdditionalProperties OneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public PersonAdditionalProperties OneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static PersonAdditionalProperties GetOneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public static PersonAdditionalProperties GetOneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public PersonAdditionalProperties FirstOneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public PersonAdditionalProperties FirstOneWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public PersonAdditionalPropertiesCollection Top(int count, WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public PersonAdditionalPropertiesCollection Top(int count, WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.Top(count, where, db);
 			}
 
-			public PersonAdditionalPropertiesCollection Top(int count, WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy, Database db = null)
+			public PersonAdditionalPropertiesCollection Top(int count, WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<PersonAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static PersonAdditionalPropertiesQueryContext _personAdditionalProperties;
+	static PersonAdditionalPropertiesQueryContext _personAdditionalProperties = null!;
 	static object _personAdditionalPropertiesLock = new object();
 	public static PersonAdditionalPropertiesQueryContext PersonAdditionalProperties
 	{
@@ -813,48 +813,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PersonCertificateDataQueryContext
 	{
-			public PersonCertificateDataCollection Where(WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public PersonCertificateDataCollection Where(WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.Where(where, db);
 			}
 		   
-			public PersonCertificateDataCollection Where(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null, Database db = null)
+			public PersonCertificateDataCollection Where(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.Where(where, orderBy, db);
 			}
 
-			public PersonCertificateData OneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public PersonCertificateData OneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.OneWhere(where, db);
 			}
 
-			public static PersonCertificateData GetOneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public static PersonCertificateData GetOneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.GetOneWhere(where, db);
 			}
 		
-			public PersonCertificateData FirstOneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public PersonCertificateData FirstOneWhere(WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.FirstOneWhere(where, db);
 			}
 
-			public PersonCertificateDataCollection Top(int count, WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public PersonCertificateDataCollection Top(int count, WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.Top(count, where, db);
 			}
 
-			public PersonCertificateDataCollection Top(int count, WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy, Database db = null)
+			public PersonCertificateDataCollection Top(int count, WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PersonCertificateDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<PersonCertificateDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonCertificateData.Count(where, db);
 			}
 	}
 
-	static PersonCertificateDataQueryContext _personCertificateDatas;
+	static PersonCertificateDataQueryContext _personCertificateDatas = null!;
 	static object _personCertificateDatasLock = new object();
 	public static PersonCertificateDataQueryContext PersonCertificateDatas
 	{
@@ -865,48 +865,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PersonMailingAddressDataQueryContext
 	{
-			public PersonMailingAddressDataCollection Where(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public PersonMailingAddressDataCollection Where(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.Where(where, db);
 			}
 		   
-			public PersonMailingAddressDataCollection Where(WhereDelegate<PersonMailingAddressDataColumns> where, OrderBy<PersonMailingAddressDataColumns> orderBy = null, Database db = null)
+			public PersonMailingAddressDataCollection Where(WhereDelegate<PersonMailingAddressDataColumns> where, OrderBy<PersonMailingAddressDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.Where(where, orderBy, db);
 			}
 
-			public PersonMailingAddressData OneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public PersonMailingAddressData OneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.OneWhere(where, db);
 			}
 
-			public static PersonMailingAddressData GetOneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public static PersonMailingAddressData GetOneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.GetOneWhere(where, db);
 			}
 		
-			public PersonMailingAddressData FirstOneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public PersonMailingAddressData FirstOneWhere(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.FirstOneWhere(where, db);
 			}
 
-			public PersonMailingAddressDataCollection Top(int count, WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public PersonMailingAddressDataCollection Top(int count, WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.Top(count, where, db);
 			}
 
-			public PersonMailingAddressDataCollection Top(int count, WhereDelegate<PersonMailingAddressDataColumns> where, OrderBy<PersonMailingAddressDataColumns> orderBy, Database db = null)
+			public PersonMailingAddressDataCollection Top(int count, WhereDelegate<PersonMailingAddressDataColumns> where, OrderBy<PersonMailingAddressDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<PersonMailingAddressDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.Count(where, db);
 			}
 	}
 
-	static PersonMailingAddressDataQueryContext _personMailingAddressDatas;
+	static PersonMailingAddressDataQueryContext _personMailingAddressDatas = null!;
 	static object _personMailingAddressDatasLock = new object();
 	public static PersonMailingAddressDataQueryContext PersonMailingAddressDatas
 	{
@@ -917,48 +917,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class ProfileAdditionalPropertiesQueryContext
 	{
-			public ProfileAdditionalPropertiesCollection Where(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public ProfileAdditionalPropertiesCollection Where(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.Where(where, db);
 			}
 		   
-			public ProfileAdditionalPropertiesCollection Where(WhereDelegate<ProfileAdditionalPropertiesColumns> where, OrderBy<ProfileAdditionalPropertiesColumns> orderBy = null, Database db = null)
+			public ProfileAdditionalPropertiesCollection Where(WhereDelegate<ProfileAdditionalPropertiesColumns> where, OrderBy<ProfileAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.Where(where, orderBy, db);
 			}
 
-			public ProfileAdditionalProperties OneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public ProfileAdditionalProperties OneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.OneWhere(where, db);
 			}
 
-			public static ProfileAdditionalProperties GetOneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public static ProfileAdditionalProperties GetOneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.GetOneWhere(where, db);
 			}
 		
-			public ProfileAdditionalProperties FirstOneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public ProfileAdditionalProperties FirstOneWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.FirstOneWhere(where, db);
 			}
 
-			public ProfileAdditionalPropertiesCollection Top(int count, WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public ProfileAdditionalPropertiesCollection Top(int count, WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.Top(count, where, db);
 			}
 
-			public ProfileAdditionalPropertiesCollection Top(int count, WhereDelegate<ProfileAdditionalPropertiesColumns> where, OrderBy<ProfileAdditionalPropertiesColumns> orderBy, Database db = null)
+			public ProfileAdditionalPropertiesCollection Top(int count, WhereDelegate<ProfileAdditionalPropertiesColumns> where, OrderBy<ProfileAdditionalPropertiesColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null)
+			public long Count(WhereDelegate<ProfileAdditionalPropertiesColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.Count(where, db);
 			}
 	}
 
-	static ProfileAdditionalPropertiesQueryContext _profileAdditionalProperties;
+	static ProfileAdditionalPropertiesQueryContext _profileAdditionalProperties = null!;
 	static object _profileAdditionalPropertiesLock = new object();
 	public static ProfileAdditionalPropertiesQueryContext ProfileAdditionalProperties
 	{
@@ -969,48 +969,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class ProfileDataQueryContext
 	{
-			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.Where(where, db);
 			}
 		   
-			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy = null, Database db = null)
+			public ProfileDataCollection Where(WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.Where(where, orderBy, db);
 			}
 
-			public ProfileData OneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public ProfileData OneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.OneWhere(where, db);
 			}
 
-			public static ProfileData GetOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public static ProfileData GetOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.GetOneWhere(where, db);
 			}
 		
-			public ProfileData FirstOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public ProfileData FirstOneWhere(WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.FirstOneWhere(where, db);
 			}
 
-			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.Top(count, where, db);
 			}
 
-			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy, Database db = null)
+			public ProfileDataCollection Top(int count, WhereDelegate<ProfileDataColumns> where, OrderBy<ProfileDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<ProfileDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<ProfileDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.ProfileData.Count(where, db);
 			}
 	}
 
-	static ProfileDataQueryContext _profileDatas;
+	static ProfileDataQueryContext _profileDatas = null!;
 	static object _profileDatasLock = new object();
 	public static ProfileDataQueryContext ProfileDatas
 	{
@@ -1021,48 +1021,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PublicKeySetDataQueryContext
 	{
-			public PublicKeySetDataCollection Where(WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public PublicKeySetDataCollection Where(WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.Where(where, db);
 			}
 		   
-			public PublicKeySetDataCollection Where(WhereDelegate<PublicKeySetDataColumns> where, OrderBy<PublicKeySetDataColumns> orderBy = null, Database db = null)
+			public PublicKeySetDataCollection Where(WhereDelegate<PublicKeySetDataColumns> where, OrderBy<PublicKeySetDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.Where(where, orderBy, db);
 			}
 
-			public PublicKeySetData OneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public PublicKeySetData OneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.OneWhere(where, db);
 			}
 
-			public static PublicKeySetData GetOneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public static PublicKeySetData GetOneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.GetOneWhere(where, db);
 			}
 		
-			public PublicKeySetData FirstOneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public PublicKeySetData FirstOneWhere(WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.FirstOneWhere(where, db);
 			}
 
-			public PublicKeySetDataCollection Top(int count, WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public PublicKeySetDataCollection Top(int count, WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.Top(count, where, db);
 			}
 
-			public PublicKeySetDataCollection Top(int count, WhereDelegate<PublicKeySetDataColumns> where, OrderBy<PublicKeySetDataColumns> orderBy, Database db = null)
+			public PublicKeySetDataCollection Top(int count, WhereDelegate<PublicKeySetDataColumns> where, OrderBy<PublicKeySetDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PublicKeySetDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<PublicKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PublicKeySetData.Count(where, db);
 			}
 	}
 
-	static PublicKeySetDataQueryContext _publicKeySetDatas;
+	static PublicKeySetDataQueryContext _publicKeySetDatas = null!;
 	static object _publicKeySetDatasLock = new object();
 	public static PublicKeySetDataQueryContext PublicKeySetDatas
 	{
@@ -1073,48 +1073,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class GroupDataPersonDataQueryContext
 	{
-			public GroupDataPersonDataCollection Where(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public GroupDataPersonDataCollection Where(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.Where(where, db);
 			}
 		   
-			public GroupDataPersonDataCollection Where(WhereDelegate<GroupDataPersonDataColumns> where, OrderBy<GroupDataPersonDataColumns> orderBy = null, Database db = null)
+			public GroupDataPersonDataCollection Where(WhereDelegate<GroupDataPersonDataColumns> where, OrderBy<GroupDataPersonDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.Where(where, orderBy, db);
 			}
 
-			public GroupDataPersonData OneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public GroupDataPersonData OneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.OneWhere(where, db);
 			}
 
-			public static GroupDataPersonData GetOneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public static GroupDataPersonData GetOneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.GetOneWhere(where, db);
 			}
 		
-			public GroupDataPersonData FirstOneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public GroupDataPersonData FirstOneWhere(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.FirstOneWhere(where, db);
 			}
 
-			public GroupDataPersonDataCollection Top(int count, WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public GroupDataPersonDataCollection Top(int count, WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.Top(count, where, db);
 			}
 
-			public GroupDataPersonDataCollection Top(int count, WhereDelegate<GroupDataPersonDataColumns> where, OrderBy<GroupDataPersonDataColumns> orderBy, Database db = null)
+			public GroupDataPersonDataCollection Top(int count, WhereDelegate<GroupDataPersonDataColumns> where, OrderBy<GroupDataPersonDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<GroupDataPersonDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.GroupDataPersonData.Count(where, db);
 			}
 	}
 
-	static GroupDataPersonDataQueryContext _groupDataPersonDatas;
+	static GroupDataPersonDataQueryContext _groupDataPersonDatas = null!;
 	static object _groupDataPersonDatasLock = new object();
 	public static GroupDataPersonDataQueryContext GroupDataPersonDatas
 	{
@@ -1125,48 +1125,48 @@ namespace Bam.Protocol.Data.Profile.Dao
 	}
 	public class PersonDataOrganizationDataQueryContext
 	{
-			public PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.Where(where, db);
 			}
 		   
-			public PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null, Database db = null)
+			public PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.Where(where, orderBy, db);
 			}
 
-			public PersonDataOrganizationData OneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public PersonDataOrganizationData OneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.OneWhere(where, db);
 			}
 
-			public static PersonDataOrganizationData GetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public static PersonDataOrganizationData GetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.GetOneWhere(where, db);
 			}
 		
-			public PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.FirstOneWhere(where, db);
 			}
 
-			public PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.Top(count, where, db);
 			}
 
-			public PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, Database db = null)
+			public PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<PersonDataOrganizationDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData.Count(where, db);
 			}
 	}
 
-	static PersonDataOrganizationDataQueryContext _personDataOrganizationDatas;
+	static PersonDataOrganizationDataQueryContext _personDataOrganizationDatas = null!;
 	static object _personDataOrganizationDatasLock = new object();
 	public static PersonDataOrganizationDataQueryContext PersonDataOrganizationDatas
 	{

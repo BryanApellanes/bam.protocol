@@ -35,7 +35,7 @@ public class GroupAccessLevelProvider : IAccessLevelProvider
             return BamAccess.Denied;
         }
 
-        string actorHandle = context.Actor?.Handle;
+        string actorHandle = context.Actor?.Handle!;
         if (string.IsNullOrEmpty(actorHandle))
         {
             return BamAccess.Denied;

@@ -5,11 +5,11 @@ namespace Bam.Protocol.Data.Profile;
 public class AdditionalProperty : KeyedAuditRepoData
 {
     [CompositeKey]
-    public string Name { get; set; }
-    
-    public string Value { get; set; }
+    public string Name { get; set; } = null!;
 
-    private string _handle;
+    public string Value { get; set; } = null!;
+
+    private string _handle = null!;
 
     public string Handle
     {

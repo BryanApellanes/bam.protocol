@@ -17,10 +17,10 @@ public class BamHeaderValue
     /// <summary>
     /// Gets or sets the name of the header.
     /// </summary>
-    public string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the value of the header.
     /// </summary>
-    public string Value { get; set; }
+    public string Value { get; set; } = null!;
 }

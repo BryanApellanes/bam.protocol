@@ -29,7 +29,9 @@ namespace Bam.Protocol
         /// </summary>
         /// <param name="clientKeySet"></param>
         /// <returns></returns>
+#pragma warning disable CS0618 // Obsolete types used intentionally for backward compatibility
         Task<IAesKeyExchange> CreateAesKeyExchangeAsync(IClientKeySet clientKeySet); // client side: set the aes key and send exchange
+#pragma warning restore CS0618
 
         /// <summary>
         /// Retrieves a client key set by its public key.
@@ -50,6 +52,8 @@ namespace Bam.Protocol
         /// </summary>
         /// <param name="secretExchange">The secret exchange containing the encrypted secret and identifier.</param>
         /// <returns>The client key set with the secret applied.</returns>
+#pragma warning disable CS0618
         Task<IClientKeySet> SetSecret(ISecretExchange secretExchange);
+#pragma warning restore CS0618
     }
 }

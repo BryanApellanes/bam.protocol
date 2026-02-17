@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class OrganizationDataQuery: Query<OrganizationDataColumns, OrganizationData>
     { 
 		public OrganizationDataQuery(){}
-		public OrganizationDataQuery(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public OrganizationDataQuery(Func<OrganizationDataColumns, QueryFilter<OrganizationDataColumns>> where, OrderBy<OrganizationDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public OrganizationDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public OrganizationDataQuery(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public OrganizationDataQuery(Func<OrganizationDataColumns, QueryFilter<OrganizationDataColumns>> where, OrderBy<OrganizationDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public OrganizationDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static OrganizationDataQuery Where(WhereDelegate<OrganizationDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static OrganizationDataQuery Where(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null, Database db = null)
+        public static OrganizationDataQuery Where(WhereDelegate<OrganizationDataColumns> where, OrderBy<OrganizationDataColumns> orderBy = null!, Database db = null!)
         {
             return new OrganizationDataQuery(where, orderBy, db);
         }

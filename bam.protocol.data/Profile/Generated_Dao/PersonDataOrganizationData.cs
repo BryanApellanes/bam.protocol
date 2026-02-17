@@ -72,7 +72,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 		set
 		{
-			SetValue("Id", value);
+			SetValue("Id", value!);
 		}
 	}
     // property:Uuid, columnName: Uuid	
@@ -108,11 +108,11 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 		set
 		{
-			SetValue("PersonDataId", value, false);
+			SetValue("PersonDataId", value!, false);
 		}
 	}
 
-    PersonData _personDataOfPersonDataId;
+    PersonData _personDataOfPersonDataId = null!;
 	public PersonData PersonDataOfPersonDataId
 	{
 		get
@@ -143,11 +143,11 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 		set
 		{
-			SetValue("OrganizationDataId", value, false);
+			SetValue("OrganizationDataId", value!, false);
 		}
 	}
 
-    OrganizationData _organizationDataOfOrganizationDataId;
+    OrganizationData _organizationDataOfOrganizationDataId = null!;
 	public OrganizationData OrganizationDataOfOrganizationDataId
 	{
 		get
@@ -190,7 +190,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="database">
 		/// The database to load from or null
 		/// </param>
-		public static PersonDataOrganizationDataCollection LoadAll(IDatabase database = null)
+		public static PersonDataOrganizationDataCollection LoadAll(IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
             ISqlStringBuilder sql = db.GetSqlStringBuilder();
@@ -206,7 +206,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         /// Process all records in batches of the specified size
         /// </summary>
         [Bam.Exclude]
-        public static async Task BatchAll(int batchSize, Action<IEnumerable<PersonDataOrganizationData>> batchProcessor, IDatabase database = null)
+        public static async Task BatchAll(int batchSize, Action<IEnumerable<PersonDataOrganizationData>> batchProcessor, IDatabase database = null!)
 		{
 			await Task.Run(async ()=>
 			{
@@ -225,72 +225,72 @@ namespace Bam.Protocol.Data.Profile.Dao
 			});
 		}
 
-		public static PersonDataOrganizationData GetById(uint? id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(uint? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified PersonDataOrganizationData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
 
-		public static PersonDataOrganizationData GetById(uint id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(uint id, IDatabase database = null!)
 		{
 			return GetById((ulong)id, database);
 		}
 
-		public static PersonDataOrganizationData GetById(int? id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(int? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified PersonDataOrganizationData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}                                    
                                     
-		public static PersonDataOrganizationData GetById(int id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(int id, IDatabase database = null!)
 		{
 			return GetById((long)id, database);
 		}
 
-		public static PersonDataOrganizationData GetById(long? id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(long? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified PersonDataOrganizationData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
                                     
-		public static PersonDataOrganizationData GetById(long id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(long id, IDatabase database = null!)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static PersonDataOrganizationData GetById(ulong? id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(ulong? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified PersonDataOrganizationData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
                                     
-		public static PersonDataOrganizationData GetById(ulong id, IDatabase database = null)
+		public static PersonDataOrganizationData GetById(ulong id, IDatabase database = null!)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static PersonDataOrganizationData GetByUuid(string uuid, IDatabase database = null)
+		public static PersonDataOrganizationData GetByUuid(string uuid, IDatabase database = null!)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Uuid") == uuid, database);
 		}
 
-		public static PersonDataOrganizationData GetByCuid(string cuid, IDatabase database = null)
+		public static PersonDataOrganizationData GetByCuid(string cuid, IDatabase database = null!)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Cuid") == cuid, database);
 		}
 
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Query(QueryFilter filter, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Query(QueryFilter filter, IDatabase database = null!)
 		{
 			return Where(filter, database);
 		}
 
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Where(QueryFilter filter, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Where(QueryFilter filter, IDatabase database = null!)
 		{
 			WhereDelegate<PersonDataOrganizationDataColumns> whereDelegate = (c) => filter;
 			return Where(whereDelegate, database);
@@ -305,7 +305,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Where(Func<PersonDataOrganizationDataColumns, QueryFilter<PersonDataOrganizationDataColumns>> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Where(Func<PersonDataOrganizationDataColumns, QueryFilter<PersonDataOrganizationDataColumns>> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			database = database ?? Db.For<PersonDataOrganizationData>();
 			return new PersonDataOrganizationDataCollection(database.GetQuery<PersonDataOrganizationDataColumns, PersonDataOrganizationData>(where, orderBy), true);
@@ -320,7 +320,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			database = database ?? Db.For<PersonDataOrganizationData>();
 			var results = new PersonDataOrganizationDataCollection(database, database.GetQuery<PersonDataOrganizationDataColumns, PersonDataOrganizationData>(where), true);
@@ -339,7 +339,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Where(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			database = database ?? Db.For<PersonDataOrganizationData>();
 			var results = new PersonDataOrganizationDataCollection(database, database.GetQuery<PersonDataOrganizationDataColumns, PersonDataOrganizationData>(where, orderBy), true);
@@ -354,7 +354,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static PersonDataOrganizationDataCollection Where(QiQuery where, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Where(QiQuery where, IDatabase database = null!)
 		{
 			var results = new PersonDataOrganizationDataCollection(database, Select<PersonDataOrganizationDataColumns>.From<PersonDataOrganizationData>().Where(where, database));
 			return results;
@@ -366,7 +366,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData GetOneWhere(QueryFilter where, IDatabase database = null)
+		public static PersonDataOrganizationData GetOneWhere(QueryFilter where, IDatabase database = null!)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -385,7 +385,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData OneWhere(QueryFilter where, IDatabase database = null)
+		public static PersonDataOrganizationData OneWhere(QueryFilter where, IDatabase database = null!)
 		{
 			WhereDelegate<PersonDataOrganizationDataColumns> whereDelegate = (c) => where;
 			var result = Top(1, whereDelegate, database);
@@ -398,7 +398,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			SetOneWhere(where, out PersonDataOrganizationData ignore, database);
 		}
@@ -409,7 +409,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, out PersonDataOrganizationData result, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, out PersonDataOrganizationData result, IDatabase database = null!)
 		{
 			result = GetOneWhere(where, database);
 		}
@@ -422,7 +422,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData GetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static PersonDataOrganizationData GetOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -447,7 +447,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData OneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static PersonDataOrganizationData OneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			var result = Top(1, where, database);
 			return OneOrThrow(result);
@@ -461,7 +461,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static PersonDataOrganizationData OneWhere(QiQuery where, IDatabase database = null)
+		public static PersonDataOrganizationData OneWhere(QiQuery where, IDatabase database = null!)
 		{
 			var results = Top(1, where, database);
 			return OneOrThrow(results);
@@ -477,7 +477,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			var results = Top(1, where, database);
 			if(results.Count > 0)
@@ -486,7 +486,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -500,7 +500,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, IDatabase database = null)
+		public static PersonDataOrganizationData FirstOneWhere(WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, IDatabase database = null!)
 		{
 			var results = Top(1, where, orderBy, database);
 			if(results.Count > 0)
@@ -509,7 +509,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -522,7 +522,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationData FirstOneWhere(QueryFilter where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null, IDatabase database = null)
+		public static PersonDataOrganizationData FirstOneWhere(QueryFilter where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			WhereDelegate<PersonDataOrganizationDataColumns> whereDelegate = (c) => where;
 			var results = Top(1, whereDelegate, orderBy, database);
@@ -532,7 +532,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -551,9 +551,9 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
-			return Top(count, where, null, database);
+			return Top(count, where, null!, database);
 		}
 
 		/// <summary>
@@ -576,7 +576,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Top(int count, WhereDelegate<PersonDataOrganizationDataColumns> where, OrderBy<PersonDataOrganizationDataColumns> orderBy, IDatabase database = null!)
 		{
 			PersonDataOrganizationDataColumns c = new PersonDataOrganizationDataColumns();
 			IQueryFilter filter = where(c);
@@ -600,7 +600,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		[Bam.Exclude]
 		public static PersonDataOrganizationDataCollection Top(int count, QueryFilter where, IDatabase database)
 		{
-			return Top(count, where, null, database);
+			return Top(count, where, null!, database);
 		}
 		/// <summary>
 		/// Execute a query and return the specified number of values.  This method
@@ -622,7 +622,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Top(int count, QueryFilter where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Top(int count, QueryFilter where, OrderBy<PersonDataOrganizationDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
 			IQuerySet query = GetQuerySet(db);
@@ -641,7 +641,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 
 		[Bam.Exclude]
-		public static PersonDataOrganizationDataCollection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Top(int count, QueryFilter where, string orderBy = null!, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
 			IQuerySet query = GetQuerySet(db);
@@ -675,7 +675,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static PersonDataOrganizationDataCollection Top(int count, QiQuery where, IDatabase database = null)
+		public static PersonDataOrganizationDataCollection Top(int count, QiQuery where, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
 			IQuerySet query = GetQuerySet(db);
@@ -693,7 +693,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static long Count(IDatabase database = null)
+		public static long Count(IDatabase database = null!)
         {
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
             IQuerySet query = GetQuerySet(db);
@@ -713,7 +713,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static long Count(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null)
+		public static long Count(WhereDelegate<PersonDataOrganizationDataColumns> where, IDatabase database = null!)
 		{
 			PersonDataOrganizationDataColumns c = new PersonDataOrganizationDataColumns();
 			IQueryFilter filter = where(c) ;
@@ -726,7 +726,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		public static long Count(QiQuery where, IDatabase database = null)
+		public static long Count(QiQuery where, IDatabase database = null!)
 		{
 		    IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
 			IQuerySet query = GetQuerySet(db);
@@ -736,13 +736,13 @@ namespace Bam.Protocol.Data.Profile.Dao
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		private static PersonDataOrganizationData CreateFromFilter(IQueryFilter filter, IDatabase database = null)
+		private static PersonDataOrganizationData CreateFromFilter(IQueryFilter filter, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<PersonDataOrganizationData>();
 			var dao = new PersonDataOrganizationData();
 			filter.Parameters.Each(p=>
 			{
-				dao.Property(p.ColumnName, p.Value);
+				dao.Property(p.ColumnName, p.Value!);
 			});
 			dao.Save(db);
 			return dao;
@@ -759,7 +759,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 				throw new MultipleEntriesFoundException();
 			}
 
-			return null;
+			return null!;
 		}
 
 	}

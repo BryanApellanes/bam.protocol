@@ -24,7 +24,7 @@ public class BamRequestLine
         this.Value = requestLine;
     }
 
-    private readonly string _value;
+    private readonly string _value = null!;
     /// <summary>
     /// Gets the raw request line string value.
     /// </summary>
@@ -46,12 +46,12 @@ public class BamRequestLine
     /// <summary>
     /// Gets the request URI parsed from the request line.
     /// </summary>
-    public string RequestUri { get; private set; }
+    public string RequestUri { get; private set; } = null!;
 
     /// <summary>
     /// Gets the protocol version parsed from the request line (e.g., "HTTP/1.1").
     /// </summary>
-    public string ProtocolVersion { get; private set; }
+    public string ProtocolVersion { get; private set; } = null!;
 
     public override string ToString()
     {

@@ -16,5 +16,5 @@ public class InitializationFailure
     /// <summary>
     /// Gets or sets the message describing the failure.
     /// </summary>
-    public string Message { get; set; }
+    public string Message { get; set; } = null!;
 }

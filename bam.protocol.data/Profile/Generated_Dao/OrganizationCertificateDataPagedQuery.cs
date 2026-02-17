@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class OrganizationCertificateDataPagedQuery: PagedQuery<OrganizationCertificateDataColumns, OrganizationCertificateData>
     { 
-		public OrganizationCertificateDataPagedQuery(OrganizationCertificateDataColumns orderByColumn,OrganizationCertificateDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public OrganizationCertificateDataPagedQuery(OrganizationCertificateDataColumns orderByColumn,OrganizationCertificateDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

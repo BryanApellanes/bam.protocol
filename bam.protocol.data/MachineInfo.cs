@@ -6,9 +6,9 @@ namespace Bam.Protocol
 {
     public class MachineInfo : IMachine
     {
-        public List<HostAddressData> HostAddresses { get; set; }
-        public string Name { get; set; }
-        public string DnsName { get; set; }
-        public List<NicData> NetworkInterfaces { get; set; }
+        public List<HostAddressData> HostAddresses { get; set; } = null!;
+        public string Name { get; set; } = null!;
+        public string DnsName { get; set; } = null!;
+        public List<NicData> NetworkInterfaces { get; set; } = null!;
     }
 }

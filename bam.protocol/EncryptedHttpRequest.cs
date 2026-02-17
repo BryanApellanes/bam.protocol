@@ -10,7 +10,7 @@ namespace Bam.Protocol
         /// <summary>
         /// Gets or sets the cipher containing the encrypted content body.
         /// </summary>
-        public Cipher ContentCipher { get; internal set; }
+        public Cipher ContentCipher { get; internal set; } = null!;
 
         /// <summary>
         /// Gets the content as the string representation of the cipher. Setting this property directly throws an <see cref="InvalidOperationException"/>.

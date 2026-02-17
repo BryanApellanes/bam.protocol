@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Common.Dao
     public class MachineDataQuery: Query<MachineDataColumns, MachineData>
     { 
 		public MachineDataQuery(){}
-		public MachineDataQuery(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public MachineDataQuery(Func<MachineDataColumns, QueryFilter<MachineDataColumns>> where, OrderBy<MachineDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public MachineDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public MachineDataQuery(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public MachineDataQuery(Func<MachineDataColumns, QueryFilter<MachineDataColumns>> where, OrderBy<MachineDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public MachineDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static MachineDataQuery Where(WhereDelegate<MachineDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static MachineDataQuery Where(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null, Database db = null)
+        public static MachineDataQuery Where(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null!, Database db = null!)
         {
             return new MachineDataQuery(where, orderBy, db);
         }

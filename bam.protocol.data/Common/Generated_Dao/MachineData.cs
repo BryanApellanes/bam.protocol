@@ -80,7 +80,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 		set
 		{
-			SetValue("Id", value);
+			SetValue("Id", value!);
 		}
 	}
     // property:Uuid, columnName: Uuid	
@@ -163,7 +163,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Created", value);
+            SetValue("Created", value!);
         }
     }
 
@@ -244,7 +244,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// <param name="database">
 		/// The database to load from or null
 		/// </param>
-		public static MachineDataCollection LoadAll(IDatabase database = null)
+		public static MachineDataCollection LoadAll(IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<MachineData>();
             ISqlStringBuilder sql = db.GetSqlStringBuilder();
@@ -260,7 +260,7 @@ namespace Bam.Protocol.Data.Common.Dao
         /// Process all records in batches of the specified size
         /// </summary>
         [Bam.Exclude]
-        public static async Task BatchAll(int batchSize, Action<IEnumerable<MachineData>> batchProcessor, IDatabase database = null)
+        public static async Task BatchAll(int batchSize, Action<IEnumerable<MachineData>> batchProcessor, IDatabase database = null!)
 		{
 			await Task.Run(async ()=>
 			{
@@ -279,72 +279,72 @@ namespace Bam.Protocol.Data.Common.Dao
 			});
 		}
 
-		public static MachineData GetById(uint? id, IDatabase database = null)
+		public static MachineData GetById(uint? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified MachineData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
 
-		public static MachineData GetById(uint id, IDatabase database = null)
+		public static MachineData GetById(uint id, IDatabase database = null!)
 		{
 			return GetById((ulong)id, database);
 		}
 
-		public static MachineData GetById(int? id, IDatabase database = null)
+		public static MachineData GetById(int? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified MachineData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}                                    
                                     
-		public static MachineData GetById(int id, IDatabase database = null)
+		public static MachineData GetById(int id, IDatabase database = null!)
 		{
 			return GetById((long)id, database);
 		}
 
-		public static MachineData GetById(long? id, IDatabase database = null)
+		public static MachineData GetById(long? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified MachineData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
                                     
-		public static MachineData GetById(long id, IDatabase database = null)
+		public static MachineData GetById(long id, IDatabase database = null!)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static MachineData GetById(ulong? id, IDatabase database = null)
+		public static MachineData GetById(ulong? id, IDatabase database = null!)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified MachineData.Id was null");
-			return GetById(id.Value, database);
+			return GetById(id!.Value, database);
 		}
                                     
-		public static MachineData GetById(ulong id, IDatabase database = null)
+		public static MachineData GetById(ulong id, IDatabase database = null!)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static MachineData GetByUuid(string uuid, IDatabase database = null)
+		public static MachineData GetByUuid(string uuid, IDatabase database = null!)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Uuid") == uuid, database);
 		}
 
-		public static MachineData GetByCuid(string cuid, IDatabase database = null)
+		public static MachineData GetByCuid(string cuid, IDatabase database = null!)
 		{
 			return OneWhere(c => Bam.Data.Query.Where("Cuid") == cuid, database);
 		}
 
 		[Bam.Exclude]
-		public static MachineDataCollection Query(QueryFilter filter, IDatabase database = null)
+		public static MachineDataCollection Query(QueryFilter filter, IDatabase database = null!)
 		{
 			return Where(filter, database);
 		}
 
 		[Bam.Exclude]
-		public static MachineDataCollection Where(QueryFilter filter, IDatabase database = null)
+		public static MachineDataCollection Where(QueryFilter filter, IDatabase database = null!)
 		{
 			WhereDelegate<MachineDataColumns> whereDelegate = (c) => filter;
 			return Where(whereDelegate, database);
@@ -359,7 +359,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static MachineDataCollection Where(Func<MachineDataColumns, QueryFilter<MachineDataColumns>> where, OrderBy<MachineDataColumns> orderBy = null, IDatabase database = null)
+		public static MachineDataCollection Where(Func<MachineDataColumns, QueryFilter<MachineDataColumns>> where, OrderBy<MachineDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			database = database ?? Db.For<MachineData>();
 			return new MachineDataCollection(database.GetQuery<MachineDataColumns, MachineData>(where, orderBy), true);
@@ -374,7 +374,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Exclude]
-		public static MachineDataCollection Where(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static MachineDataCollection Where(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			database = database ?? Db.For<MachineData>();
 			var results = new MachineDataCollection(database, database.GetQuery<MachineDataColumns, MachineData>(where), true);
@@ -393,7 +393,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineDataCollection Where(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null, IDatabase database = null)
+		public static MachineDataCollection Where(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			database = database ?? Db.For<MachineData>();
 			var results = new MachineDataCollection(database, database.GetQuery<MachineDataColumns, MachineData>(where, orderBy), true);
@@ -408,7 +408,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static MachineDataCollection Where(QiQuery where, IDatabase database = null)
+		public static MachineDataCollection Where(QiQuery where, IDatabase database = null!)
 		{
 			var results = new MachineDataCollection(database, Select<MachineDataColumns>.From<MachineData>().Where(where, database));
 			return results;
@@ -420,7 +420,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static MachineData GetOneWhere(QueryFilter where, IDatabase database = null)
+		public static MachineData GetOneWhere(QueryFilter where, IDatabase database = null!)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -439,7 +439,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData OneWhere(QueryFilter where, IDatabase database = null)
+		public static MachineData OneWhere(QueryFilter where, IDatabase database = null!)
 		{
 			WhereDelegate<MachineDataColumns> whereDelegate = (c) => where;
 			var result = Top(1, whereDelegate, database);
@@ -452,7 +452,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			SetOneWhere(where, out MachineData ignore, database);
 		}
@@ -463,7 +463,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Exclude]
-		public static void SetOneWhere(WhereDelegate<MachineDataColumns> where, out MachineData result, IDatabase database = null)
+		public static void SetOneWhere(WhereDelegate<MachineDataColumns> where, out MachineData result, IDatabase database = null!)
 		{
 			result = GetOneWhere(where, database);
 		}
@@ -476,7 +476,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData GetOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static MachineData GetOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -501,7 +501,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData OneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static MachineData OneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			var result = Top(1, where, database);
 			return OneOrThrow(result);
@@ -515,7 +515,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static MachineData OneWhere(QiQuery where, IDatabase database = null)
+		public static MachineData OneWhere(QiQuery where, IDatabase database = null!)
 		{
 			var results = Top(1, where, database);
 			return OneOrThrow(results);
@@ -531,7 +531,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData FirstOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static MachineData FirstOneWhere(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			var results = Top(1, where, database);
 			if(results.Count > 0)
@@ -540,7 +540,7 @@ namespace Bam.Protocol.Data.Common.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -554,7 +554,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData FirstOneWhere(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy, IDatabase database = null)
+		public static MachineData FirstOneWhere(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy, IDatabase database = null!)
 		{
 			var results = Top(1, where, orderBy, database);
 			if(results.Count > 0)
@@ -563,7 +563,7 @@ namespace Bam.Protocol.Data.Common.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -576,7 +576,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineData FirstOneWhere(QueryFilter where, OrderBy<MachineDataColumns> orderBy = null, IDatabase database = null)
+		public static MachineData FirstOneWhere(QueryFilter where, OrderBy<MachineDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			WhereDelegate<MachineDataColumns> whereDelegate = (c) => where;
 			var results = Top(1, whereDelegate, orderBy, database);
@@ -586,7 +586,7 @@ namespace Bam.Protocol.Data.Common.Dao
 			}
 			else
 			{
-				return null;
+				return null!;
 			}
 		}
 
@@ -605,9 +605,9 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Exclude]
-		public static MachineDataCollection Top(int count, WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static MachineDataCollection Top(int count, WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
-			return Top(count, where, null, database);
+			return Top(count, where, null!, database);
 		}
 
 		/// <summary>
@@ -630,7 +630,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static MachineDataCollection Top(int count, WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy, IDatabase database = null)
+		public static MachineDataCollection Top(int count, WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy, IDatabase database = null!)
 		{
 			MachineDataColumns c = new MachineDataColumns();
 			IQueryFilter filter = where(c);
@@ -654,7 +654,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		[Bam.Exclude]
 		public static MachineDataCollection Top(int count, QueryFilter where, IDatabase database)
 		{
-			return Top(count, where, null, database);
+			return Top(count, where, null!, database);
 		}
 		/// <summary>
 		/// Execute a query and return the specified number of values.  This method
@@ -676,7 +676,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static MachineDataCollection Top(int count, QueryFilter where, OrderBy<MachineDataColumns> orderBy = null, IDatabase database = null)
+		public static MachineDataCollection Top(int count, QueryFilter where, OrderBy<MachineDataColumns> orderBy = null!, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<MachineData>();
 			IQuerySet query = GetQuerySet(db);
@@ -695,7 +695,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 
 		[Bam.Exclude]
-		public static MachineDataCollection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null)
+		public static MachineDataCollection Top(int count, QueryFilter where, string orderBy = null!, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<MachineData>();
 			IQuerySet query = GetQuerySet(db);
@@ -729,7 +729,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static MachineDataCollection Top(int count, QiQuery where, IDatabase database = null)
+		public static MachineDataCollection Top(int count, QiQuery where, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<MachineData>();
 			IQuerySet query = GetQuerySet(db);
@@ -747,7 +747,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static long Count(IDatabase database = null)
+		public static long Count(IDatabase database = null!)
         {
 			IDatabase db = database ?? Db.For<MachineData>();
             IQuerySet query = GetQuerySet(db);
@@ -767,7 +767,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Exclude]
-		public static long Count(WhereDelegate<MachineDataColumns> where, IDatabase database = null)
+		public static long Count(WhereDelegate<MachineDataColumns> where, IDatabase database = null!)
 		{
 			MachineDataColumns c = new MachineDataColumns();
 			IQueryFilter filter = where(c) ;
@@ -780,7 +780,7 @@ namespace Bam.Protocol.Data.Common.Dao
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		public static long Count(QiQuery where, IDatabase database = null)
+		public static long Count(QiQuery where, IDatabase database = null!)
 		{
 		    IDatabase db = database ?? Db.For<MachineData>();
 			IQuerySet query = GetQuerySet(db);
@@ -790,13 +790,13 @@ namespace Bam.Protocol.Data.Common.Dao
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		private static MachineData CreateFromFilter(IQueryFilter filter, IDatabase database = null)
+		private static MachineData CreateFromFilter(IQueryFilter filter, IDatabase database = null!)
 		{
 			IDatabase db = database ?? Db.For<MachineData>();
 			var dao = new MachineData();
 			filter.Parameters.Each(p=>
 			{
-				dao.Property(p.ColumnName, p.Value);
+				dao.Property(p.ColumnName, p.Value!);
 			});
 			dao.Save(db);
 			return dao;
@@ -813,7 +813,7 @@ namespace Bam.Protocol.Data.Common.Dao
 				throw new MultipleEntriesFoundException();
 			}
 
-			return null;
+			return null!;
 		}
 
 	}

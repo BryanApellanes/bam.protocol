@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 		}
 
 		[JsonIgnore]
-		public DaoRepository DaoRepository { get; set; }
+		public DaoRepository DaoRepository { get; set; } = null!;
 
 		[JsonIgnore]
 		public Dictionary<string, PropertyInfo> UpdatedXrefCollectionProperties { get; set; }
@@ -38,15 +38,15 @@ namespace Bam.Protocol.Data.Common.Wrappers
 		{
 			if(UpdatedXrefCollectionProperties != null && !UpdatedXrefCollectionProperties.ContainsKey(propertyName))
 			{
-				UpdatedXrefCollectionProperties.Add(propertyName, correspondingProperty);				
+				UpdatedXrefCollectionProperties.Add(propertyName, correspondingProperty);
 			}
 			else if(UpdatedXrefCollectionProperties != null)
 			{
-				UpdatedXrefCollectionProperties[propertyName] = correspondingProperty;				
+				UpdatedXrefCollectionProperties[propertyName] = correspondingProperty;
 			}
 		}
 
-        System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> _hostAddresses;
+        System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> _hostAddresses = null!;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> HostAddresses
 		{
 			get
@@ -61,7 +61,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 			{
 				_hostAddresses = value;
 			}
-		}        System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> _networkInterfaces;
+		}        System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> _networkInterfaces = null!;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> NetworkInterfaces
 		{
 			get

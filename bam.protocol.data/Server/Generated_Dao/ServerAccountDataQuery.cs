@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Server.Dao
     public class ServerAccountDataQuery: Query<ServerAccountDataColumns, ServerAccountData>
     { 
 		public ServerAccountDataQuery(){}
-		public ServerAccountDataQuery(WhereDelegate<ServerAccountDataColumns> where, OrderBy<ServerAccountDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public ServerAccountDataQuery(Func<ServerAccountDataColumns, QueryFilter<ServerAccountDataColumns>> where, OrderBy<ServerAccountDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public ServerAccountDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public ServerAccountDataQuery(WhereDelegate<ServerAccountDataColumns> where, OrderBy<ServerAccountDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public ServerAccountDataQuery(Func<ServerAccountDataColumns, QueryFilter<ServerAccountDataColumns>> where, OrderBy<ServerAccountDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public ServerAccountDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static ServerAccountDataQuery Where(WhereDelegate<ServerAccountDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static ServerAccountDataQuery Where(WhereDelegate<ServerAccountDataColumns> where, OrderBy<ServerAccountDataColumns> orderBy = null, Database db = null)
+        public static ServerAccountDataQuery Where(WhereDelegate<ServerAccountDataColumns> where, OrderBy<ServerAccountDataColumns> orderBy = null!, Database db = null!)
         {
             return new ServerAccountDataQuery(where, orderBy, db);
         }

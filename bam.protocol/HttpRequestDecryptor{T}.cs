@@ -33,7 +33,7 @@ namespace Bam.Protocol
         {
             get;
             private set;
-        }
+        } = null!;
 
         /// <summary>
         /// Decrypts the specified typed encrypted request, returning a typed HTTP request with deserialized content.

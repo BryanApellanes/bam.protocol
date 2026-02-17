@@ -15,7 +15,7 @@ public class BamAuthentication
     /// <param name="actor">The actor that was authenticated.</param>
     /// <param name="request">The request that was authenticated.</param>
     /// <param name="messages">Optional messages describing the authentication result.</param>
-    public BamAuthentication(bool success, IActor actor, IBamRequest request, string[] messages = null)
+    public BamAuthentication(bool success, IActor actor, IBamRequest request, string[] messages = null!)
     {
         Success = success;
         Actor = actor;

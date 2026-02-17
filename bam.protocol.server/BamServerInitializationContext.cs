@@ -15,12 +15,12 @@ public abstract class BamServerInitializationContext
     /// <summary>
     /// Gets or sets the server processing this request.
     /// </summary>
-    public BamServer Server { get; set; }
+    public BamServer Server { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the server context being initialized.
     /// </summary>
-    public IBamServerContext ServerContext { get; set; }
+    public IBamServerContext ServerContext { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets a value indicating whether the initialization pipeline can continue to the next step.
@@ -30,7 +30,7 @@ public abstract class BamServerInitializationContext
     /// <summary>
     /// Gets or sets the event arguments associated with this initialization.
     /// </summary>
-    public BamServerEventArgs EventArgs { get; set; }
+    public BamServerEventArgs EventArgs { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the current initialization status.
@@ -40,5 +40,5 @@ public abstract class BamServerInitializationContext
     /// <summary>
     /// Gets or sets a message describing the initialization result or failure reason.
     /// </summary>
-    public string Message { get; set; }
+    public string Message { get; set; } = null!;
 }

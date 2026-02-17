@@ -11,5 +11,5 @@ public class StartSessionRequest : BamRequest
     /// <summary>
     /// Gets or sets the client's ECC public key used for key exchange.
     /// </summary>
-    public EccPublicKey ClientPublicKey { get; set; }
+    public EccPublicKey ClientPublicKey { get; set; } = null!;
 }

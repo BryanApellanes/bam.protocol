@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 		}
 
 		[JsonIgnore]
-		public DaoRepository DaoRepository { get; set; }
+		public DaoRepository DaoRepository { get; set; } = null!;
 
 		[JsonIgnore]
 		public Dictionary<string, PropertyInfo> UpdatedXrefCollectionProperties { get; set; }
@@ -47,14 +47,14 @@ namespace Bam.Protocol.Data.Common.Wrappers
 		}
 
 
-        Bam.Protocol.Data.Common.DeviceData _deviceData;
+        Bam.Protocol.Data.Common.DeviceData _deviceData = null!;
 		public override Bam.Protocol.Data.Common.DeviceData DeviceData
 		{
 			get
 			{
 				if (_deviceData == null)
 				{
-					_deviceData = (Bam.Protocol.Data.Common.DeviceData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.DeviceData));
+					_deviceData = (Bam.Protocol.Data.Common.DeviceData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.DeviceData))!;
 				}
 				return _deviceData;
 			}
@@ -62,14 +62,14 @@ namespace Bam.Protocol.Data.Common.Wrappers
 			{
 				_deviceData = value;
 			}
-		}        Bam.Protocol.Data.Common.MachineData _machineData;
+		}        Bam.Protocol.Data.Common.MachineData _machineData = null!;
 		public override Bam.Protocol.Data.Common.MachineData MachineData
 		{
 			get
 			{
 				if (_machineData == null)
 				{
-					_machineData = (Bam.Protocol.Data.Common.MachineData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.MachineData));
+					_machineData = (Bam.Protocol.Data.Common.MachineData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.MachineData))!;
 				}
 				return _machineData;
 			}

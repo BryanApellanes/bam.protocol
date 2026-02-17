@@ -29,8 +29,8 @@ public class BamRequestProcessor : IBamRequestProcessor
     public object ProcessRequestContext(IBamServerContext serverContext)
     {
         string content = serverContext.BamRequest.Content;
-        MethodInvocationRequest invocation = Newtonsoft.Json.JsonConvert.DeserializeObject<MethodInvocationRequest>(content);
-        invocation.ServerInitialize(ServiceRegistry);
+        MethodInvocationRequest invocation = Newtonsoft.Json.JsonConvert.DeserializeObject<MethodInvocationRequest>(content)!;
+        invocation!.ServerInitialize(ServiceRegistry);
         return invocation.Invoke();
     }
 }

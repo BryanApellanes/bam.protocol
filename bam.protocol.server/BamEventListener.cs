@@ -28,12 +28,12 @@ public class BamEventListener
     /// <summary>
     /// Gets or sets the name of the event to listen for.
     /// </summary>
-    public string EventName { get; set; }
+    public string EventName { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the delegate to invoke when the event is raised.
     /// </summary>
-    public Delegate EventHandler { get; set; }
+    public Delegate EventHandler { get; set; } = null!;
 
     /// <summary>
     /// Subscribes the event handler to the named event on the specified event source.
@@ -43,7 +43,7 @@ public class BamEventListener
     public void Listen(object eventSource, bool throwIfEventNotFound = false)
     {
         Type type = eventSource.GetType();
-        EventInfo eventInfo = type.GetEvent(EventName);
+        EventInfo eventInfo = type.GetEvent(EventName)!;
         if (eventInfo != null)
         {
             eventInfo.AddEventHandler(eventSource, EventHandler);

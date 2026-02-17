@@ -32,7 +32,7 @@ public class ActorResolverInitializationHandler: IBamServerContextInitialization
             initialization.Status = InitializationStatus.ActorResolutionFailed;
         }
 
-        context.SetActor(actor);
+        context.SetActor(actor!);
         return initialization;
     }
 }

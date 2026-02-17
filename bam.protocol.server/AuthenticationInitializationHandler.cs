@@ -31,7 +31,7 @@ public class AuthenticationInitializationHandler : IBamServerContextInitializati
             initialization.Status = InitializationStatus.AuthenticationFailed;
         }
 
-        context.SetAuthentication(authentication);
+        context.SetAuthentication(authentication!);
         return initialization;
     }
 }

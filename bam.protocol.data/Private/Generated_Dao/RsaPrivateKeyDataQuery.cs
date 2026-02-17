@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Private.Dao
     public class RsaPrivateKeyDataQuery: Query<RsaPrivateKeyDataColumns, RsaPrivateKeyData>
     { 
 		public RsaPrivateKeyDataQuery(){}
-		public RsaPrivateKeyDataQuery(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public RsaPrivateKeyDataQuery(Func<RsaPrivateKeyDataColumns, QueryFilter<RsaPrivateKeyDataColumns>> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public RsaPrivateKeyDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public RsaPrivateKeyDataQuery(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public RsaPrivateKeyDataQuery(Func<RsaPrivateKeyDataColumns, QueryFilter<RsaPrivateKeyDataColumns>> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public RsaPrivateKeyDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static RsaPrivateKeyDataQuery Where(WhereDelegate<RsaPrivateKeyDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static RsaPrivateKeyDataQuery Where(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null, Database db = null)
+        public static RsaPrivateKeyDataQuery Where(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null!, Database db = null!)
         {
             return new RsaPrivateKeyDataQuery(where, orderBy, db);
         }

@@ -6,7 +6,7 @@
     /// <typeparam name="TContent">The type of the request body content.</typeparam>
     public class HttpRequest<TContent> : HttpRequest, IHttpRequest<TContent>
     {
-        TContent content;
+        TContent content = default!;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpRequest{TContent}"/> class with default settings.
@@ -31,7 +31,7 @@
             set
             {
                 this.content = value;
-                base.Content = this.TypedContent.ToJson();
+                base.Content = this.TypedContent!.ToJson();
             }
         }
 

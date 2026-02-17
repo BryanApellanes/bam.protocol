@@ -25,7 +25,7 @@ namespace Bam.Server
             this.ServerName = serverName;
         }
 
-        IManagedServer _server;
+        IManagedServer _server = null!;
         protected internal IManagedServer Server
         {
             get => _server;
@@ -36,7 +36,7 @@ namespace Bam.Server
             }
         }
 
-        string _serverName;
+        string _serverName = null!;
         /// <summary>
         /// Gets or sets the server name.  Not to be confused with the hostname, the ServerName is an identifier assigned to the server for programmatic reference.
         /// </summary>

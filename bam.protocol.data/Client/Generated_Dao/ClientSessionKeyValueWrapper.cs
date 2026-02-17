@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Client.Wrappers
 		}
 
 		[JsonIgnore]
-		public DaoRepository DaoRepository { get; set; }
+		public DaoRepository DaoRepository { get; set; } = null!;
 
 		[JsonIgnore]
 		public Dictionary<string, PropertyInfo> UpdatedXrefCollectionProperties { get; set; }
@@ -47,16 +47,16 @@ namespace Bam.Protocol.Data.Client.Wrappers
 		}
 
 
-        Bam.Protocol.Data.Client.ClientSessionData _clientSessionData;
+        Bam.Protocol.Data.Client.ClientSessionData _clientSessionData = null!;
 		public override Bam.Protocol.Data.Client.ClientSessionData ClientSessionData
 		{
 			get
 			{
 				if (_clientSessionData == null)
 				{
-					_clientSessionData = (Bam.Protocol.Data.Client.ClientSessionData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Client.ClientSessionData));
+					_clientSessionData = (Bam.Protocol.Data.Client.ClientSessionData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Client.ClientSessionData))!;
 				}
-				return _clientSessionData;
+				return _clientSessionData!;
 			}
 			set
 			{

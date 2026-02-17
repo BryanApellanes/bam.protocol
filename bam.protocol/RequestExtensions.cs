@@ -69,7 +69,7 @@ namespace Bam.Server
 
             if (request?.Headers != null && !string.IsNullOrEmpty(request?.Headers[headerName]))
             {
-                headerValue = request.Headers[headerName];
+                headerValue = request!.Headers[headerName]!;
                 return true;
             }
 
@@ -104,7 +104,8 @@ namespace Bam.Server
         /// <returns>The client IP address.</returns>
         public static string GetClientIp(this IHttpContext context)
         {
-            return GetClientIp(context?.Request);
+            return GetClientIp(context?.Request!);
+
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace Bam.Server
         {
             return request?.Headers["X-Forwarded-For"]
                 .Or(request?.Headers["Remote-Addr"])
-                .Or(request?.UserHostAddress);
+                .Or(request?.UserHostAddress)!;
         }
     }
 }

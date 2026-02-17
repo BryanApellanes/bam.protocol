@@ -13,7 +13,7 @@ namespace Bam.Protocol.Data.Common
         {
         }
         
-        private string _instanceIdentifier;
+        private string _instanceIdentifier = null!;
 
         public string InstanceIdentifier
         {
@@ -32,11 +32,11 @@ namespace Bam.Protocol.Data.Common
         public ulong MachineId { get; set; }
         
         [JsonIgnore]
-        public IMachine Machine { get; set; }
-        
-        public string HashAlgorithm { get; set; }
+        public IMachine Machine { get; set; } = null!;
 
-        private string _hash;
+        public string HashAlgorithm { get; set; } = null!;
+
+        private string _hash = null!;
         public string Hash
         {
             get
@@ -52,7 +52,7 @@ namespace Bam.Protocol.Data.Common
         }
        
         [CompositeKey]
-        public string MachineName { get; set; }
+        public string MachineName { get; set; } = null!;
         [CompositeKey]
         public int ProcessId { get; set; }
         public DateTime StartTime { get; set; }
@@ -61,26 +61,26 @@ namespace Bam.Protocol.Data.Common
         public int? ExitCode { get; set; }
         
         [CompositeKey]
-        public string FilePath { get; set; }
-        
+        public string FilePath { get; set; } = null!;
+
         [CompositeKey]
-        public string CommandLine { get; set; }
+        public string CommandLine { get; set; } = null!;
 
         public override int GetHashCode()
         {
             return this.ToString().GetHashCode();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if(!(obj is ProcessDescriptorData))
             {
                 return false;
             }
-            return obj.ToString().Equals(this.ToString());
+            return obj!.ToString()!.Equals(this.ToString());
         }
 
-        static ProcessDescriptorData _current;
+        static ProcessDescriptorData _current = null!;
         static object _currentLock = new object();
         public static ProcessDescriptorData Current
         {
@@ -95,7 +95,7 @@ namespace Bam.Protocol.Data.Common
                         MachineName = Environment.MachineName,
                         ProcessId = currentProcess.Id,
                         StartTime = currentProcess.StartTime,
-                        FilePath = Assembly.GetEntryAssembly().GetFilePath(),
+                        FilePath = Assembly.GetEntryAssembly()!.GetFilePath(),
                         CommandLine = Environment.CommandLine
                     };                    
                     result.InstanceIdentifier = result.ToString();
@@ -117,7 +117,7 @@ namespace Bam.Protocol.Data.Common
             return result;
         }*/
 
-        static string _localIdentifier;
+        static string _localIdentifier = null!;
         public static string LocalIdentifier
         {
             get

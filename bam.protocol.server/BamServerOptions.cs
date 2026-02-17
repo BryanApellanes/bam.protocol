@@ -41,12 +41,12 @@ public class BamServerOptions
     /// <summary>
     /// Gets or sets the server event handlers.
     /// </summary>
-    public BamServerEventHandlers ServerEventHandlers { get; set; }
+    public BamServerEventHandlers ServerEventHandlers { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the request event handlers.
     /// </summary>
-    public BamRequestEventHandlers RequestEventHandlers { get; set; }
+    public BamRequestEventHandlers RequestEventHandlers { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the HTTP host binding.
@@ -101,7 +101,7 @@ public class BamServerOptions
         set
         {
             _tcpIpAddress = value;
-            ComponentRegistry.For<ITcpIPAddressProvider>().UseSingleton(new BamTcpIPAddressProvider(_tcpIpAddress));
+            ComponentRegistry.For<ITcpIPAddressProvider>().UseSingleton(new BamTcpIPAddressProvider(_tcpIpAddress!));
         }
     }
 
@@ -123,7 +123,7 @@ public class BamServerOptions
         set => _udpPort = value;
     }
 
-    private IPAddress _udpIpAddress;
+    private IPAddress _udpIpAddress = null!;
     /// <summary>
     /// Gets or sets the UDP IP address. Setting this also updates the UDP IP address provider in the component registry.
     /// </summary>

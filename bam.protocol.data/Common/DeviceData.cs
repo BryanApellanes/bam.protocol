@@ -39,13 +39,13 @@ public class DeviceData : MachineData, IDevice, IHasHandle
     public virtual ulong ProcessDescriptorId { get; set; }
     
     [JsonIgnore]
-    public virtual ProcessDescriptorData ProcessDescriptorData { get; set; }
+    public virtual ProcessDescriptorData ProcessDescriptorData { get; set; } = null!;
 
     public DeviceTypes DeviceType { get; set; }
 
-    private string _handle;
+    private string _handle = null!;
 
-    public string Handle
+    public new string Handle
     {
         get
         {

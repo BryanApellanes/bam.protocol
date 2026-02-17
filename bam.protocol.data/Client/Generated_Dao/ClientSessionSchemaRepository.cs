@@ -66,7 +66,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public void SetOneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where, out Bam.Protocol.Data.Client.ClientKeySetData result)
 		{
 			Bam.Protocol.Data.Client.Dao.ClientKeySetData.SetOneWhere(where, out Bam.Protocol.Data.Client.Dao.ClientKeySetData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientKeySetData>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientKeySetData>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data, this);
 		}
 
@@ -79,7 +79,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientKeySetData GetOneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
-			var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data, this); 
         }
 
@@ -95,8 +95,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientKeySetData OneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
-            var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data, this);           
+            var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data!, this);           
         }
 
 		/// <summary>
@@ -106,7 +106,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Client.ClientKeySetDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Client.ClientKeySetData> ClientKeySetDatasWhere(WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Client.ClientKeySetData> ClientKeySetDatasWhere(WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Client.ClientKeySetData>(Bam.Protocol.Data.Client.Dao.ClientKeySetData.Where(where, orderBy, Database));
         }
@@ -189,7 +189,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public void SetOneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where, out Bam.Protocol.Data.Client.ClientSessionData result)
 		{
 			Bam.Protocol.Data.Client.Dao.ClientSessionData.SetOneWhere(where, out Bam.Protocol.Data.Client.Dao.ClientSessionData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientSessionData>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientSessionData>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data, this);
 		}
 
@@ -202,7 +202,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientSessionData GetOneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
-			var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data, this); 
         }
 
@@ -218,8 +218,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientSessionData OneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
-            var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data, this);           
+            var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data!, this);           
         }
 
 		/// <summary>
@@ -229,7 +229,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Client.ClientSessionDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Client.ClientSessionData> ClientSessionDatasWhere(WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Client.ClientSessionData> ClientSessionDatasWhere(WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Client.ClientSessionData>(Bam.Protocol.Data.Client.Dao.ClientSessionData.Where(where, orderBy, Database));
         }
@@ -312,7 +312,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public void SetOneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where, out Bam.Protocol.Data.Client.ClientSessionKeyValue result)
 		{
 			Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.SetOneWhere(where, out Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Client.ClientSessionKeyValue>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data, this);
 		}
 
@@ -325,7 +325,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientSessionKeyValue GetOneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
-			var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data, this); 
         }
 
@@ -341,8 +341,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		public Bam.Protocol.Data.Client.ClientSessionKeyValue OneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
-            var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data, this);           
+            var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data!, this);           
         }
 
 		/// <summary>
@@ -352,7 +352,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Client.ClientSessionKeyValueColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Client.ClientSessionKeyValue> ClientSessionKeyValuesWhere(WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Client.ClientSessionKeyValue> ClientSessionKeyValuesWhere(WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Client.ClientSessionKeyValue>(Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Where(where, orderBy, Database));
         }

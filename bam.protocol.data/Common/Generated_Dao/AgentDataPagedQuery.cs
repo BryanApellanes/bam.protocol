@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class AgentDataPagedQuery: PagedQuery<AgentDataColumns, AgentData>
     { 
-		public AgentDataPagedQuery(AgentDataColumns orderByColumn,AgentDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public AgentDataPagedQuery(AgentDataColumns orderByColumn,AgentDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

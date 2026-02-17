@@ -91,7 +91,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.ActorData GetOneActorDataWhere(WhereDelegate<ActorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ActorData>();
-			var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ActorData>(data, this); 
         }
 
@@ -107,7 +107,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.ActorData OneActorDataWhere(WhereDelegate<ActorDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ActorData>();
-            var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ActorData>(data, this);           
         }
 
@@ -118,7 +118,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.ActorDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.ActorData> ActorDatasWhere(WhereDelegate<ActorDataColumns> where, OrderBy<ActorDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.ActorData> ActorDatasWhere(WhereDelegate<ActorDataColumns> where, OrderBy<ActorDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.ActorData>(Bam.Protocol.Data.Common.Dao.ActorData.Where(where, orderBy, Database));
         }
@@ -214,7 +214,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.AgentData GetOneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.AgentData>();
-			var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.AgentData>(data, this); 
         }
 
@@ -230,7 +230,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.AgentData OneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.AgentData>();
-            var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.AgentData>(data, this);           
         }
 
@@ -241,7 +241,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.AgentDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.AgentData> AgentDatasWhere(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.AgentData> AgentDatasWhere(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.AgentData>(Bam.Protocol.Data.Common.Dao.AgentData.Where(where, orderBy, Database));
         }
@@ -337,7 +337,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.DeviceData GetOneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.DeviceData>();
-			var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.DeviceData>(data, this); 
         }
 
@@ -353,7 +353,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.DeviceData OneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.DeviceData>();
-            var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.DeviceData>(data, this);           
         }
 
@@ -364,7 +364,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.DeviceDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.DeviceData> DeviceDatasWhere(WhereDelegate<DeviceDataColumns> where, OrderBy<DeviceDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.DeviceData> DeviceDatasWhere(WhereDelegate<DeviceDataColumns> where, OrderBy<DeviceDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.DeviceData>(Bam.Protocol.Data.Common.Dao.DeviceData.Where(where, orderBy, Database));
         }
@@ -460,7 +460,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.HostAddressData GetOneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.HostAddressData>();
-			var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.HostAddressData>(data, this); 
         }
 
@@ -476,7 +476,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.HostAddressData OneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.HostAddressData>();
-            var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.HostAddressData>(data, this);           
         }
 
@@ -487,7 +487,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.HostAddressDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.HostAddressData> HostAddressDatasWhere(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.HostAddressData> HostAddressDatasWhere(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.HostAddressData>(Bam.Protocol.Data.Common.Dao.HostAddressData.Where(where, orderBy, Database));
         }
@@ -583,7 +583,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.MachineData GetOneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.MachineData>();
-			var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.MachineData>(data, this); 
         }
 
@@ -599,7 +599,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.MachineData OneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.MachineData>();
-            var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.MachineData>(data, this);           
         }
 
@@ -610,7 +610,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.MachineDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.MachineData> MachineDatasWhere(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.MachineData> MachineDatasWhere(WhereDelegate<MachineDataColumns> where, OrderBy<MachineDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.MachineData>(Bam.Protocol.Data.Common.Dao.MachineData.Where(where, orderBy, Database));
         }
@@ -706,7 +706,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.NicData GetOneNicDataWhere(WhereDelegate<NicDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.NicData>();
-			var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.NicData>(data, this); 
         }
 
@@ -722,7 +722,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.NicData OneNicDataWhere(WhereDelegate<NicDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.NicData>();
-            var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.NicData>(data, this);           
         }
 
@@ -733,7 +733,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.NicDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.NicData> NicDatasWhere(WhereDelegate<NicDataColumns> where, OrderBy<NicDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.NicData> NicDatasWhere(WhereDelegate<NicDataColumns> where, OrderBy<NicDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.NicData>(Bam.Protocol.Data.Common.Dao.NicData.Where(where, orderBy, Database));
         }
@@ -829,7 +829,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.ProcessDescriptorData GetOneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ProcessDescriptorData>();
-			var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ProcessDescriptorData>(data, this); 
         }
 
@@ -845,7 +845,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		public Bam.Protocol.Data.Common.ProcessDescriptorData OneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ProcessDescriptorData>();
-            var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ProcessDescriptorData>(data, this);           
         }
 
@@ -856,7 +856,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Common.ProcessDescriptorDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Common.ProcessDescriptorData> ProcessDescriptorDatasWhere(WhereDelegate<ProcessDescriptorDataColumns> where, OrderBy<ProcessDescriptorDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Common.ProcessDescriptorData> ProcessDescriptorDatasWhere(WhereDelegate<ProcessDescriptorDataColumns> where, OrderBy<ProcessDescriptorDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Common.ProcessDescriptorData>(Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.Where(where, orderBy, Database));
         }

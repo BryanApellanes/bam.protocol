@@ -91,16 +91,16 @@ public class ServerSessionManager : IServerSessionManager
     /// <returns>The session state, or null if no session exists.</returns>
     public IServerSessionState GetSession(IBamRequest request)
     {
-        string sessionId = GetSessionId(request);
+        string sessionId = GetSessionId(request)!;
         if (sessionId == null)
         {
-            return null;
+            return null!;
         }
 
         ServerSession session = Repository.OneServerSessionWhere(session=> session.SessionId == sessionId);
         if (session == null)
         {
-            return null;
+            return null!;
         }
 
         return new ServerSessionState(session, Repository);
@@ -113,7 +113,7 @@ public class ServerSessionManager : IServerSessionManager
     /// <returns>The session identifier string, or null if not present.</returns>
     public string GetSessionId(IBamRequest request)
     {
-        return request.Headers.GetValueOrDefault(Headers.SessionId);
+        return request.Headers.GetValueOrDefault(Headers.SessionId)!;
     }
 
     /// <summary>

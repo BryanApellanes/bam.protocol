@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class OrganizationAdditionalPropertiesQuery: Query<OrganizationAdditionalPropertiesColumns, OrganizationAdditionalProperties>
     { 
 		public OrganizationAdditionalPropertiesQuery(){}
-		public OrganizationAdditionalPropertiesQuery(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public OrganizationAdditionalPropertiesQuery(Func<OrganizationAdditionalPropertiesColumns, QueryFilter<OrganizationAdditionalPropertiesColumns>> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public OrganizationAdditionalPropertiesQuery(Delegate where, Database db = null) : base(where, db) { }
+		public OrganizationAdditionalPropertiesQuery(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public OrganizationAdditionalPropertiesQuery(Func<OrganizationAdditionalPropertiesColumns, QueryFilter<OrganizationAdditionalPropertiesColumns>> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public OrganizationAdditionalPropertiesQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static OrganizationAdditionalPropertiesQuery Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static OrganizationAdditionalPropertiesQuery Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null, Database db = null)
+        public static OrganizationAdditionalPropertiesQuery Where(WhereDelegate<OrganizationAdditionalPropertiesColumns> where, OrderBy<OrganizationAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
         {
             return new OrganizationAdditionalPropertiesQuery(where, orderBy, db);
         }

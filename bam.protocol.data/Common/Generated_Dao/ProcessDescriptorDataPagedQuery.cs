@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class ProcessDescriptorDataPagedQuery: PagedQuery<ProcessDescriptorDataColumns, ProcessDescriptorData>
     { 
-		public ProcessDescriptorDataPagedQuery(ProcessDescriptorDataColumns orderByColumn,ProcessDescriptorDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public ProcessDescriptorDataPagedQuery(ProcessDescriptorDataColumns orderByColumn,ProcessDescriptorDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

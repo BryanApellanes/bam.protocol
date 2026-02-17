@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Server.Dao
 {
     public class ServerSessionPagedQuery: PagedQuery<ServerSessionColumns, ServerSession>
     { 
-		public ServerSessionPagedQuery(ServerSessionColumns orderByColumn,ServerSessionQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public ServerSessionPagedQuery(ServerSessionColumns orderByColumn,ServerSessionQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

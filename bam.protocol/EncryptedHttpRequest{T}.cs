@@ -8,7 +8,7 @@ namespace Bam.Protocol
     /// <typeparam name="TContent">The type of the content body before encryption.</typeparam>
     public class EncryptedHttpRequest<TContent> : EncryptedHttpRequest
     {
-        ContentCipher<TContent> cipher;
+        ContentCipher<TContent> cipher = null!;
 
         /// <summary>
         /// Gets or sets the strongly-typed content cipher containing the encrypted content body.
@@ -39,7 +39,7 @@ namespace Bam.Protocol
         /// </summary>
         public override string ContentType
         {
-            get => this.ContentCipher?.ContentType; 
+            get => this.ContentCipher?.ContentType!;
             set => base.ContentType = value;
         }
     }

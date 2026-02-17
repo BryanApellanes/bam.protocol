@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Server.Dao
     public class ServerSessionQuery: Query<ServerSessionColumns, ServerSession>
     { 
 		public ServerSessionQuery(){}
-		public ServerSessionQuery(WhereDelegate<ServerSessionColumns> where, OrderBy<ServerSessionColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public ServerSessionQuery(Func<ServerSessionColumns, QueryFilter<ServerSessionColumns>> where, OrderBy<ServerSessionColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public ServerSessionQuery(Delegate where, Database db = null) : base(where, db) { }
+		public ServerSessionQuery(WhereDelegate<ServerSessionColumns> where, OrderBy<ServerSessionColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public ServerSessionQuery(Func<ServerSessionColumns, QueryFilter<ServerSessionColumns>> where, OrderBy<ServerSessionColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public ServerSessionQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static ServerSessionQuery Where(WhereDelegate<ServerSessionColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static ServerSessionQuery Where(WhereDelegate<ServerSessionColumns> where, OrderBy<ServerSessionColumns> orderBy = null, Database db = null)
+        public static ServerSessionQuery Where(WhereDelegate<ServerSessionColumns> where, OrderBy<ServerSessionColumns> orderBy = null!, Database db = null!)
         {
             return new ServerSessionQuery(where, orderBy, db);
         }

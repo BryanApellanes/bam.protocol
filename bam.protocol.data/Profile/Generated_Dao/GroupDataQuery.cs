@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class GroupDataQuery: Query<GroupDataColumns, GroupData>
     { 
 		public GroupDataQuery(){}
-		public GroupDataQuery(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public GroupDataQuery(Func<GroupDataColumns, QueryFilter<GroupDataColumns>> where, OrderBy<GroupDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public GroupDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public GroupDataQuery(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public GroupDataQuery(Func<GroupDataColumns, QueryFilter<GroupDataColumns>> where, OrderBy<GroupDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public GroupDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static GroupDataQuery Where(WhereDelegate<GroupDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static GroupDataQuery Where(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null, Database db = null)
+        public static GroupDataQuery Where(WhereDelegate<GroupDataColumns> where, OrderBy<GroupDataColumns> orderBy = null!, Database db = null!)
         {
             return new GroupDataQuery(where, orderBy, db);
         }

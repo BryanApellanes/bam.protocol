@@ -10,12 +10,12 @@ public class Argument : IArgument
     /// <summary>
     /// Gets or sets the name of the parameter.
     /// </summary>
-    public string ParameterName { get; set; }
+    public string ParameterName { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the value of the argument.
     /// </summary>
-    public object Value { get; set; }
+    public object Value { get; set; } = null!;
 
     /// <summary>
     /// Creates an <see cref="Argument"/> from a <see cref="ParameterInfo"/>, using the specified value or the parameter's default value.
@@ -23,12 +23,12 @@ public class Argument : IArgument
     /// <param name="parameter">The parameter info to create the argument from.</param>
     /// <param name="value">The value for the argument, or null to use the parameter's default value.</param>
     /// <returns>A new <see cref="Argument"/> instance.</returns>
-    public static Argument For(ParameterInfo parameter, object value = null)
+    public static Argument For(ParameterInfo parameter, object value = null!)
     {
         return new Argument()
         {
-            ParameterName = parameter.Name,
-            Value = value ?? parameter.DefaultValue
+            ParameterName = parameter.Name!,
+            Value = (value ?? parameter.DefaultValue)!
         };
     }
 
@@ -41,7 +41,7 @@ public class Argument : IArgument
     /// <returns>A list of <see cref="Argument"/> instances.</returns>
     public static List<Argument> ListForValues<T>(string methodName, params object[] arguments)
     {
-        return ListForValues(typeof(T).GetMethod(methodName), arguments);
+        return ListForValues(typeof(T).GetMethod(methodName)!, arguments);
     }
     
     /// <summary>

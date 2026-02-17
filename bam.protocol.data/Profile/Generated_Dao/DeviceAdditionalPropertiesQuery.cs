@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class DeviceAdditionalPropertiesQuery: Query<DeviceAdditionalPropertiesColumns, DeviceAdditionalProperties>
     { 
 		public DeviceAdditionalPropertiesQuery(){}
-		public DeviceAdditionalPropertiesQuery(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public DeviceAdditionalPropertiesQuery(Func<DeviceAdditionalPropertiesColumns, QueryFilter<DeviceAdditionalPropertiesColumns>> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public DeviceAdditionalPropertiesQuery(Delegate where, Database db = null) : base(where, db) { }
+		public DeviceAdditionalPropertiesQuery(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public DeviceAdditionalPropertiesQuery(Func<DeviceAdditionalPropertiesColumns, QueryFilter<DeviceAdditionalPropertiesColumns>> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public DeviceAdditionalPropertiesQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static DeviceAdditionalPropertiesQuery Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static DeviceAdditionalPropertiesQuery Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null, Database db = null)
+        public static DeviceAdditionalPropertiesQuery Where(WhereDelegate<DeviceAdditionalPropertiesColumns> where, OrderBy<DeviceAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
         {
             return new DeviceAdditionalPropertiesQuery(where, orderBy, db);
         }

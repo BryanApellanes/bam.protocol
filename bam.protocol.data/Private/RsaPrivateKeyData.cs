@@ -4,7 +4,7 @@ namespace Bam.Protocol.Data.Private;
 
 public class RsaPrivateKeyData : RepoData
 {
-    public string Pem { get; set; }
-    public string PublicKeyHash { get; set; }
-    public string PublicKeyHashAlgorithm { get; set; }
+    public string Pem { get; set; } = null!;
+    public string PublicKeyHash { get; set; } = null!;
+    public string PublicKeyHashAlgorithm { get; set; } = null!;
 }

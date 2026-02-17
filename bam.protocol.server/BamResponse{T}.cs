@@ -20,7 +20,7 @@ public class BamResponse<T> : BamResponse, IBamResponse<T>
     /// </summary>
     /// <param name="initializationContext">The server initialization context.</param>
     /// <param name="statusCode">The HTTP status code. Defaults to 404.</param>
-    public BamResponse(BamServerInitializationContext initializationContext, int statusCode = 404) : base(initializationContext.ServerContext.OutputStream, statusCode)
+    public BamResponse(BamServerInitializationContext initializationContext, int statusCode = 404) : base(initializationContext.ServerContext.OutputStream!, statusCode)
     {
         this.BamServerInitializationContext = initializationContext;
     }
@@ -92,6 +92,6 @@ public class BamResponse<T> : BamResponse, IBamResponse<T>
     /// <summary>
     /// Gets or sets the typed content of this response.
     /// </summary>
-    public T Content { get; set; }
+    public T Content { get; set; } = default!;
 
 }

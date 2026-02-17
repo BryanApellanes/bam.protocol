@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class HostAddressDataPagedQuery: PagedQuery<HostAddressDataColumns, HostAddressData>
     { 
-		public HostAddressDataPagedQuery(HostAddressDataColumns orderByColumn,HostAddressDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public HostAddressDataPagedQuery(HostAddressDataColumns orderByColumn,HostAddressDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

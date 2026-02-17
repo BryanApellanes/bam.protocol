@@ -10,7 +10,7 @@ public class BamServerInfo
     /// <summary>
     /// Gets or sets the server name.
     /// </summary>
-    public string ServerName { get; set; }
+    public string ServerName { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the TCP port number.
@@ -25,12 +25,12 @@ public class BamServerInfo
     /// <summary>
     /// Gets or sets the TCP IP address as a string.
     /// </summary>
-    public string TcpIPAddress { get; internal set; }
+    public string TcpIPAddress { get; internal set; } = null!;
 
     /// <summary>
     /// Gets or sets the UDP IP address as a string.
     /// </summary>
-    public string UdpIPAddress { get; internal set; }
+    public string UdpIPAddress { get; internal set; } = null!;
 
     /// <summary>
     /// Gets or sets the HTTP host binding for this server.
@@ -39,5 +39,5 @@ public class BamServerInfo
     {
         get;
         set;
-    }
+    } = null!;
 }

@@ -22,17 +22,17 @@ public class BamServerContext : IBamServerContext
     /// <summary>
     /// Gets or sets the unique request identifier.
     /// </summary>
-    public string RequestId { get; internal set; }
+    public string RequestId { get; internal set; } = null!;
 
     /// <summary>
     /// Gets or sets the parsed BAM request.
     /// </summary>
-    public IBamRequest BamRequest { get; internal set; }
+    public IBamRequest BamRequest { get; internal set; } = null!;
 
     /// <summary>
     /// Gets or sets the BAM response.
     /// </summary>
-    public IBamResponse BamResponse { get; set; }
+    public IBamResponse BamResponse { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the output stream for writing the response.
@@ -42,27 +42,27 @@ public class BamServerContext : IBamServerContext
     /// <summary>
     /// Gets the actor associated with this request.
     /// </summary>
-    public IActor Actor { get; private set; }
+    public IActor Actor { get; private set; } = null!;
 
     /// <summary>
     /// Gets the authentication result for this request.
     /// </summary>
-    public BamAuthentication Authentication { get; private set; }
+    public BamAuthentication Authentication { get; private set; } = null!;
 
     /// <summary>
     /// Gets the resolved command for this request.
     /// </summary>
-    public ICommand Command { get; private set; }
+    public ICommand Command { get; private set; } = null!;
 
     /// <summary>
     /// Gets the server session state for this request.
     /// </summary>
-    public IServerSessionState ServerSessionState { get; private set; }
+    public IServerSessionState ServerSessionState { get; private set; } = null!;
 
     /// <summary>
     /// Gets the authorization calculation result for this request.
     /// </summary>
-    public IAuthorizationCalculation AuthorizationCalculation { get; private set; }
+    public IAuthorizationCalculation AuthorizationCalculation { get; private set; } = null!;
 
     /// <summary>
     /// Sets the session state on this context.
@@ -128,5 +128,5 @@ public class BamServerContext : IBamServerContext
         this.InitializationException = exception;
     }
 
-    protected Exception InitializationException { get; private set; }
+    protected Exception InitializationException { get; private set; } = null!;
 }

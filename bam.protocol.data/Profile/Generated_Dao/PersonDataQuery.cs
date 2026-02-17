@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class PersonDataQuery: Query<PersonDataColumns, PersonData>
     { 
 		public PersonDataQuery(){}
-		public PersonDataQuery(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public PersonDataQuery(Func<PersonDataColumns, QueryFilter<PersonDataColumns>> where, OrderBy<PersonDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public PersonDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public PersonDataQuery(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public PersonDataQuery(Func<PersonDataColumns, QueryFilter<PersonDataColumns>> where, OrderBy<PersonDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public PersonDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static PersonDataQuery Where(WhereDelegate<PersonDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static PersonDataQuery Where(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null, Database db = null)
+        public static PersonDataQuery Where(WhereDelegate<PersonDataColumns> where, OrderBy<PersonDataColumns> orderBy = null!, Database db = null!)
         {
             return new PersonDataQuery(where, orderBy, db);
         }

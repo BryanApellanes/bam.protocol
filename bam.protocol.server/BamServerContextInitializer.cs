@@ -32,72 +32,72 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     /// <summary>
     /// Occurs when session state resolution starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveSessionStateStarted;
+    public event EventHandler<BamServerEventArgs> ResolveSessionStateStarted = null!;
 
     /// <summary>
     /// Occurs when session state resolution completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveSessionStateComplete;
+    public event EventHandler<BamServerEventArgs> ResolveSessionStateComplete = null!;
 
     /// <summary>
     /// Occurs when actor resolution starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveActorStarted;
+    public event EventHandler<BamServerEventArgs> ResolveActorStarted = null!;
 
     /// <summary>
     /// Occurs when actor resolution completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveActorComplete;
+    public event EventHandler<BamServerEventArgs> ResolveActorComplete = null!;
 
     /// <summary>
     /// Occurs when request authentication starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AuthenticateRequestStarted;
+    public event EventHandler<BamServerEventArgs> AuthenticateRequestStarted = null!;
 
     /// <summary>
     /// Occurs when request authentication completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AuthenticateRequestComplete;
+    public event EventHandler<BamServerEventArgs> AuthenticateRequestComplete = null!;
 
     /// <summary>
     /// Occurs when command resolution starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveCommandStarted;
+    public event EventHandler<BamServerEventArgs> ResolveCommandStarted = null!;
 
     /// <summary>
     /// Occurs when command resolution completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> ResolveCommandComplete;
+    public event EventHandler<BamServerEventArgs> ResolveCommandComplete = null!;
 
     /// <summary>
     /// Occurs when request authorization starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AuthorizeRequestStarted;
+    public event EventHandler<BamServerEventArgs> AuthorizeRequestStarted = null!;
 
     /// <summary>
     /// Occurs when request authorization completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AuthorizeRequestComplete;
+    public event EventHandler<BamServerEventArgs> AuthorizeRequestComplete = null!;
 
     /// <summary>
     /// Occurs when the before-initialization phase starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> BeforeInitializationStarted;
+    public event EventHandler<BamServerEventArgs> BeforeInitializationStarted = null!;
 
     /// <summary>
     /// Occurs when the before-initialization phase completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> BeforeInitializationComplete;
+    public event EventHandler<BamServerEventArgs> BeforeInitializationComplete = null!;
 
     /// <summary>
     /// Occurs when the after-initialization phase starts.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AfterInitializationStarted;
+    public event EventHandler<BamServerEventArgs> AfterInitializationStarted = null!;
 
     /// <summary>
     /// Occurs when the after-initialization phase completes.
     /// </summary>
-    public event EventHandler<BamServerEventArgs> AfterInitializationComplete;
+    public event EventHandler<BamServerEventArgs> AfterInitializationComplete = null!;
 
     /// <summary>
     /// Occurs when an exception is thrown during initialization.
@@ -154,7 +154,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         }
         catch (Exception ex)
         {
-            FireEvent(InitializationException, new InitializationExceptionEventArgs(ex, initialization));
+            FireEvent(InitializationException!, new InitializationExceptionEventArgs(ex, initialization));
             serverContext.SetInitializationException(ex);
         }
         return initialization;
@@ -278,7 +278,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         }
         catch (Exception ex)
         {
-            FireEvent(InitializationException, new InitializationExceptionEventArgs(ex, initialization));
+            FireEvent(InitializationException!, new InitializationExceptionEventArgs(ex, initialization));
         }
     }
 
@@ -302,7 +302,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         }
         catch (Exception ex)
         {
-            FireEvent(InitializationException, new InitializationExceptionEventArgs(ex, initialization));
+            FireEvent(InitializationException!, new InitializationExceptionEventArgs(ex, initialization));
         }
     }
 }

@@ -53,17 +53,17 @@ public class AuthorizationCalculator : IAuthorizationCalculator
             return BamAccess.Denied;
         }
 
-        MethodInfo method = type.GetMethod(command.MethodName);
+        MethodInfo method = type.GetMethod(command.MethodName)!;
         if (method != null)
         {
-            RequiredAccessAttribute methodAttr = method.GetCustomAttribute<RequiredAccessAttribute>();
+            RequiredAccessAttribute methodAttr = method.GetCustomAttribute<RequiredAccessAttribute>()!;
             if (methodAttr != null)
             {
                 return methodAttr.Access;
             }
         }
 
-        RequiredAccessAttribute classAttr = type.GetCustomAttribute<RequiredAccessAttribute>();
+        RequiredAccessAttribute classAttr = type.GetCustomAttribute<RequiredAccessAttribute>()!;
         if (classAttr != null)
         {
             return classAttr.Access;
@@ -76,21 +76,21 @@ public class AuthorizationCalculator : IAuthorizationCalculator
     {
         if (string.IsNullOrEmpty(typeName))
         {
-            return null;
+            return null!;
         }
 
         return TypeCache.GetOrAdd(typeName, name =>
         {
             foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                Type type = assembly.GetType(name);
+                Type type = assembly.GetType(name)!;
                 if (type != null)
                 {
                     return type;
                 }
             }
-            return null;
-        });
+            return null!;
+        })!;
     }
 
     private static IAuthorizationCalculation Denied(IBamServerContext serverContext, string message)

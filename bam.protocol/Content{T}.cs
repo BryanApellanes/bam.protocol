@@ -33,10 +33,10 @@ public class Content<T> : Content, IContent<T>
         this.Value = value;
     }
     
-    object IContent.Value => Value;
+    object IContent.Value => Value!;
 
     /// <summary>
     /// Gets the strongly-typed content value.
     /// </summary>
-    public T Value { get; }
+    public new T Value { get; }
 }

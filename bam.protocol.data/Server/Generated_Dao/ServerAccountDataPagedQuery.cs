@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Server.Dao
 {
     public class ServerAccountDataPagedQuery: PagedQuery<ServerAccountDataColumns, ServerAccountData>
     { 
-		public ServerAccountDataPagedQuery(ServerAccountDataColumns orderByColumn,ServerAccountDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public ServerAccountDataPagedQuery(ServerAccountDataColumns orderByColumn,ServerAccountDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

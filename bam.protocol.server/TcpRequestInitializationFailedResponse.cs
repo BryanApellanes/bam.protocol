@@ -12,7 +12,7 @@ public class TcpRequestInitializationFailedResponse : BamResponse
     /// </summary>
     /// <param name="initialization">The initialization context containing failure details.</param>
     public TcpRequestInitializationFailedResponse(BamServerInitializationContext initialization)
-        : base(initialization.ServerContext.OutputStream, 400)
+        : base(initialization.ServerContext.OutputStream!, 400)
     {
         this.Initialization = initialization;
     }

@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class GroupDataPagedQuery: PagedQuery<GroupDataColumns, GroupData>
     { 
-		public GroupDataPagedQuery(GroupDataColumns orderByColumn,GroupDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public GroupDataPagedQuery(GroupDataColumns orderByColumn,GroupDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

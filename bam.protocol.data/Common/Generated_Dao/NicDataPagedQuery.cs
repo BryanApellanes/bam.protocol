@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class NicDataPagedQuery: PagedQuery<NicDataColumns, NicData>
     { 
-		public NicDataPagedQuery(NicDataColumns orderByColumn,NicDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public NicDataPagedQuery(NicDataColumns orderByColumn,NicDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

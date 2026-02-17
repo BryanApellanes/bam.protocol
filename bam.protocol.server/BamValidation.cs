@@ -13,5 +13,5 @@ public class BamValidation
     /// <summary>
     /// Gets or sets the validation messages.
     /// </summary>
-    public string[] Messages { get; internal set; }
+    public string[] Messages { get; internal set; } = null!;
 }

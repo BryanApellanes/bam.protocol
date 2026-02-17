@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class DeviceDataPagedQuery: PagedQuery<DeviceDataColumns, DeviceData>
     { 
-		public DeviceDataPagedQuery(DeviceDataColumns orderByColumn,DeviceDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public DeviceDataPagedQuery(DeviceDataColumns orderByColumn,DeviceDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

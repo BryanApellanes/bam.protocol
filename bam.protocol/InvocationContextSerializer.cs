@@ -27,7 +27,7 @@ public class InvocationContextSerializer : IInvocationContextSerializer
     }
     
     /// <inheritdoc />
-    public string Format { get; private set; }
+    public string Format { get; private set; } = null!;
 
     /// <inheritdoc />
     public string Serialize(object context)

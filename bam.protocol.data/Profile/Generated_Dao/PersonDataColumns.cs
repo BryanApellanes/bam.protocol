@@ -19,7 +19,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         
         public bool IsKey()
         {
-            return (bool)ColumnName?.Equals(KeyColumn.ColumnName);
+            return (bool)ColumnName?.Equals(KeyColumn.ColumnName)!;
         }
 
         private bool? _isForeignKey;
@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Profile.Dao
             {
                 if (_isForeignKey == null)
                 {
-                    PropertyInfo prop = DaoType
+                    PropertyInfo? prop = DaoType
                         .GetProperties()
                         .FirstOrDefault(pi => ((MemberInfo) pi)
                             .HasCustomAttributeOfType<ForeignKeyAttribute>(out ForeignKeyAttribute foreignKeyAttribute)
@@ -37,7 +37,7 @@ namespace Bam.Protocol.Data.Profile.Dao
                         _isForeignKey = prop != null;
                 }
 
-                return _isForeignKey.Value;
+                return _isForeignKey!.Value;
             }
             set => _isForeignKey = value;
         }
@@ -66,7 +66,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 
 		public Type DaoType => typeof(PersonData);
 
-		public string Operator { get; set; }
+		public string Operator { get; set; } = null!;
 
         public override string ToString()
         {

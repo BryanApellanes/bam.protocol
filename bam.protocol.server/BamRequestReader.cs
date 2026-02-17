@@ -38,7 +38,7 @@ public class BamRequestReader : Loggable, IBamRequestReader
     /// <returns>The parsed BAM request.</returns>
     public IBamRequest ReadRequest(HttpListenerRequest request)
     {
-        FireEvent(ReadRequestStarted, this, new EventArgs());
+        FireEvent(ReadRequestStarted!, this, new EventArgs());
         BamRequest bamRequest = new BamRequest(GetBamRequestLine(request))
         {
             Headers = ReadHeaders(request),
@@ -100,7 +100,7 @@ public class BamRequestReader : Loggable, IBamRequestReader
         return headers;
     }
     
-    protected string ReadLineString(Stream stream, Encoding encoding = null)
+    protected string ReadLineString(Stream stream, Encoding encoding = null!)
     {
         encoding = encoding ?? Encoding.ASCII;
         byte[] line = ReadLine(stream);
@@ -128,7 +128,7 @@ public class BamRequestReader : Loggable, IBamRequestReader
         return lineBuffer.ToArray();
     }
 
-    protected string ReadContentString(Stream stream, Encoding encoding = null)
+    protected string ReadContentString(Stream stream, Encoding encoding = null!)
     {
         encoding = encoding ?? Encoding.ASCII;
         byte[] content = ReadContent(stream);
@@ -160,9 +160,9 @@ public class BamRequestReader : Loggable, IBamRequestReader
     private Dictionary<string, string> ReadHeaders(HttpListenerRequest request)
     {
         Dictionary<string, string>  result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string key in request.Headers.AllKeys)
+        foreach (string key in request.Headers.AllKeys!)
         {
-            result.Add(key, request.Headers[key]);
+            result.Add(key!, request.Headers[key]!);
         }
 
         return result;

@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class AgentCertificateDataQuery: Query<AgentCertificateDataColumns, AgentCertificateData>
     { 
 		public AgentCertificateDataQuery(){}
-		public AgentCertificateDataQuery(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public AgentCertificateDataQuery(Func<AgentCertificateDataColumns, QueryFilter<AgentCertificateDataColumns>> where, OrderBy<AgentCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public AgentCertificateDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public AgentCertificateDataQuery(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public AgentCertificateDataQuery(Func<AgentCertificateDataColumns, QueryFilter<AgentCertificateDataColumns>> where, OrderBy<AgentCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public AgentCertificateDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static AgentCertificateDataQuery Where(WhereDelegate<AgentCertificateDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static AgentCertificateDataQuery Where(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null, Database db = null)
+        public static AgentCertificateDataQuery Where(WhereDelegate<AgentCertificateDataColumns> where, OrderBy<AgentCertificateDataColumns> orderBy = null!, Database db = null!)
         {
             return new AgentCertificateDataQuery(where, orderBy, db);
         }

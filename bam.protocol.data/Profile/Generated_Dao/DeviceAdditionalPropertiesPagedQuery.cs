@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class DeviceAdditionalPropertiesPagedQuery: PagedQuery<DeviceAdditionalPropertiesColumns, DeviceAdditionalProperties>
     { 
-		public DeviceAdditionalPropertiesPagedQuery(DeviceAdditionalPropertiesColumns orderByColumn,DeviceAdditionalPropertiesQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public DeviceAdditionalPropertiesPagedQuery(DeviceAdditionalPropertiesColumns orderByColumn,DeviceAdditionalPropertiesQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

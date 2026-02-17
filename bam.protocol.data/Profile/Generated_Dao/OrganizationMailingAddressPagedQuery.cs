@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class OrganizationMailingAddressPagedQuery: PagedQuery<OrganizationMailingAddressColumns, OrganizationMailingAddress>
     { 
-		public OrganizationMailingAddressPagedQuery(OrganizationMailingAddressColumns orderByColumn,OrganizationMailingAddressQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public OrganizationMailingAddressPagedQuery(OrganizationMailingAddressColumns orderByColumn,OrganizationMailingAddressQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

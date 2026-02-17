@@ -29,7 +29,7 @@ public class AuthorizationCalculatorInitializationHandler : IBamServerContextIni
             initialization.Status = InitializationStatus.AuthorizationCalculationFailed;
         }
 
-        context.SetAuthorizationCalculation(authorization);
+        context.SetAuthorizationCalculation(authorization!);
         return initialization;
     }
 }

@@ -37,7 +37,7 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
                 initialization.Message = "Session Initialization Failed";
             }
 
-            context.SetSessionState(state);
+            context.SetSessionState(state!);
         }
         else
         {
@@ -87,7 +87,7 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
             var json = System.Text.Json.JsonDocument.Parse(content);
             if (json.RootElement.TryGetProperty("ClientPublicKey", out var keyElement))
             {
-                string pem = keyElement.GetString();
+                string pem = keyElement.GetString()!;
                 if (!string.IsNullOrEmpty(pem))
                 {
                     sessionRequest.ClientPublicKey = new EccPublicKey(pem);

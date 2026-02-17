@@ -30,7 +30,7 @@ public class DefaultBamResponseProvider : BamResponseProvider
         set;
     }
 
-    private BamServerInitializationContext _currentInitialization;
+    private BamServerInitializationContext _currentInitialization = null!;
 
     protected override IBamResponse CreateFailureResponse(BamServerInitializationContext initialization)
     {

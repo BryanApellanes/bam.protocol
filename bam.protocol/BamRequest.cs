@@ -30,56 +30,56 @@ public class BamRequest : IBamRequest
     /// <summary>
     /// Gets or sets the parsed request line.
     /// </summary>
-    public BamRequestLine Line { get; set; }
+    public BamRequestLine Line { get; set; } = null!;
 
     /// <inheritdoc />
-    public string ProtocolVersion { get; internal set; }
+    public string ProtocolVersion { get; internal set; } = null!;
 
     /// <inheritdoc />
-    public string Content { get; set; }
+    public string Content { get; set; } = null!;
 
     /// <inheritdoc />
-    public string[] AcceptTypes { get; set; }
+    public string[] AcceptTypes { get; set; } = null!;
 
     /// <inheritdoc />
-    public Encoding ContentEncoding { get; set; }
+    public Encoding ContentEncoding { get; set; } = null!;
 
     /// <inheritdoc />
     public long ContentLength64 { get; internal set;}
 
     /// <inheritdoc />
-    public Dictionary<string, string> QueryString { get; internal set;}
+    public Dictionary<string, string> QueryString { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public string ContentType { get; internal set;}
+    public string ContentType { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public CookieCollection Cookies { get; internal set;}
+    public CookieCollection Cookies { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public Dictionary<string, string> Headers { get; set; }
+    public Dictionary<string, string> Headers { get; set; } = null!;
 
     /// <inheritdoc />
     public HttpMethods HttpMethod { get; internal set; }
 
     /// <inheritdoc />
-    public Uri Url { get; internal set; }
+    public Uri Url { get; internal set; } = null!;
 
     /// <inheritdoc />
-    public Uri UrlReferrer => Headers.ContainsKey("referer") ? new Uri(Headers["referer"]) : null;
+    public Uri UrlReferrer => Headers.ContainsKey("referer") ? new Uri(Headers["referer"]) : null!;
 
     /// <inheritdoc />
     public string UserAgent => Headers.ContainsKey("user-agent") ? Headers["user-agent"] : string.Empty;
 
     /// <inheritdoc />
-    public string UserHostAddress { get; internal set;}
+    public string UserHostAddress { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public string UserHostName { get; internal set;}
+    public string UserHostName { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public string[] UserLanguages { get; internal set;}
+    public string[] UserLanguages { get; internal set;} = null!;
 
     /// <inheritdoc />
-    public string RawUrl { get; internal set;}
+    public string RawUrl { get; internal set;} = null!;
 }

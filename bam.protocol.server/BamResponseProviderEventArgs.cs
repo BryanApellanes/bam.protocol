@@ -24,5 +24,5 @@ public class BamResponseProviderEventArgs : EventArgs
     /// <summary>
     /// Gets or sets the response provider associated with this event.
     /// </summary>
-    public BamResponseProvider ResponseProvider { get; set; }
+    public BamResponseProvider ResponseProvider { get; set; } = null!;
 }

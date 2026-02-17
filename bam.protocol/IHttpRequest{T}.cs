@@ -11,6 +11,6 @@ namespace Bam.Encryption
         /// <summary>
         /// Gets or sets the strongly-typed content body.
         /// </summary>
-        new TContent TypedContent { get; set; }
+        TContent TypedContent { get; set; }
     }
 }

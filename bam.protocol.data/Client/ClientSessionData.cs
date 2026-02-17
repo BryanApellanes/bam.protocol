@@ -10,7 +10,7 @@ public class ClientSessionData : KeyedAuditRepoData
     }
 
     [CompositeKey]
-    public string SessionId { get; set; }
+    public string SessionId { get; set; } = null!;
 
     public virtual List<ClientSessionKeyValue> KeyValues { get; set; }
 }

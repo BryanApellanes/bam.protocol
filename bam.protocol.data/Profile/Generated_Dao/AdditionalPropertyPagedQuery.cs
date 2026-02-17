@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class AdditionalPropertyPagedQuery: PagedQuery<AdditionalPropertyColumns, AdditionalProperty>
     { 
-		public AdditionalPropertyPagedQuery(AdditionalPropertyColumns orderByColumn,AdditionalPropertyQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public AdditionalPropertyPagedQuery(AdditionalPropertyColumns orderByColumn,AdditionalPropertyQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

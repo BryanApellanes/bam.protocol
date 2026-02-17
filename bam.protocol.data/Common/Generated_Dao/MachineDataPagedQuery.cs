@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Common.Dao
 {
     public class MachineDataPagedQuery: PagedQuery<MachineDataColumns, MachineData>
     { 
-		public MachineDataPagedQuery(MachineDataColumns orderByColumn,MachineDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public MachineDataPagedQuery(MachineDataColumns orderByColumn,MachineDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

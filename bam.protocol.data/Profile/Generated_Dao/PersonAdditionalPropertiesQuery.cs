@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class PersonAdditionalPropertiesQuery: Query<PersonAdditionalPropertiesColumns, PersonAdditionalProperties>
     { 
 		public PersonAdditionalPropertiesQuery(){}
-		public PersonAdditionalPropertiesQuery(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public PersonAdditionalPropertiesQuery(Func<PersonAdditionalPropertiesColumns, QueryFilter<PersonAdditionalPropertiesColumns>> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public PersonAdditionalPropertiesQuery(Delegate where, Database db = null) : base(where, db) { }
+		public PersonAdditionalPropertiesQuery(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public PersonAdditionalPropertiesQuery(Func<PersonAdditionalPropertiesColumns, QueryFilter<PersonAdditionalPropertiesColumns>> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public PersonAdditionalPropertiesQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static PersonAdditionalPropertiesQuery Where(WhereDelegate<PersonAdditionalPropertiesColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static PersonAdditionalPropertiesQuery Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null, Database db = null)
+        public static PersonAdditionalPropertiesQuery Where(WhereDelegate<PersonAdditionalPropertiesColumns> where, OrderBy<PersonAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
         {
             return new PersonAdditionalPropertiesQuery(where, orderBy, db);
         }

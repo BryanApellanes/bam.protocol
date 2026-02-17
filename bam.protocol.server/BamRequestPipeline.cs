@@ -36,7 +36,7 @@ public class BamRequestPipeline
         BamServer? server = null)
     {
         BamServerInitializationContext initialization = Instantiators[serverContext.RequestType]();
-        initialization.Server = server;
+        initialization.Server = server!;
         initialization.ServerContext = serverContext;
         initialization.EventArgs = args;
 

@@ -19,7 +19,7 @@ namespace Bam.Protocol.Data.Common.Dao
         
         public bool IsKey()
         {
-            return (bool)ColumnName?.Equals(KeyColumn.ColumnName);
+            return (bool)ColumnName?.Equals(KeyColumn.ColumnName)!;
         }
 
         private bool? _isForeignKey;
@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Common.Dao
             {
                 if (_isForeignKey == null)
                 {
-                    PropertyInfo prop = DaoType
+                    PropertyInfo? prop = DaoType
                         .GetProperties()
                         .FirstOrDefault(pi => ((MemberInfo) pi)
                             .HasCustomAttributeOfType<ForeignKeyAttribute>(out ForeignKeyAttribute foreignKeyAttribute)
@@ -55,7 +55,7 @@ namespace Bam.Protocol.Data.Common.Dao
 
 		public Type DaoType => typeof(AgentData);
 
-		public string Operator { get; set; }
+		public string Operator { get; set; } = null!;
 
         public override string ToString()
         {

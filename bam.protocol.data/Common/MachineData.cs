@@ -40,7 +40,7 @@ namespace Bam.Protocol.Data.Common
 
         protected bool IsInitialized { get; set; }
 
-        List<HostAddressData> _hostAddresses;
+        List<HostAddressData> _hostAddresses = null!;
         public virtual List<HostAddressData> HostAddresses
         {
             get => _hostAddresses ??= new List<HostAddressData>();
@@ -49,12 +49,12 @@ namespace Bam.Protocol.Data.Common
 
         [CompositeKey]
         [CompositeHandle]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         [CompositeKey]
-        public string DnsName { get; set; }
+        public string DnsName { get; set; } = null!;
 
-        private List<NicData> _nics;
+        private List<NicData> _nics = null!;
         public virtual List<NicData> NetworkInterfaces
         {
             get => _nics ??= new List<NicData>();
@@ -75,7 +75,7 @@ namespace Bam.Protocol.Data.Common
             return $"{Name}@{DnsName}";
         }
 
-        static MachineData _current;
+        static MachineData _current = null!;
         static object _currentLock = new object();
         [JsonIgnore]
         public static MachineData Current
@@ -90,12 +90,12 @@ namespace Bam.Protocol.Data.Common
 
         public override RepoData Save(IRepository repo)
         {
-            MachineData existing = repo.Query<MachineData>(new { Name = Name }).FirstOrDefault();
+            MachineData existing = repo.Query<MachineData>(new { Name = Name }).FirstOrDefault()!;
             if(existing == null)
             {
-                existing = repo.Save(this);
-            }                        
-            return existing;
+                existing = repo.Save(this)!;
+            }
+            return existing!;
         }
         
         private void SetNics()
@@ -120,7 +120,7 @@ namespace Bam.Protocol.Data.Common
             _nics = context.Nics;
         }
 
-        IPAddress[] _hostIps;
+        IPAddress[] _hostIps = null!;
         private void SetHostAddresses()
         {
             if(_hostIps == null)

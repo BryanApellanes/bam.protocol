@@ -71,7 +71,7 @@ public class BamAuthenticator : IAuthenticator
         }
 
         // 4. Verify JWT from Authorization header
-        if (!request.Headers.TryGetValue(Headers.Authorization, out string authHeader))
+        if (!request.Headers.TryGetValue(Headers.Authorization, out string? authHeader))
         {
             return new BamAuthentication(false, actor, request, new[] { "Authorization header missing." });
         }
@@ -106,7 +106,7 @@ public class BamAuthenticator : IAuthenticator
         }
 
         // Get the client's public key from session state for JWT verification
-        string clientPublicKeyPem = serverContext.ServerSessionState?.Get<string>("ClientPublicKey");
+        string clientPublicKeyPem = serverContext.ServerSessionState?.Get<string>("ClientPublicKey")!;
         if (string.IsNullOrEmpty(clientPublicKeyPem))
         {
             return new BamAuthentication(false, actor, request, new[] { "Client public key not found in session." });

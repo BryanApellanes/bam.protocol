@@ -46,7 +46,7 @@ namespace Bam.Protocol.Server
         /// <param name="options">The server options.</param>
         public BamServer(BamServerOptions options)
         {
-            Logger = options.Logger;
+            Logger = options.Logger!;
             TcpPort = options.TcpPort;
             UdpPort = options.UdpPort;
             ServerName = options.ServerName;
@@ -59,7 +59,7 @@ namespace Bam.Protocol.Server
 
         private readonly BamRequestPipeline _pipeline;
         
-        Encoding _encoding;
+        Encoding _encoding = null!;
         readonly object _encodingLock = new object();
 
         /// <summary>
@@ -76,20 +76,20 @@ namespace Bam.Protocol.Server
         
         protected BamServerOptions Options { get; private set; }
 
-        protected ICommunicationHandler CommunicationHandler => Options.GetCommunicationHandler();
+        protected ICommunicationHandler CommunicationHandler => Options.GetCommunicationHandler()!;
 
-        protected ITcpIPAddressProvider TcpIpAddressProvider => CommunicationHandler.TcpIpAddressProvider;
-        protected IUdpIPAddressProvider UdpIpAddressProvider => CommunicationHandler.UdpIpAddressProvider;
-        protected IBamServerContextProvider ServerContextProvider => CommunicationHandler.ServerContextProvider;
-        protected IBamResponseProvider ResponseProvider => CommunicationHandler.ResponseProvider;
-        protected IActorResolver ActorResolver => CommunicationHandler.ActorResolver;
-        protected IServerSessionManager ServerSessionManager => CommunicationHandler.ServerSessionManager;
-        protected IAuthorizationCalculator AuthorizationCalculator => CommunicationHandler.AuthorizationCalculator;
-        protected IBamRequestProcessor RequestProcessor => CommunicationHandler.RequestProcessor;
+        protected ITcpIPAddressProvider TcpIpAddressProvider => CommunicationHandler.TcpIpAddressProvider!;
+        protected IUdpIPAddressProvider UdpIpAddressProvider => CommunicationHandler.UdpIpAddressProvider!;
+        protected IBamServerContextProvider ServerContextProvider => CommunicationHandler.ServerContextProvider!;
+        protected IBamResponseProvider ResponseProvider => CommunicationHandler.ResponseProvider!;
+        protected IActorResolver ActorResolver => CommunicationHandler.ActorResolver!;
+        protected IServerSessionManager ServerSessionManager => CommunicationHandler.ServerSessionManager!;
+        protected IAuthorizationCalculator AuthorizationCalculator => CommunicationHandler.AuthorizationCalculator!;
+        protected IBamRequestProcessor RequestProcessor => CommunicationHandler.RequestProcessor!;
         /// <summary>
         /// Gets the object encoder/decoder used for serializing and deserializing request/response content.
         /// </summary>
-        public IObjectEncoderDecoder ObjectEncoderDecoder => CommunicationHandler.ObjectEncoderDecoder;
+        public IObjectEncoderDecoder ObjectEncoderDecoder => CommunicationHandler.ObjectEncoderDecoder!;
 
         /// <summary>
         /// Gets or sets the name of this server to aid in identifying the process in logs.
@@ -141,13 +141,13 @@ namespace Bam.Protocol.Server
         {
             get;
             set;
-        }
+        } = null!;
 
         /// <summary>
         /// Occurs when the server is about to start.
         /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Started")]
-        public event EventHandler<BamServerEventArgs> Starting;
+        public event EventHandler<BamServerEventArgs> Starting = null!;
 
         /// <summary>
         /// Occurs when the server has started successfully.
@@ -159,36 +159,36 @@ namespace Bam.Protocol.Server
         /// Occurs when the server is about to stop.
         /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Stopping")]
-        public event EventHandler<BamServerEventArgs> Stopping;
+        public event EventHandler<BamServerEventArgs> Stopping = null!;
 
         /// <summary>
         /// Occurs when the server has stopped.
         /// </summary>
 		[Verbosity(VerbosityLevel.Information, SenderMessageFormat = "BamHttpServer={Name};Port={Port};Stopped")]
-        public event EventHandler<BamServerEventArgs> Stopped;
+        public event EventHandler<BamServerEventArgs> Stopped = null!;
 
         /// <summary>
         /// Occurs when an exception is thrown during server listener startup.
         /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
-        public event EventHandler StartExceptionThrown;
+        public event EventHandler StartExceptionThrown = null!;
 
         /// <summary>
         /// Occurs when an exception is thrown while processing a request.
         /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
-        public event EventHandler RequestExceptionThrown;
+        public event EventHandler RequestExceptionThrown = null!;
 
         /// <summary>
         /// Occurs when an exception is thrown during the overall server start operation.
         /// </summary>
         [Verbosity(LogEventType.Error, SenderMessageFormat = "LastMessage: {LastExceptionMessage}")]
-        public event EventHandler ServerStartException;
+        public event EventHandler ServerStartException = null!;
 
         /// <summary>
         /// Occurs when an HTTP request is received.
         /// </summary>
-        public event EventHandler HttpRequestReceived;
+        public event EventHandler HttpRequestReceived = null!;
         
         /// <summary>
         /// Occurs when a TCP client connects to the server.
@@ -196,32 +196,32 @@ namespace Bam.Protocol.Server
         [Verbosity(LogEventType.Information,
             SenderMessageFormat =
                 "Client Connected: LocalEndpoint={LocalEndpoint}, RemoteEndpoint={RemoteEndpoint}")]
-        public event EventHandler<BamServerEventArgs> TcpClientConnected;
+        public event EventHandler<BamServerEventArgs> TcpClientConnected = null!;
 
         /// <summary>
         /// Occurs when UDP data is received.
         /// </summary>
-        public event EventHandler<BamServerEventArgs> UdpDataReceived;
+        public event EventHandler<BamServerEventArgs> UdpDataReceived = null!;
 
         /// <summary>
         /// Occurs when server context creation starts for a request.
         /// </summary>
-        public event EventHandler<BamServerEventArgs> CreateContextStarted;
+        public event EventHandler<BamServerEventArgs> CreateContextStarted = null!;
 
         /// <summary>
         /// Occurs when server context creation completes for a request.
         /// </summary>
-        public event EventHandler<BamServerEventArgs> CreateContextComplete;
+        public event EventHandler<BamServerEventArgs> CreateContextComplete = null!;
 
         /// <summary>
         /// Occurs when server context initialization starts for a request.
         /// </summary>
-        public event EventHandler<BamServerEventArgs> InitializeContextStarted;
+        public event EventHandler<BamServerEventArgs> InitializeContextStarted = null!;
 
         /// <summary>
         /// Occurs when server context initialization completes for a request.
         /// </summary>
-        public event EventHandler<BamServerEventArgs> InitializeContextComplete;
+        public event EventHandler<BamServerEventArgs> InitializeContextComplete = null!;
 
         /// <summary>
         /// Gets an informational snapshot of this server's configuration.
@@ -330,10 +330,10 @@ namespace Bam.Protocol.Server
             }
         }
 
-        protected HttpServer HttpServer { get; set; }
-        protected TcpListener TcpListener { get; set; }
-        protected UdpClient UdpClient { get; set; }
-        protected ILogger Logger { get; set; }
+        protected HttpServer HttpServer { get; set; } = null!;
+        protected TcpListener TcpListener { get; set; } = null!;
+        protected UdpClient UdpClient { get; set; } = null!;
+        protected ILogger Logger { get; set; } = null!;
 
         protected void HandleHttpRequests(HttpListenerContext listenerContext)
         {
@@ -412,7 +412,7 @@ namespace Bam.Protocol.Server
                     try
                     {
                         FireEvent(TcpClientConnected, new BamServerEventArgs(client));
-                        Logger.Info("Tcp Client Connected (CorrelationId={0}): LocalEndpoint={1}, RemoteEndpoint={2}", requestId, client.Client.LocalEndPoint.ToString(), client.Client.RemoteEndPoint.ToString());
+                        Logger.Info("Tcp Client Connected (CorrelationId={0}): LocalEndpoint={1}, RemoteEndpoint={2}", requestId, client.Client.LocalEndPoint!.ToString()!, client.Client.RemoteEndPoint!.ToString()!);
                         HandleTcpRequest(client, requestId);
                     }
                     catch (Exception ex)

@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Client.Dao
 {
     public class ClientKeySetDataPagedQuery: PagedQuery<ClientKeySetDataColumns, ClientKeySetData>
     { 
-		public ClientKeySetDataPagedQuery(ClientKeySetDataColumns orderByColumn,ClientKeySetDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public ClientKeySetDataPagedQuery(ClientKeySetDataColumns orderByColumn,ClientKeySetDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

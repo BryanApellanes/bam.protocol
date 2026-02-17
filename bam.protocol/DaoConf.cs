@@ -36,28 +36,28 @@ namespace Bam.Server
                 Directory = new DirectoryInfo(Path.Combine(contentRoot, "common", "workspace"))
             };
             ConnectionStringSettings settings = connResolver.Resolve(connectionName);
-            return new DaoConf { ConnectionName = connectionName, RegistrarCaller = typeof(SQLiteRegistrarCaller).AssemblyQualifiedName };
+            return new DaoConf { ConnectionName = connectionName, RegistrarCaller = typeof(SQLiteRegistrarCaller).AssemblyQualifiedName! };
         }
         
         /// <summary>
         /// The name of the connection (this equals ContextName in some instances (example, qi.js) and 
         /// is also the name of the connection string setting used in the default configuration file)
         /// </summary>
-        public string ConnectionName { get; set; }
+        public string ConnectionName { get; set; } = null!;
 
         /// <summary>
         /// The AssemblyQualifiedName of an IRegistrarCaller implementation
         /// used to register the underlying database type (SQLite, SqlClient, etc.)
         /// </summary>
-        public string RegistrarCaller { get; set; }
+        public string RegistrarCaller { get; set; } = null!;
 
-        IRegistrarCaller _registrarCaller;
+        IRegistrarCaller _registrarCaller = null!;
         readonly object _registrarCallerLock = new object();
         protected IRegistrarCaller RegistrarCallerInstance
         {
             get
             {
-                return _registrarCallerLock.DoubleCheckLock<IRegistrarCaller>(ref _registrarCaller, () => Type.GetType(RegistrarCaller).Construct<IRegistrarCaller>());
+                return _registrarCallerLock.DoubleCheckLock<IRegistrarCaller>(ref _registrarCaller, () => Type.GetType(RegistrarCaller)!.Construct<IRegistrarCaller>());
             }
         }
 

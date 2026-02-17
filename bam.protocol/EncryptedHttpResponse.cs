@@ -8,7 +8,7 @@ namespace Bam.Server
     public abstract class EncryptedHttpResponse : HttpResponse
     {
 
-        ContentCipher _conentCipher;
+        ContentCipher _conentCipher = null!;
         /// <summary>
         /// Gets or sets the content cipher. Setting this also updates the Content and ContentType properties.
         /// </summary>

@@ -16,7 +16,7 @@ namespace Bam.Server
         private static readonly ConcurrentDictionary<HostBinding, HttpServer> _listening = new ConcurrentDictionary<HostBinding, HttpServer>();
         private readonly HttpListener _listener;
         private readonly Thread _handlerThread;
-        private readonly ILogger _logger;
+        private readonly ILogger _logger = null!;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpServer"/> class with the specified request handler.
@@ -25,7 +25,7 @@ namespace Bam.Server
         /// <param name="logger">An optional logger. Defaults to <see cref="Log.Default"/>.</param>
         public HttpServer(Action<HttpListenerContext> requestHandler, ILogger? logger = null)
         {
-            _logger = logger ?? Log.Default;
+            _logger = (logger ?? Log.Default)!;
 
             _listener = new HttpListener();
             _handlerThread = new Thread(HandleHttpListenerContextRequests);

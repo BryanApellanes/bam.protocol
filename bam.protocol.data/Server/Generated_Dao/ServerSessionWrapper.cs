@@ -29,7 +29,7 @@ namespace Bam.Protocol.Data.Server.Wrappers
 		}
 
 		[JsonIgnore]
-		public DaoRepository DaoRepository { get; set; }
+		public DaoRepository DaoRepository { get; set; } = null!;
 
 		[JsonIgnore]
 		public Dictionary<string, PropertyInfo> UpdatedXrefCollectionProperties { get; set; }
@@ -46,7 +46,7 @@ namespace Bam.Protocol.Data.Server.Wrappers
 			}
 		}
 
-        System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> _keyValues;
+        System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> _keyValues = null!;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> KeyValues
 		{
 			get

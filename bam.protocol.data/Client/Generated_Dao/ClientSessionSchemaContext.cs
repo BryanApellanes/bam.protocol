@@ -33,48 +33,48 @@ namespace Bam.Protocol.Data.Client.Dao
 
 	public class ClientKeySetDataQueryContext
 	{
-			public ClientKeySetDataCollection Where(WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public ClientKeySetDataCollection Where(WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.Where(where, db);
 			}
 		   
-			public ClientKeySetDataCollection Where(WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy = null, Database db = null)
+			public ClientKeySetDataCollection Where(WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.Where(where, orderBy, db);
 			}
 
-			public ClientKeySetData OneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public ClientKeySetData OneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.OneWhere(where, db);
 			}
 
-			public static ClientKeySetData GetOneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public static ClientKeySetData GetOneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.GetOneWhere(where, db);
 			}
 		
-			public ClientKeySetData FirstOneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public ClientKeySetData FirstOneWhere(WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.FirstOneWhere(where, db);
 			}
 
-			public ClientKeySetDataCollection Top(int count, WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public ClientKeySetDataCollection Top(int count, WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.Top(count, where, db);
 			}
 
-			public ClientKeySetDataCollection Top(int count, WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy, Database db = null)
+			public ClientKeySetDataCollection Top(int count, WhereDelegate<ClientKeySetDataColumns> where, OrderBy<ClientKeySetDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<ClientKeySetDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<ClientKeySetDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientKeySetData.Count(where, db);
 			}
 	}
 
-	static ClientKeySetDataQueryContext _clientKeySetDatas;
+	static ClientKeySetDataQueryContext _clientKeySetDatas = null!;
 	static object _clientKeySetDatasLock = new object();
 	public static ClientKeySetDataQueryContext ClientKeySetDatas
 	{
@@ -85,48 +85,48 @@ namespace Bam.Protocol.Data.Client.Dao
 	}
 	public class ClientSessionDataQueryContext
 	{
-			public ClientSessionDataCollection Where(WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public ClientSessionDataCollection Where(WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.Where(where, db);
 			}
 		   
-			public ClientSessionDataCollection Where(WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy = null, Database db = null)
+			public ClientSessionDataCollection Where(WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.Where(where, orderBy, db);
 			}
 
-			public ClientSessionData OneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public ClientSessionData OneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(where, db);
 			}
 
-			public static ClientSessionData GetOneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public static ClientSessionData GetOneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.GetOneWhere(where, db);
 			}
 		
-			public ClientSessionData FirstOneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public ClientSessionData FirstOneWhere(WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.FirstOneWhere(where, db);
 			}
 
-			public ClientSessionDataCollection Top(int count, WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public ClientSessionDataCollection Top(int count, WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.Top(count, where, db);
 			}
 
-			public ClientSessionDataCollection Top(int count, WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy, Database db = null)
+			public ClientSessionDataCollection Top(int count, WhereDelegate<ClientSessionDataColumns> where, OrderBy<ClientSessionDataColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<ClientSessionDataColumns> where, Database db = null)
+			public long Count(WhereDelegate<ClientSessionDataColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionData.Count(where, db);
 			}
 	}
 
-	static ClientSessionDataQueryContext _clientSessionDatas;
+	static ClientSessionDataQueryContext _clientSessionDatas = null!;
 	static object _clientSessionDatasLock = new object();
 	public static ClientSessionDataQueryContext ClientSessionDatas
 	{
@@ -137,48 +137,48 @@ namespace Bam.Protocol.Data.Client.Dao
 	}
 	public class ClientSessionKeyValueQueryContext
 	{
-			public ClientSessionKeyValueCollection Where(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public ClientSessionKeyValueCollection Where(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Where(where, db);
 			}
 		   
-			public ClientSessionKeyValueCollection Where(WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy = null, Database db = null)
+			public ClientSessionKeyValueCollection Where(WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy = null!, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Where(where, orderBy, db);
 			}
 
-			public ClientSessionKeyValue OneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public ClientSessionKeyValue OneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.OneWhere(where, db);
 			}
 
-			public static ClientSessionKeyValue GetOneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public static ClientSessionKeyValue GetOneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.GetOneWhere(where, db);
 			}
 		
-			public ClientSessionKeyValue FirstOneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public ClientSessionKeyValue FirstOneWhere(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.FirstOneWhere(where, db);
 			}
 
-			public ClientSessionKeyValueCollection Top(int count, WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public ClientSessionKeyValueCollection Top(int count, WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Top(count, where, db);
 			}
 
-			public ClientSessionKeyValueCollection Top(int count, WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy, Database db = null)
+			public ClientSessionKeyValueCollection Top(int count, WhereDelegate<ClientSessionKeyValueColumns> where, OrderBy<ClientSessionKeyValueColumns> orderBy, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Top(count, where, orderBy, db);
 			}
 
-			public long Count(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null)
+			public long Count(WhereDelegate<ClientSessionKeyValueColumns> where, Database db = null!)
 			{
 				return Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.Count(where, db);
 			}
 	}
 
-	static ClientSessionKeyValueQueryContext _clientSessionKeyValues;
+	static ClientSessionKeyValueQueryContext _clientSessionKeyValues = null!;
 	static object _clientSessionKeyValuesLock = new object();
 	public static ClientSessionKeyValueQueryContext ClientSessionKeyValues
 	{

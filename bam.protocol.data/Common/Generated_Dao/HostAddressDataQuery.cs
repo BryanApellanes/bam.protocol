@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Common.Dao
     public class HostAddressDataQuery: Query<HostAddressDataColumns, HostAddressData>
     { 
 		public HostAddressDataQuery(){}
-		public HostAddressDataQuery(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public HostAddressDataQuery(Func<HostAddressDataColumns, QueryFilter<HostAddressDataColumns>> where, OrderBy<HostAddressDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public HostAddressDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public HostAddressDataQuery(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public HostAddressDataQuery(Func<HostAddressDataColumns, QueryFilter<HostAddressDataColumns>> where, OrderBy<HostAddressDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public HostAddressDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static HostAddressDataQuery Where(WhereDelegate<HostAddressDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static HostAddressDataQuery Where(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null, Database db = null)
+        public static HostAddressDataQuery Where(WhereDelegate<HostAddressDataColumns> where, OrderBy<HostAddressDataColumns> orderBy = null!, Database db = null!)
         {
             return new HostAddressDataQuery(where, orderBy, db);
         }

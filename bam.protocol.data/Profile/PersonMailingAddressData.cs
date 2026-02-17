@@ -5,8 +5,8 @@ namespace Bam.Protocol.Data.Profile;
 public class PersonMailingAddressData : RepoData
 {
     [CompositeKey]
-    public string PersonHandle { get; set; }
-    
+    public string PersonHandle { get; set; } = null!;
+
     [CompositeKey]
-    public string MailingAddressHandle { get; set; }
+    public string MailingAddressHandle { get; set; } = null!;
 }

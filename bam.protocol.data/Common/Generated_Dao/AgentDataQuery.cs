@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Common.Dao
     public class AgentDataQuery: Query<AgentDataColumns, AgentData>
     { 
 		public AgentDataQuery(){}
-		public AgentDataQuery(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public AgentDataQuery(Func<AgentDataColumns, QueryFilter<AgentDataColumns>> where, OrderBy<AgentDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public AgentDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public AgentDataQuery(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public AgentDataQuery(Func<AgentDataColumns, QueryFilter<AgentDataColumns>> where, OrderBy<AgentDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public AgentDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static AgentDataQuery Where(WhereDelegate<AgentDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static AgentDataQuery Where(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null, Database db = null)
+        public static AgentDataQuery Where(WhereDelegate<AgentDataColumns> where, OrderBy<AgentDataColumns> orderBy = null!, Database db = null!)
         {
             return new AgentDataQuery(where, orderBy, db);
         }

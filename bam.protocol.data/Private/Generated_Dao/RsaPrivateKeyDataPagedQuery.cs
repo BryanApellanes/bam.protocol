@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Private.Dao
 {
     public class RsaPrivateKeyDataPagedQuery: PagedQuery<RsaPrivateKeyDataColumns, RsaPrivateKeyData>
     { 
-		public RsaPrivateKeyDataPagedQuery(RsaPrivateKeyDataColumns orderByColumn,RsaPrivateKeyDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public RsaPrivateKeyDataPagedQuery(RsaPrivateKeyDataColumns orderByColumn,RsaPrivateKeyDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

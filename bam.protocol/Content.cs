@@ -8,5 +8,5 @@ public class Content : IContent
     /// <summary>
     /// Gets or sets the content value.
     /// </summary>
-    public object Value { get; set; }
+    public object Value { get; set; } = null!;
 }

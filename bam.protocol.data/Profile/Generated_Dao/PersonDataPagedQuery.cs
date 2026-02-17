@@ -12,6 +12,6 @@ namespace Bam.Protocol.Data.Profile.Dao
 {
     public class PersonDataPagedQuery: PagedQuery<PersonDataColumns, PersonData>
     { 
-		public PersonDataPagedQuery(PersonDataColumns orderByColumn,PersonDataQuery query, Database db = null) : base(orderByColumn, query, db) { }
+		public PersonDataPagedQuery(PersonDataColumns orderByColumn,PersonDataQuery query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

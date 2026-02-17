@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class DeviceCertificateDataQuery: Query<DeviceCertificateDataColumns, DeviceCertificateData>
     { 
 		public DeviceCertificateDataQuery(){}
-		public DeviceCertificateDataQuery(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public DeviceCertificateDataQuery(Func<DeviceCertificateDataColumns, QueryFilter<DeviceCertificateDataColumns>> where, OrderBy<DeviceCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public DeviceCertificateDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public DeviceCertificateDataQuery(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public DeviceCertificateDataQuery(Func<DeviceCertificateDataColumns, QueryFilter<DeviceCertificateDataColumns>> where, OrderBy<DeviceCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public DeviceCertificateDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static DeviceCertificateDataQuery Where(WhereDelegate<DeviceCertificateDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static DeviceCertificateDataQuery Where(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null, Database db = null)
+        public static DeviceCertificateDataQuery Where(WhereDelegate<DeviceCertificateDataColumns> where, OrderBy<DeviceCertificateDataColumns> orderBy = null!, Database db = null!)
         {
             return new DeviceCertificateDataQuery(where, orderBy, db);
         }

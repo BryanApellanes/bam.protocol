@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class OrganizationCertificateDataQuery: Query<OrganizationCertificateDataColumns, OrganizationCertificateData>
     { 
 		public OrganizationCertificateDataQuery(){}
-		public OrganizationCertificateDataQuery(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public OrganizationCertificateDataQuery(Func<OrganizationCertificateDataColumns, QueryFilter<OrganizationCertificateDataColumns>> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public OrganizationCertificateDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public OrganizationCertificateDataQuery(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public OrganizationCertificateDataQuery(Func<OrganizationCertificateDataColumns, QueryFilter<OrganizationCertificateDataColumns>> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public OrganizationCertificateDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static OrganizationCertificateDataQuery Where(WhereDelegate<OrganizationCertificateDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static OrganizationCertificateDataQuery Where(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null, Database db = null)
+        public static OrganizationCertificateDataQuery Where(WhereDelegate<OrganizationCertificateDataColumns> where, OrderBy<OrganizationCertificateDataColumns> orderBy = null!, Database db = null!)
         {
             return new OrganizationCertificateDataQuery(where, orderBy, db);
         }

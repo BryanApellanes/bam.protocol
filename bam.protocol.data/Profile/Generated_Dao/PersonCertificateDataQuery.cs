@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class PersonCertificateDataQuery: Query<PersonCertificateDataColumns, PersonCertificateData>
     { 
 		public PersonCertificateDataQuery(){}
-		public PersonCertificateDataQuery(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public PersonCertificateDataQuery(Func<PersonCertificateDataColumns, QueryFilter<PersonCertificateDataColumns>> where, OrderBy<PersonCertificateDataColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public PersonCertificateDataQuery(Delegate where, Database db = null) : base(where, db) { }
+		public PersonCertificateDataQuery(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public PersonCertificateDataQuery(Func<PersonCertificateDataColumns, QueryFilter<PersonCertificateDataColumns>> where, OrderBy<PersonCertificateDataColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public PersonCertificateDataQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static PersonCertificateDataQuery Where(WhereDelegate<PersonCertificateDataColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static PersonCertificateDataQuery Where(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null, Database db = null)
+        public static PersonCertificateDataQuery Where(WhereDelegate<PersonCertificateDataColumns> where, OrderBy<PersonCertificateDataColumns> orderBy = null!, Database db = null!)
         {
             return new PersonCertificateDataQuery(where, orderBy, db);
         }

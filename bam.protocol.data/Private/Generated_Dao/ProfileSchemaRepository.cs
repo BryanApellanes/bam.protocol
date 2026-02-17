@@ -66,7 +66,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public void SetOneEccPrivateKeyDataWhere(WhereDelegate<EccPrivateKeyDataColumns> where, out Bam.Protocol.Data.Private.EccPrivateKeyData result)
 		{
 			Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.SetOneWhere(where, out Bam.Protocol.Data.Private.Dao.EccPrivateKeyData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.EccPrivateKeyData>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.EccPrivateKeyData>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data, this);
 		}
 
@@ -79,7 +79,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.EccPrivateKeyData GetOneEccPrivateKeyDataWhere(WhereDelegate<EccPrivateKeyDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.EccPrivateKeyData>();
-			var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data, this); 
         }
 
@@ -95,8 +95,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.EccPrivateKeyData OneEccPrivateKeyDataWhere(WhereDelegate<EccPrivateKeyDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.EccPrivateKeyData>();
-            var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data, this);           
+            var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data!, this);           
         }
 
 		/// <summary>
@@ -106,7 +106,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Private.EccPrivateKeyDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Private.EccPrivateKeyData> EccPrivateKeyDatasWhere(WhereDelegate<EccPrivateKeyDataColumns> where, OrderBy<EccPrivateKeyDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Private.EccPrivateKeyData> EccPrivateKeyDatasWhere(WhereDelegate<EccPrivateKeyDataColumns> where, OrderBy<EccPrivateKeyDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Private.EccPrivateKeyData>(Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.Where(where, orderBy, Database));
         }
@@ -189,7 +189,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public void SetOnePrivateKeySetDataWhere(WhereDelegate<PrivateKeySetDataColumns> where, out Bam.Protocol.Data.Private.PrivateKeySetData result)
 		{
 			Bam.Protocol.Data.Private.Dao.PrivateKeySetData.SetOneWhere(where, out Bam.Protocol.Data.Private.Dao.PrivateKeySetData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.PrivateKeySetData>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.PrivateKeySetData>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data, this);
 		}
 
@@ -202,7 +202,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.PrivateKeySetData GetOnePrivateKeySetDataWhere(WhereDelegate<PrivateKeySetDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.PrivateKeySetData>();
-			var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data, this); 
         }
 
@@ -218,8 +218,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.PrivateKeySetData OnePrivateKeySetDataWhere(WhereDelegate<PrivateKeySetDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.PrivateKeySetData>();
-            var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data, this);           
+            var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data!, this);           
         }
 
 		/// <summary>
@@ -229,7 +229,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Private.PrivateKeySetDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Private.PrivateKeySetData> PrivateKeySetDatasWhere(WhereDelegate<PrivateKeySetDataColumns> where, OrderBy<PrivateKeySetDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Private.PrivateKeySetData> PrivateKeySetDatasWhere(WhereDelegate<PrivateKeySetDataColumns> where, OrderBy<PrivateKeySetDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Private.PrivateKeySetData>(Bam.Protocol.Data.Private.Dao.PrivateKeySetData.Where(where, orderBy, Database));
         }
@@ -312,7 +312,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public void SetOneRsaPrivateKeyDataWhere(WhereDelegate<RsaPrivateKeyDataColumns> where, out Bam.Protocol.Data.Private.RsaPrivateKeyData result)
 		{
 			Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.SetOneWhere(where, out Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData daoResult, Database);
-			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Private.RsaPrivateKeyData>()!;
             result = new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data, this);
 		}
 
@@ -325,7 +325,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.RsaPrivateKeyData GetOneRsaPrivateKeyDataWhere(WhereDelegate<RsaPrivateKeyDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
-			var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+			var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data, this); 
         }
 
@@ -341,8 +341,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		public Bam.Protocol.Data.Private.RsaPrivateKeyData OneRsaPrivateKeyDataWhere(WhereDelegate<RsaPrivateKeyDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
-            var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data, this);           
+            var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data!, this);           
         }
 
 		/// <summary>
@@ -352,7 +352,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between Bam.Protocol.Data.Private.RsaPrivateKeyDataColumns and other values
 		/// </param>
-		public IEnumerable<Bam.Protocol.Data.Private.RsaPrivateKeyData> RsaPrivateKeyDatasWhere(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null)
+		public IEnumerable<Bam.Protocol.Data.Private.RsaPrivateKeyData> RsaPrivateKeyDatasWhere(WhereDelegate<RsaPrivateKeyDataColumns> where, OrderBy<RsaPrivateKeyDataColumns> orderBy = null!)
         {
             return Wrap<Bam.Protocol.Data.Private.RsaPrivateKeyData>(Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.Where(where, orderBy, Database));
         }

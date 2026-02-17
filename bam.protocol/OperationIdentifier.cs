@@ -8,7 +8,7 @@ namespace Bam.Protocol;
 public class OperationIdentifier : IOperationIdentifier
 {
     /// <inheritdoc />
-    public string Value { get; }
+    public string Value { get; } = null!;
 
     /// <summary>
     /// Creates an operation identifier string for the specified method on type <typeparamref name="T"/>.
@@ -30,7 +30,7 @@ public class OperationIdentifier : IOperationIdentifier
     public static string For(Type type, string methodName)
     {
         Args.ThrowIfNull(type, "type");
-        return For(type.GetMethod(methodName));
+        return For(type.GetMethod(methodName)!);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public class OperationIdentifier : IOperationIdentifier
     public static string For(MethodInfo method)
     {
         Args.ThrowIfNull(method, nameof(method));
-        return $"{method.DeclaringType.FullName}+{method.Name}, {method.DeclaringType.Assembly.FullName}";
+        return $"{method.DeclaringType!.FullName}+{method.Name}, {method.DeclaringType.Assembly.FullName}";
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class OperationIdentifier : IOperationIdentifier
         string methodName = parts[1];
         string assemblyName = parts[2];
         Assembly assembly = Assembly.Load(assemblyName);
-        Type type = assembly.GetType(typeName);
-        return type.GetMethod(methodName);
+        Type type = assembly.GetType(typeName)!;
+        return type.GetMethod(methodName)!;
     }
 }

@@ -117,10 +117,10 @@ namespace Bam.Server
         /// <returns>An array of <see cref="HostBinding"/> instances from the configuration.</returns>
         public static HostBinding[] FromBamProcessConfig(string defaultHostName = "localhost", int defaultPort = 80)
         {
-            int port = int.Parse(Config.Current["Port", defaultPort.ToString()]);
-            bool ssl = Config.Current["Ssl"].IsAffirmative();
+            int port = int.Parse(Config.Current["Port", defaultPort.ToString()]!);
+            bool ssl = Config.Current["Ssl"]!.IsAffirmative();
             List<HostBinding> results = new List<HostBinding>();
-            foreach (string hostName in Config.Current["HostNames"].Or(defaultHostName).DelimitSplit(",", true))
+            foreach (string hostName in Config.Current["HostNames"]!.Or(defaultHostName).DelimitSplit(",", true))
             {
                 AddHostBinding(hostName, port, ssl, results);
             }

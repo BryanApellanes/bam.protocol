@@ -4,9 +4,9 @@ namespace Bam.Encryption.Data.Files
 {
     public class KeySetFile : IApplicationKeySet
     {
-        public string ApplicationName { get; set; }
+        public string ApplicationName { get; set; } = null!;
 
-        static KeySetFile _forApplication;
+        static KeySetFile _forApplication = null!;
         static object _forApplicationLock = new object();
         public static KeySetFile ForApplication
         {

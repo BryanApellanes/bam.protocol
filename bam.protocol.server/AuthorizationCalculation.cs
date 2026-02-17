@@ -24,7 +24,7 @@ public class AuthorizationCalculation : IAuthorizationCalculation
     /// <summary>
     /// Gets or sets the messages associated with the authorization calculation.
     /// </summary>
-    public string[] Messages { get; internal set; }
+    public string[] Messages { get; internal set; } = null!;
 
     /// <summary>
     /// Gets or sets the calculated access level.

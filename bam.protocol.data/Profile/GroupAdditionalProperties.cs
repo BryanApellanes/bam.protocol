@@ -4,6 +4,6 @@ namespace Bam.Protocol.Data.Profile;
 
 public class GroupAdditionalProperties : KeyedAuditRepoData
 {
-    public string GroupHandle { get; set; }
-    public string AdditionalPropertyHandle { get; set; }
+    public string GroupHandle { get; set; } = null!;
+    public string AdditionalPropertyHandle { get; set; } = null!;
 }

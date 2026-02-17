@@ -19,12 +19,12 @@ public class RequestSecurityValidator
     public bool ValidateBodySignature(IBamServerContext context)
     {
         IBamRequest request = context.BamRequest;
-        if (!request.Headers.TryGetValue(Headers.BodySignature, out string signatureBase64))
+        if (!request.Headers.TryGetValue(Headers.BodySignature, out string? signatureBase64))
         {
             return false;
         }
 
-        request.Headers.TryGetValue(Headers.BodySignatureAlgorithm, out string algorithm);
+        request.Headers.TryGetValue(Headers.BodySignatureAlgorithm, out string? algorithm);
         algorithm = algorithm ?? "SHA256WITHECDSA";
 
         string clientPublicKeyPem = context.ServerSessionState.Get<string>("ClientPublicKey");
@@ -59,12 +59,12 @@ public class RequestSecurityValidator
     public bool ValidateNonceHash(IBamServerContext context)
     {
         IBamRequest request = context.BamRequest;
-        if (!request.Headers.TryGetValue(Headers.Nonce, out string nonce))
+        if (!request.Headers.TryGetValue(Headers.Nonce, out string? nonce))
         {
             return false;
         }
 
-        if (!request.Headers.TryGetValue(Headers.NonceHash, out string nonceHashBase64))
+        if (!request.Headers.TryGetValue(Headers.NonceHash, out string? nonceHashBase64))
         {
             return false;
         }
@@ -91,10 +91,10 @@ public class RequestSecurityValidator
     /// <returns>The decrypted body string, or null if decryption fails.</returns>
     public string DecryptBody(IBamServerContext context)
     {
-        using AesKey aesKey = DeriveSessionAesKey(context.ServerSessionState);
+        using AesKey aesKey = DeriveSessionAesKey(context.ServerSessionState)!;
         if (aesKey == null)
         {
-            return null;
+            return null!;
         }
 
         try
@@ -103,7 +103,7 @@ public class RequestSecurityValidator
         }
         catch
         {
-            return null;
+            return null!;
         }
     }
 
@@ -119,7 +119,7 @@ public class RequestSecurityValidator
 
         if (string.IsNullOrEmpty(serverPrivateKeyPem) || string.IsNullOrEmpty(clientPublicKeyPem))
         {
-            return null;
+            return null!;
         }
 
         byte[] serverPemBytes = Encoding.UTF8.GetBytes(serverPrivateKeyPem);

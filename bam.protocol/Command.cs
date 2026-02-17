@@ -6,11 +6,11 @@ namespace Bam.Protocol;
 public class Command : ICommand
 {
     /// <inheritdoc />
-    public string TypeName { get; set; }
+    public string TypeName { get; set; } = null!;
 
     /// <inheritdoc />
-    public string MethodName { get; set; }
+    public string MethodName { get; set; } = null!;
 
     /// <inheritdoc />
-    public string[] Arguments { get; set; }
+    public string[] Arguments { get; set; } = null!;
 }

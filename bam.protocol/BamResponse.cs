@@ -26,7 +26,7 @@ public abstract class BamResponse : IBamResponse
     /// <inheritdoc />
     public long ContentLength64 { get; set; }
     /// <inheritdoc />
-    public string ContentType { get; set; }
+    public string ContentType { get; set; } = null!;
     /// <inheritdoc />
     public CookieCollection Cookies { get; set; }
     /// <inheritdoc />
@@ -34,7 +34,7 @@ public abstract class BamResponse : IBamResponse
     /// <inheritdoc />
     public Stream OutputStream { get; }
     /// <inheritdoc />
-    public string RedirectLocation { get; set; }
+    public string RedirectLocation { get; set; } = null!;
     /// <inheritdoc />
     public int StatusCode { get; set; }
 
@@ -92,7 +92,7 @@ public abstract class BamResponse : IBamResponse
     /// <inheritdoc />
     public void SetCookie(Cookie cookie)
     {
-        Cookie existing = Cookies.FirstOrDefault(c => c.Name.Equals(cookie.Name));
+        Cookie? existing = Cookies.FirstOrDefault(c => c.Name.Equals(cookie.Name));
         if (existing != null)
         {
             Cookies.Remove(existing);

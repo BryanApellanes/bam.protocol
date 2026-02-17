@@ -10,12 +10,12 @@
         /// Gets or sets the host.  This equates to the Host
         /// property of a Uri.
         /// </summary>
-        public string Host { get; set; }
+        public string Host { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the AppName that the Host should be mapped to.
         /// </summary>
-        public string AppName { get; set; }
+        public string AppName { get; set; } = null!;
 
         /// <inheritdoc />
         public override int GetHashCode()
@@ -24,7 +24,7 @@
         }
 
         /// <inheritdoc />
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is HostAppMap hostMapping)
             {

@@ -13,16 +13,16 @@ namespace Bam.Protocol.Data.Profile.Dao
     public class AgentAdditionalPropertiesQuery: Query<AgentAdditionalPropertiesColumns, AgentAdditionalProperties>
     { 
 		public AgentAdditionalPropertiesQuery(){}
-		public AgentAdditionalPropertiesQuery(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }
-		public AgentAdditionalPropertiesQuery(Func<AgentAdditionalPropertiesColumns, QueryFilter<AgentAdditionalPropertiesColumns>> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null, Database db = null) : base(where, orderBy, db) { }		
-		public AgentAdditionalPropertiesQuery(Delegate where, Database db = null) : base(where, db) { }
+		public AgentAdditionalPropertiesQuery(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }
+		public AgentAdditionalPropertiesQuery(Func<AgentAdditionalPropertiesColumns, QueryFilter<AgentAdditionalPropertiesColumns>> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null!, Database db = null!) : base(where, orderBy, db) { }		
+		public AgentAdditionalPropertiesQuery(Delegate where, Database db = null!) : base(where, db) { }
 		
         public static AgentAdditionalPropertiesQuery Where(WhereDelegate<AgentAdditionalPropertiesColumns> where)
         {
-            return Where(where, null, null);
+            return Where(where, null!, null!);
         }
 
-        public static AgentAdditionalPropertiesQuery Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null, Database db = null)
+        public static AgentAdditionalPropertiesQuery Where(WhereDelegate<AgentAdditionalPropertiesColumns> where, OrderBy<AgentAdditionalPropertiesColumns> orderBy = null!, Database db = null!)
         {
             return new AgentAdditionalPropertiesQuery(where, orderBy, db);
         }

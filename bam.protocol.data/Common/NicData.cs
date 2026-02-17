@@ -15,29 +15,29 @@ namespace Bam.Protocol.Data.Common
         public virtual ulong DeviceDataId { get; set; }
 
         [JsonIgnore]
-        public virtual DeviceData DeviceData { get; set; }
-    
+        public virtual DeviceData DeviceData { get; set; } = null!;
+
         public virtual ulong MachineDataId { get; set; }
-        
-        public string Description { get; set; }
+
+        public string Description { get; set; } = null!;
         [JsonIgnore]
-        public virtual MachineData MachineData { get; set; }
-        
+        public virtual MachineData MachineData { get; set; } = null!;
+
         [CompositeKey]
-        public string AddressFamily { get; set; }
-        
+        public string AddressFamily { get; set; } = null!;
+
         [CompositeKey]
-        public string Address { get; set; }
-        
+        public string Address { get; set; } = null!;
+
         [CompositeKey]
-        public string MacAddress { get; set; }
+        public string MacAddress { get; set; } = null!;
         
         public override int GetHashCode()
         {
             return $"{AddressFamily}:{Address}:{MacAddress}".GetHashCode();
         }
         
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if(obj is NicData input)
             {

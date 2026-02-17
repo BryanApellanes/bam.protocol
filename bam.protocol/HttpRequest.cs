@@ -63,7 +63,7 @@ namespace Bam.Encryption
         {
             get;
             set;
-        }
+        } = null!;
 
         /// <summary>
         /// Gets or sets the character encoding for the request content.
@@ -128,14 +128,14 @@ namespace Bam.Encryption
         {
             HttpRequest request = new HttpRequest
             {
-                Uri = httpRequestMessage.RequestUri,
-                Content = httpRequestMessage.Content.ReadAsStringAsync().Result,
-                ContentType = httpRequestMessage.Content?.Headers?.ContentType?.MediaType,
+                Uri = httpRequestMessage.RequestUri!,
+                Content = httpRequestMessage.Content!.ReadAsStringAsync().Result,
+                ContentType = httpRequestMessage.Content?.Headers?.ContentType?.MediaType!,
                 Verb = VerbsByMethod[httpRequestMessage.Method]
             };
             foreach(System.Collections.Generic.KeyValuePair<string, IEnumerable<string>> kvp in httpRequestMessage.Headers)
             {
-                request.Headers.Add(kvp.Key, kvp.Value.ToString());
+                request.Headers.Add(kvp.Key, kvp.Value.ToString()!);
             }
             return request;
         }
@@ -150,8 +150,8 @@ namespace Bam.Encryption
         {
             HttpRequest<TContent> request = new HttpRequest<TContent>
             {
-                Uri = httpRequestMessage.RequestUri,
-                ContentType = httpRequestMessage.Content?.Headers?.ContentType?.MediaType,
+                Uri = httpRequestMessage.RequestUri!,
+                ContentType = httpRequestMessage.Content?.Headers?.ContentType?.MediaType!,
                 Verb = VerbsByMethod[httpRequestMessage.Method]
             };
 
@@ -167,7 +167,7 @@ namespace Bam.Encryption
             return request;
         }
 
-        static Dictionary<HttpMethod, HttpVerbs> _verbsByMethod;
+        static Dictionary<HttpMethod, HttpVerbs> _verbsByMethod = null!;
         protected static Dictionary<HttpMethod, HttpVerbs> VerbsByMethod
         {
             get
@@ -189,7 +189,7 @@ namespace Bam.Encryption
             }
         }
 
-        Dictionary<HttpVerbs, HttpMethod> _methodsByVerbs;
+        Dictionary<HttpVerbs, HttpMethod> _methodsByVerbs = null!;
         private Dictionary<HttpVerbs, HttpMethod> MethodsByVerbs
         {
             get

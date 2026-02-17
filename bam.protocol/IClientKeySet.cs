@@ -44,12 +44,12 @@ namespace Bam.Protocol.Client
         /// <summary>
         /// Gets or sets the client hostname.
         /// </summary>
-        string ClientHostName { get; set; }
+        new string ClientHostName { get; set; }
 
         /// <summary>
         /// Gets or sets the server hostname.
         /// </summary>
-        string ServerHostName { get; set; }
+        new string ServerHostName { get; set; }
 
         /// <summary>
         /// Encrypts the specified value using asymmetric (RSA) encryption.

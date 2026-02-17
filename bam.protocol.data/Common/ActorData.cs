@@ -4,8 +4,8 @@ namespace Bam.Protocol.Data.Common;
 
 public class ActorData : KeyedAuditRepoData, IActor, IHasHandle
 {
-    public string Name { get; set; }
-    
+    public string Name { get; set; } = null!;
+
     [CompositeKey]
-    public string Handle { get; set; }
+    public string Handle { get; set; } = null!;
 }

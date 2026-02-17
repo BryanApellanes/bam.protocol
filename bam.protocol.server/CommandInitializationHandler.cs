@@ -29,7 +29,7 @@ public class CommandInitializationHandler: IBamServerContextInitializationHandle
             initialization.Status = InitializationStatus.CommandResolutionFailed;
         }
 
-        context.SetCommand(command);
+        context.SetCommand(command!);
         return initialization;
     }
 }

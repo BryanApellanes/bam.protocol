@@ -44,7 +44,7 @@ public class ServerSessionState : IServerSessionState
     /// <summary>
     /// Gets or sets the session identifier.
     /// </summary>
-    public string SessionId { get; set; }
+    public string SessionId { get; set; } = null!;
 
     /// <summary>
     /// Gets the value associated with the specified key.
@@ -53,7 +53,7 @@ public class ServerSessionState : IServerSessionState
     /// <returns>The value, or null if not found.</returns>
     public object Get(string name)
     {
-        return _state.TryGetValue(name, out var value) ? value : null;
+        return _state.TryGetValue(name, out var value) ? value : null!;
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public class ServerSessionState : IServerSessionState
         object val = Get(name);
         if (val == null)
         {
-            return default(T);
+            return default(T)!;
         }
         return (T)val;
     }
@@ -91,8 +91,8 @@ public class ServerSessionState : IServerSessionState
     /// <param name="value">The value to store.</param>
     public void Set<T>(string name, T value)
     {
-        _state[name] = value;
-        Save(name, value);
+        _state[name] = value!;
+        Save(name, value!);
     }
 
     /// <summary>

@@ -17,15 +17,15 @@ public class CommandResolver : Loggable, ICommandResolver
         string content = request.Content;
         if (string.IsNullOrEmpty(content))
         {
-            return null;
+            return null!;
         }
 
         try
         {
-            MethodInvocationRequest invocation = Newtonsoft.Json.JsonConvert.DeserializeObject<MethodInvocationRequest>(content);
+            MethodInvocationRequest invocation = Newtonsoft.Json.JsonConvert.DeserializeObject<MethodInvocationRequest>(content)!;
             if (invocation == null || string.IsNullOrEmpty(invocation.OperationIdentifier))
             {
-                return null;
+                return null!;
             }
 
             string[] parts = invocation.OperationIdentifier.Split('+', ',');
@@ -33,13 +33,13 @@ public class CommandResolver : Loggable, ICommandResolver
             {
                 TypeName = parts[0].Trim(),
                 MethodName = parts[1].Trim(),
-                Arguments = invocation.Arguments?.Select(a => a.Value?.ToString()).ToArray() ?? Array.Empty<string>()
+                Arguments = invocation.Arguments?.Select(a => a.Value?.ToString()!).ToArray()! ?? Array.Empty<string>()
             };
         }
         catch (Exception ex)
         {
             Log.Warn("Failed to resolve command from request content: {0}", ex.Message);
-            return null;
+            return null!;
         }
     }
 }

@@ -22,5 +22,5 @@ public class BamRequestReaderOptions
     /// <summary>
     /// Gets or sets the event handler that is subscribed to all the events of a `RequestReader`.
     /// </summary>
-    public EventHandler<BamRequestReaderEventArgs> EventHandler { get; set; }
+    public EventHandler<BamRequestReaderEventArgs> EventHandler { get; set; } = null!;
 }

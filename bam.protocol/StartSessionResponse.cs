@@ -24,7 +24,7 @@ public class StartSessionResponse : BamResponse
     /// <summary>
     /// Gets or sets the unique session identifier.
     /// </summary>
-    public string SessionId { get; set; }
+    public string SessionId { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the nonce value used for key derivation.

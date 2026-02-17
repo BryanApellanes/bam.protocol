@@ -37,7 +37,7 @@ public static class ByteExtensions
     /// <param name="valueToCheck">The value to compare to the end of the buffer.</param>
     /// <param name="encoding">The encoding used to read the tail of the buffer.</param>
     /// <returns>True if the end of the buffer matches the specified value; otherwise, false.</returns>
-    public static bool TailEquals(this byte[] buffer, string valueToCheck, Encoding encoding = null)
+    public static bool TailEquals(this byte[] buffer, string valueToCheck, Encoding encoding = null!)
     {
         encoding = encoding ?? Encoding.ASCII;
         byte[] tail = buffer.PeekBack(valueToCheck.Length);
