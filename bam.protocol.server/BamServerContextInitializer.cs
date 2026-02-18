@@ -16,9 +16,11 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     /// <param name="commandInitializationHandler">The command initialization handler.</param>
     /// <param name="authenticationInitializationHandler">The authentication initialization handler.</param>
     /// <param name="anonymousAccessInitializationHandler">The anonymous access initialization handler.</param>
+    /// <param name="requestSecurityValidator">The request security validator for decrypting anonymous encrypted requests.</param>
     public BamServerContextInitializer(ActorResolverInitializationHandler actorResolverInitializationHandler, AuthorizationCalculatorInitializationHandler authorizationCalculatorInitializationHandler,
         ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler,
-        AuthenticationInitializationHandler authenticationInitializationHandler, AnonymousAccessInitializationHandler anonymousAccessInitializationHandler)
+        AuthenticationInitializationHandler authenticationInitializationHandler, AnonymousAccessInitializationHandler anonymousAccessInitializationHandler,
+        RequestSecurityValidator requestSecurityValidator)
     {
         this.AuthorizationCalculatorInitializationHandlerInitializationHandler = authorizationCalculatorInitializationHandler;
         this.ActorResolverInitializationHandler = actorResolverInitializationHandler;
@@ -26,6 +28,7 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         this.CommandInitializationHandler = commandInitializationHandler;
         this.AuthenticationInitializationHandler = authenticationInitializationHandler;
         this.AnonymousAccessInitializationHandler = anonymousAccessInitializationHandler;
+        this.RequestSecurityValidator = requestSecurityValidator;
     }
     
     protected HashSet<IBamServerContextInitializationHandler> BeforeInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
@@ -128,8 +131,23 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
 
             initialization = InitializeAnonymousAccess(initialization, args);
 
-            if (!initialization.IsAnonymousAccess)
+            if (initialization.IsAnonymousAccess && initialization.IsAnonymousEncryptionRequired)
             {
+                // Encrypted anonymous: need session for ECDH keys, then decrypt, skip actor/JWT
+                initialization = InitializeSession(initialization, args);
+                if (!initialization.CanContinue)
+                {
+                    return initialization;
+                }
+
+                initialization = DecryptAnonymousRequest(initialization);
+
+                // Re-attempt command resolution after decryption
+                initialization = InitializeCommand(initialization, args);
+            }
+            else if (!initialization.IsAnonymousAccess)
+            {
+                // Full authenticated pipeline
                 initialization = InitializeSession(initialization, args);
                 if (!initialization.CanContinue)
                 {
@@ -224,6 +242,23 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
+    private BamServerInitializationContext DecryptAnonymousRequest(BamServerInitializationContext initialization)
+    {
+        IBamServerContext context = initialization.ServerContext;
+        if (context.ServerSessionState == null)
+        {
+            return initialization;
+        }
+
+        string decrypted = RequestSecurityValidator.DecryptBody(context);
+        if (decrypted != null)
+        {
+            context.BamRequest.Content = decrypted;
+        }
+
+        return initialization;
+    }
+
     /// <summary>
     /// Adds a handler to run before the main initialization steps.
     /// </summary>
@@ -277,6 +312,12 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     }
 
     protected AuthorizationCalculatorInitializationHandler AuthorizationCalculatorInitializationHandlerInitializationHandler
+    {
+        get;
+        set;
+    }
+
+    protected RequestSecurityValidator RequestSecurityValidator
     {
         get;
         set;

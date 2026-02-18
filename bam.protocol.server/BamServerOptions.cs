@@ -169,7 +169,8 @@ public class BamServerOptions
             .For<ICommandResolver>().Use<CommandResolver>()
             .For<IBamRequestProcessor>().Use<BamRequestProcessor>()
             .For<IProfileManager>().Use<ProfileManager>()
-            .For<IAuthenticator>().Use<BamAuthenticator>();
+            .For<IAuthenticator>().Use<BamAuthenticator>()
+            .For<RequestSecurityValidator>().Use<RequestSecurityValidator>();
 
         ComponentRegistry
             .For<ServiceRegistry>().UseSingleton(ComponentRegistry);

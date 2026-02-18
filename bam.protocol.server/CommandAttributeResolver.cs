@@ -89,4 +89,15 @@ public static class CommandAttributeResolver
         AnonymousAccessAttribute? attr = GetAttribute<AnonymousAccessAttribute>(command);
         return attr?.AllowAnonymous ?? false;
     }
+
+    /// <summary>
+    /// Determines whether encryption is required for the specified command.
+    /// </summary>
+    /// <param name="command">The command to inspect.</param>
+    /// <returns>True if encryption is required; otherwise false.</returns>
+    public static bool IsEncryptionRequired(ICommand command)
+    {
+        AnonymousAccessAttribute? attr = GetAttribute<AnonymousAccessAttribute>(command);
+        return attr?.EncryptionRequired ?? false;
+    }
 }

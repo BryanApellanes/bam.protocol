@@ -18,6 +18,10 @@ public class AnonymousAccessInitializationHandler : IBamServerContextInitializat
         if (command != null && CommandAttributeResolver.IsAnonymousAccessAllowed(command))
         {
             initialization.IsAnonymousAccess = true;
+            if (CommandAttributeResolver.IsEncryptionRequired(command))
+            {
+                initialization.IsAnonymousEncryptionRequired = true;
+            }
         }
 
         return initialization;

@@ -173,7 +173,8 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
             sessionHandler,
             options.ComponentRegistry.Get<CommandInitializationHandler>(),
             options.ComponentRegistry.Get<AuthenticationInitializationHandler>(),
-            new AnonymousAccessInitializationHandler());
+            new AnonymousAccessInitializationHandler(),
+            new RequestSecurityValidator());
         options.ComponentRegistry.For<IBamServerContextInitializer>().UseSingleton(initializer);
 
         BamServer server = new BamServer(options);
