@@ -14,10 +14,10 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Private.Dao
 {
-	// schema = ProfileSchema
-	// connection Name = ProfileSchema
+	// schema = PrivateSchema
+	// connection Name = PrivateSchema
 	[Serializable]
-	[Bam.Data.Table("EccPrivateKeyData", "ProfileSchema")]
+	[Bam.Data.Table("EccPrivateKeyData", "PrivateSchema")]
 	public partial class EccPrivateKeyData: Bam.Data.Dao
 	{
 		public EccPrivateKeyData():base()
@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("Pem", value);
+            SetValue("Pem", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicKeyHash", value);
+            SetValue("PublicKeyHash", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicKeyHashAlgorithm", value);
+            SetValue("PublicKeyHashAlgorithm", value!);
         }
     }
 
@@ -699,7 +699,7 @@ namespace Bam.Protocol.Data.Private.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<EccPrivateKeyData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

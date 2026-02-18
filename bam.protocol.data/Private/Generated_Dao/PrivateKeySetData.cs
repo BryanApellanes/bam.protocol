@@ -14,10 +14,10 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Private.Dao
 {
-	// schema = ProfileSchema
-	// connection Name = ProfileSchema
+	// schema = PrivateSchema
+	// connection Name = PrivateSchema
 	[Serializable]
-	[Bam.Data.Table("PrivateKeySetData", "ProfileSchema")]
+	[Bam.Data.Table("PrivateKeySetData", "PrivateSchema")]
 	public partial class PrivateKeySetData: Bam.Data.Dao
 	{
 		public PrivateKeySetData():base()
@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicEccKeyHash", value);
+            SetValue("PublicEccKeyHash", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicEccKeyHashAlgorithm", value);
+            SetValue("PublicEccKeyHashAlgorithm", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicRsaKeyHash", value);
+            SetValue("PublicRsaKeyHash", value!);
         }
     }
 
@@ -155,7 +155,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicRsaKeyHashAlgorithm", value);
+            SetValue("PublicRsaKeyHashAlgorithm", value!);
         }
     }
 
@@ -169,7 +169,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("KeySetHandle", value);
+            SetValue("KeySetHandle", value!);
         }
     }
 
@@ -183,7 +183,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicRsaKey", value);
+            SetValue("PublicRsaKey", value!);
         }
     }
 
@@ -197,7 +197,7 @@ namespace Bam.Protocol.Data.Private.Dao
         }
         set
         {
-            SetValue("PublicEccKey", value);
+            SetValue("PublicEccKey", value!);
         }
     }
 
@@ -755,7 +755,7 @@ namespace Bam.Protocol.Data.Private.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<PrivateKeySetData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

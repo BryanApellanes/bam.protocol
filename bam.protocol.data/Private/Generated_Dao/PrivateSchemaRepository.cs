@@ -17,11 +17,11 @@ using Bam.Protocol.Data.Private;
 namespace Bam.Protocol.Data.Private.Dao.Repository
 {
 	[Serializable]
-	public partial class ProfileSchemaRepository: DaoRepository
+	public partial class PrivateSchemaRepository: DaoRepository
 	{
-		public ProfileSchemaRepository()
+		public PrivateSchemaRepository()
 		{
-			SchemaName = "ProfileSchema";
+			SchemaName = "PrivateSchema";
 			BaseNamespace = "Bam.Protocol.Data.Private";
 
 			
@@ -34,7 +34,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 			AddType<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
 			
 
-			DaoAssembly = typeof(ProfileSchemaRepository).Assembly;
+			DaoAssembly = typeof(PrivateSchemaRepository).Assembly;
 		}
 
 		object _addLock = new object();
@@ -43,7 +43,7 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
             lock (_addLock)
             {
                 base.AddType(type);
-                DaoAssembly = typeof(ProfileSchemaRepository).Assembly;
+                DaoAssembly = typeof(PrivateSchemaRepository).Assembly;
             }
         }
 
@@ -80,7 +80,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.EccPrivateKeyData>();
 			var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data, this);
         }
 
 		/// <summary>
@@ -96,7 +97,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.EccPrivateKeyData>();
             var data = (Bam.Protocol.Data.Private.EccPrivateKeyData)Bam.Protocol.Data.Private.Dao.EccPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.EccPrivateKeyData>(data!, this);
         }
 
 		/// <summary>
@@ -203,7 +205,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.PrivateKeySetData>();
 			var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data, this);
         }
 
 		/// <summary>
@@ -219,7 +222,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.PrivateKeySetData>();
             var data = (Bam.Protocol.Data.Private.PrivateKeySetData)Bam.Protocol.Data.Private.Dao.PrivateKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.PrivateKeySetData>(data!, this);
         }
 
 		/// <summary>
@@ -326,7 +330,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
 			var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data, this);
         }
 
 		/// <summary>
@@ -342,7 +347,8 @@ namespace Bam.Protocol.Data.Private.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Private.RsaPrivateKeyData>();
             var data = (Bam.Protocol.Data.Private.RsaPrivateKeyData)Bam.Protocol.Data.Private.Dao.RsaPrivateKeyData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Private.RsaPrivateKeyData>(data!, this);
         }
 
 		/// <summary>

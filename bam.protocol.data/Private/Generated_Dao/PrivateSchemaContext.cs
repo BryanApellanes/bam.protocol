@@ -11,14 +11,14 @@ using Bam.Data.Qi;
 
 namespace Bam.Protocol.Data.Private.Dao
 {
-	// schema = ProfileSchema
-    public static class ProfileSchemaContext
+	// schema = PrivateSchema
+    public static class PrivateSchemaContext
     {
 		public static string ConnectionName
 		{
 			get
 			{
-				return "ProfileSchema";
+				return "PrivateSchema";
 			}
 		}
 
