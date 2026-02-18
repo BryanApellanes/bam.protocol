@@ -31,6 +31,31 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
         public void SomeMethod() { }
     }
 
+    [RequiredAccess(BamAccess.Execute)]
+    public class ExecuteService
+    {
+        public void ExecuteMethod() { }
+
+        [RequiredAccess(BamAccess.Write)]
+        public void WriteMethod() { }
+    }
+
+    [AnonymousAccess]
+    [RequiredAccess(BamAccess.Read)]
+    public class AnonymousReadService
+    {
+        public void ReadMethod() { }
+
+        [AnonymousAccess(false)]
+        public void ProtectedMethod() { }
+    }
+
+    [AnonymousAccess]
+    public class AnonymousNoRequiredAccessService
+    {
+        public void SomeMethod() { }
+    }
+
     private static IBamServerContext CreateMockContext(BamAccess actorAccess, string typeName, string methodName)
     {
         IAccessLevelProvider accessLevelProvider = Substitute.For<IAccessLevelProvider>();
@@ -187,6 +212,106 @@ public class AuthorizationCalculatorShould : UnitTestMenuContainer
         {
             IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
             because.ItsTrue("access is Read (required level)", result.Access == BamAccess.Read);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void GrantExecuteAccessWhenActorHasExecute()
+    {
+        string typeName = typeof(ExecuteService).FullName!;
+        IBamServerContext context = CreateMockContext(BamAccess.Execute, typeName, "ExecuteMethod");
+        IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Execute);
+
+        When.A<AuthorizationCalculator>("grants execute access when actor has execute",
+            () => new AuthorizationCalculator(provider),
+            (calculator) => calculator.CalculateAuthorization(context))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
+            because.ItsTrue("access is Execute", result.Access == BamAccess.Execute);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void DenyExecuteWhenActorHasRead()
+    {
+        string typeName = typeof(ExecuteService).FullName!;
+        IBamServerContext context = CreateMockContext(BamAccess.Read, typeName, "ExecuteMethod");
+        IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Read);
+
+        When.A<AuthorizationCalculator>("denies execute when actor has read",
+            () => new AuthorizationCalculator(provider),
+            (calculator) => calculator.CalculateAuthorization(context))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
+            because.ItsTrue("access is Denied", result.Access == BamAccess.Denied);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void GrantAnonymousAccessWhenAttributePresent()
+    {
+        string typeName = typeof(AnonymousReadService).FullName!;
+        IBamServerContext context = CreateMockContext(BamAccess.Denied, typeName, "ReadMethod");
+        IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Denied);
+
+        When.A<AuthorizationCalculator>("grants anonymous access when attribute present",
+            () => new AuthorizationCalculator(provider),
+            (calculator) => calculator.CalculateAuthorization(context))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
+            because.ItsTrue("access is Read", result.Access == BamAccess.Read);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void DenyAnonymousWhenMethodOverridesWithFalse()
+    {
+        string typeName = typeof(AnonymousReadService).FullName!;
+        IBamServerContext context = CreateMockContext(BamAccess.Denied, typeName, "ProtectedMethod");
+        IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Denied);
+
+        When.A<AuthorizationCalculator>("denies anonymous when method overrides with false",
+            () => new AuthorizationCalculator(provider),
+            (calculator) => calculator.CalculateAuthorization(context))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
+            because.ItsTrue("access is Denied", result.Access == BamAccess.Denied);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void DefaultToExecuteForAnonymousWithNoRequiredAccess()
+    {
+        string typeName = typeof(AnonymousNoRequiredAccessService).FullName!;
+        IBamServerContext context = CreateMockContext(BamAccess.Denied, typeName, "SomeMethod");
+        IAccessLevelProvider provider = CreateMockProvider(context, BamAccess.Denied);
+
+        When.A<AuthorizationCalculator>("defaults to execute for anonymous with no required access",
+            () => new AuthorizationCalculator(provider),
+            (calculator) => calculator.CalculateAuthorization(context))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            IAuthorizationCalculation result = because.TheResult.As<IAuthorizationCalculation>();
+            because.ItsTrue("access is Execute", result.Access == BamAccess.Execute);
         })
         .SoBeHappy()
         .UnlessItFailed();

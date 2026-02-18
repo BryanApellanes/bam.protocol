@@ -53,14 +53,14 @@ public abstract class BamResponseProvider : IBamResponseProvider
         {
             case BamAccess.Read:
                 return CreateReadResponse(serverContext);
-                break;
+            case BamAccess.Execute:
+                return CreateExecuteResponse(serverContext);
             case BamAccess.Write:
                 return CreateWriteResponse(serverContext);
             default:
             case BamAccess.Denied:
                 LogAccessDenied(serverContext);
                 return CreateDeniedResponse(serverContext);
-                break;
         }
     }
 
@@ -77,6 +77,13 @@ public abstract class BamResponseProvider : IBamResponseProvider
     /// <param name="serverContext">The server context for the read request.</param>
     /// <returns>The read response.</returns>
     public abstract IBamResponse CreateReadResponse(IBamServerContext serverContext);
+
+    /// <summary>
+    /// Creates a response for an execute access request.
+    /// </summary>
+    /// <param name="serverContext">The server context for the execute request.</param>
+    /// <returns>The execute response.</returns>
+    public abstract IBamResponse CreateExecuteResponse(IBamServerContext serverContext);
 
     /// <summary>
     /// Creates a response for a write access request.
