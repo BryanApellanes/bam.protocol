@@ -1,6 +1,5 @@
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Server;
-using Bam.Protocol.Data.Server.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Protocol.Profile.Registration;
 
@@ -8,17 +7,16 @@ namespace Bam.Protocol;
 
 public class AccountManager : IAccountManager
 {
-    public AccountManager(IProfileManager profileManager, ServerSessionSchemaRepository serverSessionRepository, string serverName)
+    public AccountManager(IProfileManager profileManager, IAccountRepository accountRepository, IServerIdentity serverIdentity)
     {
         this.ProfileManager = profileManager;
-        this.ServerSessionRepository = serverSessionRepository;
-        this.ServerName = serverName;
-        serverSessionRepository.Initialize();
+        this.AccountRepository = accountRepository;
+        this.ServerIdentity = serverIdentity;
     }
 
     protected IProfileManager ProfileManager { get; }
-    protected ServerSessionSchemaRepository ServerSessionRepository { get; }
-    protected string ServerName { get; }
+    protected IAccountRepository AccountRepository { get; }
+    protected IServerIdentity ServerIdentity { get; }
 
     public AccountData RegisterAccount(PersonRegistrationData data)
     {
@@ -26,10 +24,10 @@ public class AccountManager : IAccountManager
 
         ServerAccountData serverAccountData = new ServerAccountData
         {
-            Issuer = ServerName,
+            Issuer = ServerIdentity.ServerName,
             ProfileHandle = profile.ProfileHandle,
         };
-        ServerSessionRepository.Save(serverAccountData);
+        AccountRepository.Save(serverAccountData);
 
         return new AccountData
         {
@@ -53,10 +51,10 @@ public class AccountManager : IAccountManager
 
         ServerAccountData serverAccountData = new ServerAccountData
         {
-            Issuer = ServerName,
+            Issuer = ServerIdentity.ServerName,
             ProfileHandle = profile.ProfileHandle,
         };
-        ServerSessionRepository.Save(serverAccountData);
+        AccountRepository.Save(serverAccountData);
 
         return new AccountData
         {

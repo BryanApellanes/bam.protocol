@@ -7,6 +7,7 @@ using Bam.Protocol.Profile.Registration;
 using Bam.Test;
 using NSubstitute;
 
+
 namespace Bam.Protocol.Tests.Unit.Profile;
 
 [UnitTestMenu("AccountManager Should", Selector = "ams")]
@@ -36,8 +37,8 @@ public class AccountManagerShould : UnitTestMenuContainer
         When.A<AccountManager>("registers an account",
             () => new AccountManager(
                 CreateMockProfileManager(),
-                CreateServerRepository(nameof(RegisterAccount)),
-                "test.server.com"),
+                new SessionSchemaAccountRepository(CreateServerRepository(nameof(RegisterAccount))),
+                new ServerIdentity("test.server.com")),
             (manager) =>
             {
                 PersonRegistrationData registration = new PersonRegistrationData
@@ -68,8 +69,8 @@ public class AccountManagerShould : UnitTestMenuContainer
         When.A<AccountManager>("creates a profile during registration",
             () => new AccountManager(
                 mockProfileManager,
-                CreateServerRepository(nameof(RegisterAccountCreatesProfile)),
-                "test.server.com"),
+                new SessionSchemaAccountRepository(CreateServerRepository(nameof(RegisterAccountCreatesProfile))),
+                new ServerIdentity("test.server.com")),
             (manager) =>
             {
                 PersonRegistrationData registration = new PersonRegistrationData
@@ -98,8 +99,8 @@ public class AccountManagerShould : UnitTestMenuContainer
         When.A<AccountManager>("persists server account data",
             () => new AccountManager(
                 CreateMockProfileManager("person1", "profile1"),
-                repo,
-                "my.server.com"),
+                new SessionSchemaAccountRepository(repo),
+                new ServerIdentity("my.server.com")),
             (manager) =>
             {
                 PersonRegistrationData registration = new PersonRegistrationData

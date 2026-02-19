@@ -1,9 +1,12 @@
 using System.Net;
+using Bam.Data;
 using Bam.Data.Objects;
 using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Logging;
 using Bam.Protocol.Data;
+using Bam.Protocol.Data.Server;
+using Bam.Protocol.Data.Server.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Server;
 using Bam.Services;
@@ -136,16 +139,50 @@ public class BamServerOptions
             ComponentRegistry.For<IUdpIPAddressProvider>().UseSingleton(new BamUdpIPAddressProvider(_udpIpAddress));
         }
     }
+    private string _serverName = null!;
     /// <summary>
     /// Gets or sets the server name for identification.
     /// </summary>
-    public string ServerName { get; set; }
+    public string ServerName
+    {
+        get => _serverName;
+        set
+        {
+            _serverName = value;
+            ComponentRegistry.For<IServerIdentity>().UseSingleton(new ServerIdentity(value));
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the Tcp and Udp ports should be deterministically derived from the name of the server.
     /// </summary>
     public bool UseNameBasedPort { get; set; }
-    
+
+    private IDatabase? _sessionDatabase;
+    /// <summary>
+    /// Gets or sets the session database. Setting this creates and registers a <see cref="ServerSessionSchemaRepository"/> singleton in the component registry.
+    /// </summary>
+    public IDatabase? SessionDatabase
+    {
+        get => _sessionDatabase;
+        set
+        {
+            _sessionDatabase = value;
+            if (value != null)
+            {
+                var repo = new ServerSessionSchemaRepository { Database = value };
+                repo.Initialize();
+                ComponentRegistry.For<ServerSessionSchemaRepository>().UseSingleton(repo);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the HTTP listener should be started by <see cref="BamServer"/>.
+    /// Default is true. Set to false when sharing options with a <see cref="WebApplicationBamServer"/> to avoid port conflicts.
+    /// </summary>
+    public bool EnableHttpListener { get; set; } = true;
+
     protected void Initialize()
     {
         ServerEventHandlers = new BamServerEventHandlers();
@@ -170,7 +207,9 @@ public class BamServerOptions
             .For<IBamRequestProcessor>().Use<BamRequestProcessor>()
             .For<IProfileManager>().Use<ProfileManager>()
             .For<IAuthenticator>().Use<BamAuthenticator>()
-            .For<RequestSecurityValidator>().Use<RequestSecurityValidator>();
+            .For<RequestSecurityValidator>().Use<RequestSecurityValidator>()
+            .For<IAccountRepository>().Use<SessionSchemaAccountRepository>()
+            .For<IAccountManager>().Use<AccountManager>();
 
         ComponentRegistry
             .For<ServiceRegistry>().UseSingleton(ComponentRegistry);
