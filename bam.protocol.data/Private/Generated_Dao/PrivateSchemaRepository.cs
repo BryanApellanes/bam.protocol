@@ -17,7 +17,7 @@ using Bam.Protocol.Data.Private;
 namespace Bam.Protocol.Data.Private.Dao.Repository
 {
 	[Serializable]
-	public partial class PrivateSchemaRepository: DaoRepository
+	public partial class PrivateSchemaRepository: AsyncDaoRepository
 	{
 		public PrivateSchemaRepository()
 		{

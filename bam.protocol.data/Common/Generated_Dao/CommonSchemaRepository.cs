@@ -17,7 +17,7 @@ using Bam.Protocol.Data.Common;
 namespace Bam.Protocol.Data.Common.Dao.Repository
 {
 	[Serializable]
-	public partial class CommonSchemaRepository: DaoRepository
+	public partial class CommonSchemaRepository: AsyncDaoRepository
 	{
 		public CommonSchemaRepository()
 		{

@@ -17,7 +17,7 @@ using Bam.Protocol.Data.Client;
 namespace Bam.Protocol.Data.Client.Dao.Repository
 {
 	[Serializable]
-	public partial class ClientSessionSchemaRepository: DaoRepository
+	public partial class ClientSessionSchemaRepository: AsyncDaoRepository
 	{
 		public ClientSessionSchemaRepository()
 		{
