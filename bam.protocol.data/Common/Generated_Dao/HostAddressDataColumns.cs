@@ -37,7 +37,7 @@ namespace Bam.Protocol.Data.Common.Dao
                         _isForeignKey = prop != null;
                 }
 
-                return _isForeignKey.Value;
+                return _isForeignKey!.Value;
             }
             set => _isForeignKey = value;
         }

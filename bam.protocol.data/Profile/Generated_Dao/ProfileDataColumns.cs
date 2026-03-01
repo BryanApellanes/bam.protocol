@@ -56,6 +56,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         public ProfileDataColumns ShowEmail => new ProfileDataColumns("ShowEmail");
         public ProfileDataColumns ShowPhone => new ProfileDataColumns("ShowPhone");
         public ProfileDataColumns MailingAddressHandles => new ProfileDataColumns("MailingAddressHandles");
+        public ProfileDataColumns DeviceHandle => new ProfileDataColumns("DeviceHandle");
         public ProfileDataColumns Key => new ProfileDataColumns("Key");
         public ProfileDataColumns CompositeKeyId => new ProfileDataColumns("CompositeKeyId");
         public ProfileDataColumns CompositeKey => new ProfileDataColumns("CompositeKey");

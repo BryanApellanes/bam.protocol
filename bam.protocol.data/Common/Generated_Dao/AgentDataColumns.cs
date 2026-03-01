@@ -37,7 +37,7 @@ namespace Bam.Protocol.Data.Common.Dao
                         _isForeignKey = prop != null;
                 }
 
-                return _isForeignKey.Value;
+                return _isForeignKey!.Value;
             }
             set => _isForeignKey = value;
         }
@@ -50,6 +50,8 @@ namespace Bam.Protocol.Data.Common.Dao
         public AgentDataColumns ActorDataId => new AgentDataColumns("ActorDataId");
         public AgentDataColumns DeviceDataId => new AgentDataColumns("DeviceDataId");
         public AgentDataColumns ProcessDescriptorDataId => new AgentDataColumns("ProcessDescriptorDataId");
+        public AgentDataColumns Handle => new AgentDataColumns("Handle");
+        public AgentDataColumns Name => new AgentDataColumns("Name");
         public AgentDataColumns Created => new AgentDataColumns("Created");
 
 

@@ -5,7 +5,6 @@ using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Logging;
 using Bam.Protocol.Data;
-using Bam.Protocol.Data.Server;
 using Bam.Protocol.Data.Server.Dao.Repository;
 using Bam.Protocol.Profile;
 using Bam.Server;

@@ -17,13 +17,22 @@ using Bam.Protocol.Data.Server;
 namespace Bam.Protocol.Data.Server.Dao.Repository
 {
 	[Serializable]
-	public partial class ServerSessionSchemaRepository: AsyncDaoRepository
+	public partial class ServerSessionSchemaRepository: DaoRepository
 	{
 		public ServerSessionSchemaRepository()
 		{
 			SchemaName = "ServerSessionSchema";
 			BaseNamespace = "Bam.Protocol.Data.Server";
 
+			
+			AddType<Bam.Protocol.Data.Server.AccountData>();
+			
+			
+			AddType<Bam.Protocol.Data.Server.InboxData>();
+			
+			
+			AddType<Bam.Protocol.Data.Server.OutboxData>();
+			
 			
 			AddType<Bam.Protocol.Data.Server.ServerAccountData>();
 			
@@ -45,6 +54,381 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
                 base.AddType(type);
                 DaoAssembly = typeof(ServerSessionSchemaRepository).Assembly;
             }
+        }
+
+		
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
+		{
+			Bam.Protocol.Data.Server.Dao.AccountData.SetOneWhere(where, Database);
+		}
+
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneAccountDataWhere(WhereDelegate<AccountDataColumns> where, out Bam.Protocol.Data.Server.AccountData result)
+		{
+			Bam.Protocol.Data.Server.Dao.AccountData.SetOneWhere(where, out Bam.Protocol.Data.Server.Dao.AccountData daoResult, Database);
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Server.AccountData>()!;
+            result = new DaoRepoData<Bam.Protocol.Data.Server.AccountData>(data, this);
+		}
+
+		/// <summary>
+		/// Get one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		/// <param name="where"></param>
+		public Bam.Protocol.Data.Server.AccountData GetOneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
+		{
+			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.AccountData>();
+			var data = (Bam.Protocol.Data.Server.AccountData)Bam.Protocol.Data.Server.Dao.AccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.AccountData>(data, this);
+        }
+
+		/// <summary>
+		/// Execute a query that should return only one result.  If no result is found null is returned.  If more
+		/// than one result is returned a MultipleEntriesFoundException is thrown.  This method is most commonly used to retrieve a
+		/// single AccountData instance by its Id/Key value
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a AccountDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between AccountDataColumns and other values
+		/// </param>
+		public Bam.Protocol.Data.Server.AccountData OneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
+        {
+            Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.AccountData>();
+            var data = (Bam.Protocol.Data.Server.AccountData)Bam.Protocol.Data.Server.Dao.AccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.AccountData>(data!, this);
+        }
+
+		/// <summary>
+		/// Execute a query and return the results. 
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a Bam.Protocol.Data.Server.AccountDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between Bam.Protocol.Data.Server.AccountDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.AccountData> AccountDatasWhere(WhereDelegate<AccountDataColumns> where, OrderBy<AccountDataColumns> orderBy = null!)
+        {
+            return Wrap<Bam.Protocol.Data.Server.AccountData>(Bam.Protocol.Data.Server.Dao.AccountData.Where(where, orderBy, Database));
+        }
+		
+		/// <summary>
+		/// Execute a query and return the specified number
+		/// of values. This method issues a sql TOP clause so only the 
+		/// specified number of values will be returned.
+		/// </summary>
+		/// <param name="count">The number of values to return.
+		/// This value is used in the sql query so no more than this 
+		/// number of values will be returned by the database.
+		/// </param>
+		/// <param name="where">A WhereDelegate that receives a AccountDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between AccountDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.AccountData> TopAccountDatasWhere(int count, WhereDelegate<AccountDataColumns> where)
+        {
+            return Wrap<Bam.Protocol.Data.Server.AccountData>(Bam.Protocol.Data.Server.Dao.AccountData.Top(count, where, Database));
+        }
+
+        public IEnumerable<Bam.Protocol.Data.Server.AccountData> TopAccountDatasWhere(int count, WhereDelegate<AccountDataColumns> where, OrderBy<AccountDataColumns> orderBy)
+        {
+            return Wrap<Bam.Protocol.Data.Server.AccountData>(Bam.Protocol.Data.Server.Dao.AccountData.Top(count, where, orderBy, Database));
+        }
+                                
+		/// <summary>
+		/// Return the count of AccountDatas
+		/// </summary>
+		public long CountAccountDatas()
+        {
+            return Bam.Protocol.Data.Server.Dao.AccountData.Count(Database);
+        }
+
+		/// <summary>
+		/// Execute a query and return the number of results
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a AccountDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between AccountDataColumns and other values
+		/// </param>
+        public long CountAccountDatasWhere(WhereDelegate<AccountDataColumns> where)
+        {
+            return Bam.Protocol.Data.Server.Dao.AccountData.Count(where, Database);
+        }
+        
+        /*public async Task BatchQueryAccountDatas(int batchSize, WhereDelegate<AccountDataColumns> where, Action<IEnumerable<Bam.Protocol.Data.Server.AccountData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.AccountData.BatchQuery(batchSize, where, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.AccountData>(batch));
+            }, Database);
+        }*/
+		
+        public async Task BatchAllAccountDatas(int batchSize, Action<IEnumerable<Bam.Protocol.Data.Server.AccountData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.AccountData.BatchAll(batchSize, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.AccountData>(batch));
+            }, Database);
+        }
+
+		
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
+		{
+			Bam.Protocol.Data.Server.Dao.InboxData.SetOneWhere(where, Database);
+		}
+
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneInboxDataWhere(WhereDelegate<InboxDataColumns> where, out Bam.Protocol.Data.Server.InboxData result)
+		{
+			Bam.Protocol.Data.Server.Dao.InboxData.SetOneWhere(where, out Bam.Protocol.Data.Server.Dao.InboxData daoResult, Database);
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Server.InboxData>()!;
+            result = new DaoRepoData<Bam.Protocol.Data.Server.InboxData>(data, this);
+		}
+
+		/// <summary>
+		/// Get one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		/// <param name="where"></param>
+		public Bam.Protocol.Data.Server.InboxData GetOneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
+		{
+			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.InboxData>();
+			var data = (Bam.Protocol.Data.Server.InboxData)Bam.Protocol.Data.Server.Dao.InboxData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.InboxData>(data, this);
+        }
+
+		/// <summary>
+		/// Execute a query that should return only one result.  If no result is found null is returned.  If more
+		/// than one result is returned a MultipleEntriesFoundException is thrown.  This method is most commonly used to retrieve a
+		/// single InboxData instance by its Id/Key value
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a InboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between InboxDataColumns and other values
+		/// </param>
+		public Bam.Protocol.Data.Server.InboxData OneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
+        {
+            Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.InboxData>();
+            var data = (Bam.Protocol.Data.Server.InboxData)Bam.Protocol.Data.Server.Dao.InboxData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.InboxData>(data!, this);
+        }
+
+		/// <summary>
+		/// Execute a query and return the results. 
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a Bam.Protocol.Data.Server.InboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between Bam.Protocol.Data.Server.InboxDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.InboxData> InboxDatasWhere(WhereDelegate<InboxDataColumns> where, OrderBy<InboxDataColumns> orderBy = null!)
+        {
+            return Wrap<Bam.Protocol.Data.Server.InboxData>(Bam.Protocol.Data.Server.Dao.InboxData.Where(where, orderBy, Database));
+        }
+		
+		/// <summary>
+		/// Execute a query and return the specified number
+		/// of values. This method issues a sql TOP clause so only the 
+		/// specified number of values will be returned.
+		/// </summary>
+		/// <param name="count">The number of values to return.
+		/// This value is used in the sql query so no more than this 
+		/// number of values will be returned by the database.
+		/// </param>
+		/// <param name="where">A WhereDelegate that receives a InboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between InboxDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.InboxData> TopInboxDatasWhere(int count, WhereDelegate<InboxDataColumns> where)
+        {
+            return Wrap<Bam.Protocol.Data.Server.InboxData>(Bam.Protocol.Data.Server.Dao.InboxData.Top(count, where, Database));
+        }
+
+        public IEnumerable<Bam.Protocol.Data.Server.InboxData> TopInboxDatasWhere(int count, WhereDelegate<InboxDataColumns> where, OrderBy<InboxDataColumns> orderBy)
+        {
+            return Wrap<Bam.Protocol.Data.Server.InboxData>(Bam.Protocol.Data.Server.Dao.InboxData.Top(count, where, orderBy, Database));
+        }
+                                
+		/// <summary>
+		/// Return the count of InboxDatas
+		/// </summary>
+		public long CountInboxDatas()
+        {
+            return Bam.Protocol.Data.Server.Dao.InboxData.Count(Database);
+        }
+
+		/// <summary>
+		/// Execute a query and return the number of results
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a InboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between InboxDataColumns and other values
+		/// </param>
+        public long CountInboxDatasWhere(WhereDelegate<InboxDataColumns> where)
+        {
+            return Bam.Protocol.Data.Server.Dao.InboxData.Count(where, Database);
+        }
+        
+        /*public async Task BatchQueryInboxDatas(int batchSize, WhereDelegate<InboxDataColumns> where, Action<IEnumerable<Bam.Protocol.Data.Server.InboxData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.InboxData.BatchQuery(batchSize, where, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.InboxData>(batch));
+            }, Database);
+        }*/
+		
+        public async Task BatchAllInboxDatas(int batchSize, Action<IEnumerable<Bam.Protocol.Data.Server.InboxData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.InboxData.BatchAll(batchSize, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.InboxData>(batch));
+            }, Database);
+        }
+
+		
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
+		{
+			Bam.Protocol.Data.Server.Dao.OutboxData.SetOneWhere(where, Database);
+		}
+
+		/// <summary>
+		/// Set one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		public void SetOneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where, out Bam.Protocol.Data.Server.OutboxData result)
+		{
+			Bam.Protocol.Data.Server.Dao.OutboxData.SetOneWhere(where, out Bam.Protocol.Data.Server.Dao.OutboxData daoResult, Database);
+			var data = daoResult.CopyAs<Bam.Protocol.Data.Server.OutboxData>()!;
+            result = new DaoRepoData<Bam.Protocol.Data.Server.OutboxData>(data, this);
+		}
+
+		/// <summary>
+		/// Get one entry matching the specified filter.  If none exists 
+		/// one is created; success depends on the nullability
+		/// of the specified columns.
+		/// </summary>
+		/// <param name="where"></param>
+		public Bam.Protocol.Data.Server.OutboxData GetOneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
+		{
+			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.OutboxData>();
+			var data = (Bam.Protocol.Data.Server.OutboxData)Bam.Protocol.Data.Server.Dao.OutboxData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.OutboxData>(data, this);
+        }
+
+		/// <summary>
+		/// Execute a query that should return only one result.  If no result is found null is returned.  If more
+		/// than one result is returned a MultipleEntriesFoundException is thrown.  This method is most commonly used to retrieve a
+		/// single OutboxData instance by its Id/Key value
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a OutboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between OutboxDataColumns and other values
+		/// </param>
+		public Bam.Protocol.Data.Server.OutboxData OneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
+        {
+            Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.OutboxData>();
+            var data = (Bam.Protocol.Data.Server.OutboxData)Bam.Protocol.Data.Server.Dao.OutboxData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.OutboxData>(data!, this);
+        }
+
+		/// <summary>
+		/// Execute a query and return the results. 
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a Bam.Protocol.Data.Server.OutboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between Bam.Protocol.Data.Server.OutboxDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.OutboxData> OutboxDatasWhere(WhereDelegate<OutboxDataColumns> where, OrderBy<OutboxDataColumns> orderBy = null!)
+        {
+            return Wrap<Bam.Protocol.Data.Server.OutboxData>(Bam.Protocol.Data.Server.Dao.OutboxData.Where(where, orderBy, Database));
+        }
+		
+		/// <summary>
+		/// Execute a query and return the specified number
+		/// of values. This method issues a sql TOP clause so only the 
+		/// specified number of values will be returned.
+		/// </summary>
+		/// <param name="count">The number of values to return.
+		/// This value is used in the sql query so no more than this 
+		/// number of values will be returned by the database.
+		/// </param>
+		/// <param name="where">A WhereDelegate that receives a OutboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between OutboxDataColumns and other values
+		/// </param>
+		public IEnumerable<Bam.Protocol.Data.Server.OutboxData> TopOutboxDatasWhere(int count, WhereDelegate<OutboxDataColumns> where)
+        {
+            return Wrap<Bam.Protocol.Data.Server.OutboxData>(Bam.Protocol.Data.Server.Dao.OutboxData.Top(count, where, Database));
+        }
+
+        public IEnumerable<Bam.Protocol.Data.Server.OutboxData> TopOutboxDatasWhere(int count, WhereDelegate<OutboxDataColumns> where, OrderBy<OutboxDataColumns> orderBy)
+        {
+            return Wrap<Bam.Protocol.Data.Server.OutboxData>(Bam.Protocol.Data.Server.Dao.OutboxData.Top(count, where, orderBy, Database));
+        }
+                                
+		/// <summary>
+		/// Return the count of OutboxDatas
+		/// </summary>
+		public long CountOutboxDatas()
+        {
+            return Bam.Protocol.Data.Server.Dao.OutboxData.Count(Database);
+        }
+
+		/// <summary>
+		/// Execute a query and return the number of results
+		/// </summary>
+		/// <param name="where">A WhereDelegate that receives a OutboxDataColumns 
+		/// and returns a IQueryFilter which is the result of any comparisons
+		/// between OutboxDataColumns and other values
+		/// </param>
+        public long CountOutboxDatasWhere(WhereDelegate<OutboxDataColumns> where)
+        {
+            return Bam.Protocol.Data.Server.Dao.OutboxData.Count(where, Database);
+        }
+        
+        /*public async Task BatchQueryOutboxDatas(int batchSize, WhereDelegate<OutboxDataColumns> where, Action<IEnumerable<Bam.Protocol.Data.Server.OutboxData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.OutboxData.BatchQuery(batchSize, where, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.OutboxData>(batch));
+            }, Database);
+        }*/
+		
+        public async Task BatchAllOutboxDatas(int batchSize, Action<IEnumerable<Bam.Protocol.Data.Server.OutboxData>> batchProcessor)
+        {
+            await Bam.Protocol.Data.Server.Dao.OutboxData.BatchAll(batchSize, (batch) =>
+            {
+				batchProcessor(Wrap<Bam.Protocol.Data.Server.OutboxData>(batch));
+            }, Database);
         }
 
 		
@@ -80,7 +464,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerAccountData>();
 			var data = (Bam.Protocol.Data.Server.ServerAccountData)Bam.Protocol.Data.Server.Dao.ServerAccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerAccountData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerAccountData>(data, this);
         }
 
 		/// <summary>
@@ -96,7 +481,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerAccountData>();
             var data = (Bam.Protocol.Data.Server.ServerAccountData)Bam.Protocol.Data.Server.Dao.ServerAccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerAccountData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerAccountData>(data!, this);
         }
 
 		/// <summary>
@@ -203,7 +589,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSession>();
 			var data = (Bam.Protocol.Data.Server.ServerSession)Bam.Protocol.Data.Server.Dao.ServerSession.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSession>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSession>(data, this);
         }
 
 		/// <summary>
@@ -219,7 +606,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSession>();
             var data = (Bam.Protocol.Data.Server.ServerSession)Bam.Protocol.Data.Server.Dao.ServerSession.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSession>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSession>(data!, this);
         }
 
 		/// <summary>
@@ -326,7 +714,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>();
 			var data = (Bam.Protocol.Data.Server.ServerSessionKeyValuePair)Bam.Protocol.Data.Server.Dao.ServerSessionKeyValuePair.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>(data, this);
         }
 
 		/// <summary>
@@ -342,7 +731,8 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>();
             var data = (Bam.Protocol.Data.Server.ServerSessionKeyValuePair)Bam.Protocol.Data.Server.Dao.ServerSessionKeyValuePair.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>(data!, this);
         }
 
 		/// <summary>

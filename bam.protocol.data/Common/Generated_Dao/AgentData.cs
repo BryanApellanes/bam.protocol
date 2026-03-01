@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -142,6 +142,34 @@ namespace Bam.Protocol.Data.Common.Dao
         set
         {
             SetValue("ProcessDescriptorDataId", value!);
+        }
+    }
+
+    // property:Handle, columnName: Handle	
+    [Bam.Data.Column(Name="Handle", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string Handle
+    {
+        get
+        {
+            return GetStringValue("Handle");
+        }
+        set
+        {
+            SetValue("Handle", value!);
+        }
+    }
+
+    // property:Name, columnName: Name	
+    [Bam.Data.Column(Name="Name", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string Name
+    {
+        get
+        {
+            return GetStringValue("Name");
+        }
+        set
+        {
+            SetValue("Name", value!);
         }
     }
 
@@ -699,7 +727,7 @@ namespace Bam.Protocol.Data.Common.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<AgentData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

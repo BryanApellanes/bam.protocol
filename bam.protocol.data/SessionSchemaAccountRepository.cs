@@ -1,6 +1,8 @@
+using Bam.Protocol;
+using Bam.Protocol.Data.Server;
 using Bam.Protocol.Data.Server.Dao.Repository;
 
-namespace Bam.Protocol.Data.Server;
+namespace Bam.Protocol.Data;
 
 public class SessionSchemaAccountRepository : IAccountRepository
 {

@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("DeviceHandle", value);
+            SetValue("DeviceHandle", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CertificateHash", value);
+            SetValue("CertificateHash", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CertificateHashAlgorithm", value);
+            SetValue("CertificateHashAlgorithm", value!);
         }
     }
 
@@ -699,7 +699,7 @@ namespace Bam.Protocol.Data.Profile.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<DeviceCertificateData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

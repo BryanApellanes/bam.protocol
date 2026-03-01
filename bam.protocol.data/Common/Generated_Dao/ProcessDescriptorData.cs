@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("InstanceIdentifier", value);
+            SetValue("InstanceIdentifier", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("HashAlgorithm", value);
+            SetValue("HashAlgorithm", value!);
         }
     }
 
@@ -155,7 +155,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Hash", value);
+            SetValue("Hash", value!);
         }
     }
 
@@ -169,7 +169,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("MachineName", value);
+            SetValue("MachineName", value!);
         }
     }
 
@@ -253,7 +253,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("FilePath", value);
+            SetValue("FilePath", value!);
         }
     }
 
@@ -267,7 +267,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("CommandLine", value);
+            SetValue("CommandLine", value!);
         }
     }
 
@@ -825,7 +825,7 @@ namespace Bam.Protocol.Data.Common.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<ProcessDescriptorData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

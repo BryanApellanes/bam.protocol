@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("ProfileHandle", value);
+            SetValue("ProfileHandle", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("AdditionalPropertyHandle", value);
+            SetValue("AdditionalPropertyHandle", value!);
         }
     }
 
@@ -169,7 +169,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CompositeKey", value);
+            SetValue("CompositeKey", value!);
         }
     }
 
@@ -183,7 +183,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CreatedBy", value);
+            SetValue("CreatedBy", value!);
         }
     }
 
@@ -197,7 +197,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("ModifiedBy", value);
+            SetValue("ModifiedBy", value!);
         }
     }
 
@@ -783,7 +783,7 @@ namespace Bam.Protocol.Data.Profile.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<ProfileAdditionalProperties>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

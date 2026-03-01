@@ -17,7 +17,7 @@ using Bam.Protocol.Data.Client;
 namespace Bam.Protocol.Data.Client.Dao.Repository
 {
 	[Serializable]
-	public partial class ClientSessionSchemaRepository: AsyncDaoRepository
+	public partial class ClientSessionSchemaRepository: DaoRepository
 	{
 		public ClientSessionSchemaRepository()
 		{
@@ -80,7 +80,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
 			var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data, this);
         }
 
 		/// <summary>
@@ -96,7 +97,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
             var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientKeySetData>(data!, this);
         }
 
 		/// <summary>
@@ -203,7 +205,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
 			var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data, this);
         }
 
 		/// <summary>
@@ -219,7 +222,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
             var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionData>(data!, this);
         }
 
 		/// <summary>
@@ -326,7 +330,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
 			var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data, this); 
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data, this);
         }
 
 		/// <summary>
@@ -342,7 +347,8 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
             var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data!, this);           
+            if (data == null) return null;
+            return new DaoRepoData<Bam.Protocol.Data.Client.ClientSessionKeyValue>(data!, this);
         }
 
 		/// <summary>

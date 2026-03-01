@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("Key", value);
+            SetValue("Key", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("Value", value);
+            SetValue("Value", value!);
         }
     }
 
@@ -155,7 +155,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("CompositeKey", value);
+            SetValue("CompositeKey", value!);
         }
     }
 
@@ -169,7 +169,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("CreatedBy", value);
+            SetValue("CreatedBy", value!);
         }
     }
 
@@ -183,7 +183,7 @@ namespace Bam.Protocol.Data.Client.Dao
         }
         set
         {
-            SetValue("ModifiedBy", value);
+            SetValue("ModifiedBy", value!);
         }
     }
 
@@ -252,7 +252,7 @@ namespace Bam.Protocol.Data.Client.Dao
 		}
 	}
 
-    ClientSessionData _clientSessionDataOfClientSessionDataId = null!;
+    ClientSessionData _clientSessionDataOfClientSessionDataId;
 	public ClientSessionData ClientSessionDataOfClientSessionDataId
 	{
 		get
@@ -804,7 +804,7 @@ namespace Bam.Protocol.Data.Client.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<ClientSessionKeyValue>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

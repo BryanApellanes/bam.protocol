@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("PersonHandle", value);
+            SetValue("PersonHandle", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("ProfileHandle", value);
+            SetValue("ProfileHandle", value!);
         }
     }
 
@@ -155,7 +155,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Name", value);
+            SetValue("Name", value!);
         }
     }
 
@@ -225,7 +225,21 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("MailingAddressHandles", value);
+            SetValue("MailingAddressHandles", value!);
+        }
+    }
+
+    // property:DeviceHandle, columnName: DeviceHandle	
+    [Bam.Data.Column(Name="DeviceHandle", DbDataType="VarChar", MaxLength="4000", AllowNull=true)]
+    public string DeviceHandle
+    {
+        get
+        {
+            return GetStringValue("DeviceHandle");
+        }
+        set
+        {
+            SetValue("DeviceHandle", value!);
         }
     }
 
@@ -267,7 +281,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CompositeKey", value);
+            SetValue("CompositeKey", value!);
         }
     }
 
@@ -281,7 +295,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("CreatedBy", value);
+            SetValue("CreatedBy", value!);
         }
     }
 
@@ -295,7 +309,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("ModifiedBy", value);
+            SetValue("ModifiedBy", value!);
         }
     }
 
@@ -881,7 +895,7 @@ namespace Bam.Protocol.Data.Profile.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<ProfileData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>
