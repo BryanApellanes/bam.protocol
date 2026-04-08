@@ -30,4 +30,10 @@ public interface IProfileRepository
 
     AgentCertificateData SaveAgentCertificate(AgentCertificateData agentCertificateData);
     AgentCertificateData FindAgentCertificateByHandle(string agentHandle);
+
+    GroupData SaveGroup(GroupData groupData);
+    GroupData FindGroupByName(string name);
+    IEnumerable<GroupData> GetGroupsForPerson(string personHandle);
+    void AddPersonToGroup(string personHandle, string groupName);
+    void RemovePersonFromGroup(string personHandle, string groupName);
 }

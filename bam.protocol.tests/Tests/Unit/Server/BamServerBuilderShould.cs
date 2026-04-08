@@ -16,6 +16,7 @@ public class BamServerBuilderShould : UnitTestMenuContainer
         .ShouldPass(because =>
         {
             because.TheResult.IsNotNull();
+            because.TheResult.IsOfType<BamServer>();
         })
         .SoBeHappy()
         .UnlessItFailed();
