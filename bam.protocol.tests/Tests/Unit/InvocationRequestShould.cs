@@ -137,7 +137,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
             {
                 SerializedContext = instance.ToJson(),
                 OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
-                Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
+                Arguments = Argument.ForValues<TestClass>("TestMethod", "arg1", "arg2")
             },
             (request) =>
             {
@@ -167,7 +167,7 @@ public class InvocationRequestShould : UnitTestMenuContainer
             {
                 SerializedContext = instance.ToJson(),
                 OperationIdentifier = OperationIdentifier.For<TestClass>("TestMethod"),
-                Arguments = Argument.ListForValues<TestClass>("TestMethod", "arg1", "arg2")
+                Arguments = Argument.ForValues<TestClass>("TestMethod", "arg1", "arg2")
             },
             (request) =>
             {

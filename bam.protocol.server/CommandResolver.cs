@@ -33,7 +33,7 @@ public class CommandResolver : Loggable, ICommandResolver
             {
                 TypeName = parts[0].Trim(),
                 MethodName = parts[1].Trim(),
-                Arguments = invocation.Arguments?.Select(a => a.Value?.ToString()!).ToArray()! ?? Array.Empty<string>()
+                Arguments = invocation.Arguments?.Values.Select(v => v?.ToString()!).ToArray()! ?? Array.Empty<string>()
             };
         }
         catch (Exception ex)

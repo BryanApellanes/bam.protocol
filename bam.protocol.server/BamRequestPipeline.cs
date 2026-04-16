@@ -30,7 +30,7 @@ public class BamRequestPipeline
     /// <param name="args">The event arguments for this request.</param>
     /// <param name="server">The optional server instance.</param>
     /// <returns>The completed initialization context.</returns>
-    public BamServerInitializationContext RunPipeline(
+    public virtual BamServerInitializationContext RunPipeline(
         IBamServerContext serverContext,
         BamServerEventArgs args,
         BamServer? server = null)

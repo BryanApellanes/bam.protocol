@@ -1,4 +1,4 @@
-﻿namespace Bam.Protocol;
+namespace Bam.Protocol;
 
 /// <summary>
 /// Defines an invocation request containing operation identifier, serialized context, and arguments.
@@ -9,19 +9,19 @@ public interface IInvocationRequest
     /// The format that the SerializedContext is serialized in.
     /// </summary>
     string ContextSerializationFormat { get; }
-    
+
     /// <summary>
     /// The name of the operation.
     /// </summary>
     string OperationIdentifier { get; }
-    
+
     /// <summary>
     /// Gets the serialized context.
     /// </summary>
     string SerializedContext { get; }
-    
+
     /// <summary>
-    /// Gets the arguments.
+    /// Gets the arguments as key-value pairs mapping parameter names to values.
     /// </summary>
-    List<Argument> Arguments { get; }
+    Dictionary<string, object?> Arguments { get; }
 }
