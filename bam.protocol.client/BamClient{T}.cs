@@ -15,21 +15,42 @@ namespace Bam.Protocol.Client
         {
         }
 
-        public TR Invoke<TR>(string methodName, params object[] args)
+        public BamClient(HostBinding httpBaseAddress, HostBinding tcpBaseAddress) : base(new JsonObjectDataEncoder(), httpBaseAddress, tcpBaseAddress)
         {
-            return InvokeAsync<TR>(methodName, args).GetAwaiter().GetResult();
         }
 
-        public async Task<TR> InvokeAsync<TR>(string methodName, params object[] args)
+        public BamClient(HostBinding httpBaseAddress, HostBinding tcpBaseAddress, HostBinding udpBaseAddress) : base(new JsonObjectDataEncoder(), httpBaseAddress, tcpBaseAddress, udpBaseAddress)
+        {
+        }
+
+        public TR Invoke<TR>(string methodName, params object[] args)
+        {
+            return Invoke<TR>(BamClientProtocols.Http, methodName, args);
+        }
+
+        public TR Invoke<TR>(BamClientProtocols protocol, string methodName, params object[] args)
+        {
+            return InvokeAsync<TR>(protocol, methodName, args).GetAwaiter().GetResult();
+        }
+
+        public Task<TR> InvokeAsync<TR>(string methodName, params object[] args)
+        {
+            return InvokeAsync<TR>(BamClientProtocols.Http, methodName, args);
+        }
+
+        public async Task<TR> InvokeAsync<TR>(BamClientProtocols protocol, string methodName, params object[] args)
         {
             MethodInvocationRequest invocation = MethodInvocationRequest.For(typeof(T), methodName, args);
-            invocation.OperationIdentifier = OperationIdentifier.For(typeof(T), methodName);
-            string body = JsonConvert.SerializeObject(invocation);
+            // ClientInitialize sets the OperationIdentifier and captures any instance context.
+            // The invocation object (not a pre-serialized string) is handed to the builder so the
+            // client's ObjectEncoderDecoder produces a body the server can decode back into a
+            // MethodInvocationRequest — matching the raw request-building path used by the transport tests.
+            invocation.ClientInitialize();
 
-            IBamClientRequest request = CreateRequestBuilder(BamClientProtocols.Http)
+            IBamClientRequest request = CreateRequestBuilder(protocol)
                 .Path("/invoke")
                 .HttpMethod(HttpMethods.POST)
-                .Content(body)
+                .Content(invocation)
                 .Build();
 
             IBamClientResponse response = await ReceiveResponseAsync(request);
@@ -39,7 +60,8 @@ namespace Bam.Protocol.Client
                 throw new BamInvocationException(typeof(T), methodName, response.StatusCode, response.Content);
             }
 
-            return JsonConvert.DeserializeObject<TR>(response.Content)!;
+            // Body strips any BAM wire framing (status line/headers) so deserialization works across transports.
+            return JsonConvert.DeserializeObject<TR>(response.Body)!;
         }
     }
 }

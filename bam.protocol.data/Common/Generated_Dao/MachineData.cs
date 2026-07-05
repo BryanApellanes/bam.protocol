@@ -93,7 +93,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -107,7 +107,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -121,7 +121,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Name", value);
+            SetValue("Name", value!);
         }
     }
 
@@ -135,7 +135,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("DnsName", value);
+            SetValue("DnsName", value!);
         }
     }
 
@@ -149,7 +149,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Handle", value);
+            SetValue("Handle", value!);
         }
     }
 
@@ -753,7 +753,7 @@ namespace Bam.Protocol.Data.Common.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<MachineData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

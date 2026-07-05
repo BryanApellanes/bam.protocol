@@ -15,15 +15,20 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
     /// <param name="serverSessionInitializationHandler">The server session initialization handler.</param>
     /// <param name="commandInitializationHandler">The command initialization handler.</param>
     /// <param name="authenticationInitializationHandler">The authentication initialization handler.</param>
+    /// <param name="anonymousAccessInitializationHandler">The anonymous access initialization handler.</param>
+    /// <param name="requestSecurityValidator">The request security validator for decrypting anonymous encrypted requests.</param>
     public BamServerContextInitializer(ActorResolverInitializationHandler actorResolverInitializationHandler, AuthorizationCalculatorInitializationHandler authorizationCalculatorInitializationHandler,
         ServerSessionInitializationHandler serverSessionInitializationHandler, CommandInitializationHandler commandInitializationHandler,
-        AuthenticationInitializationHandler authenticationInitializationHandler)
+        AuthenticationInitializationHandler authenticationInitializationHandler, AnonymousAccessInitializationHandler anonymousAccessInitializationHandler,
+        RequestSecurityValidator requestSecurityValidator)
     {
         this.AuthorizationCalculatorInitializationHandlerInitializationHandler = authorizationCalculatorInitializationHandler;
         this.ActorResolverInitializationHandler = actorResolverInitializationHandler;
         this.ServerSessionInitializationHandler = serverSessionInitializationHandler;
         this.CommandInitializationHandler = commandInitializationHandler;
         this.AuthenticationInitializationHandler = authenticationInitializationHandler;
+        this.AnonymousAccessInitializationHandler = anonymousAccessInitializationHandler;
+        this.RequestSecurityValidator = requestSecurityValidator;
     }
     
     protected HashSet<IBamServerContextInitializationHandler> BeforeInitializationHandlers { get; } = new HashSet<IBamServerContextInitializationHandler>();
@@ -117,31 +122,56 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
             BamServerEventArgs args = initialization.EventArgs;
 
             OnBeforeInitialization(initialization, args);
-            
-            initialization = InitializeSession(initialization, args);
-            if (!initialization.CanContinue)
-            {
-                return initialization;
-            }
-            
-            initialization = InitializeActor(initialization, args);
-            if (!initialization.CanContinue)
-            {
-                return initialization;
-            }
-
-            initialization = InitializeAuthentication(initialization, args);
-            if (!initialization.CanContinue)
-            {
-                return initialization;
-            }
 
             initialization = InitializeCommand(initialization, args);
             if (!initialization.CanContinue)
             {
                 return initialization;
             }
-            
+
+            initialization = InitializeAnonymousAccess(initialization, args);
+
+            if (initialization.IsAnonymousAccess && initialization.IsAnonymousEncryptionRequired)
+            {
+                // Encrypted anonymous: need session for ECDH keys, then decrypt, skip actor/JWT
+                initialization = InitializeSession(initialization, args);
+                if (!initialization.CanContinue)
+                {
+                    return initialization;
+                }
+
+                initialization = DecryptAnonymousRequest(initialization);
+
+                // Re-attempt command resolution after decryption
+                initialization = InitializeCommand(initialization, args);
+            }
+            else if (!initialization.IsAnonymousAccess)
+            {
+                // Full authenticated pipeline
+                initialization = InitializeSession(initialization, args);
+                if (!initialization.CanContinue)
+                {
+                    return initialization;
+                }
+
+                initialization = InitializeActor(initialization, args);
+                if (!initialization.CanContinue)
+                {
+                    return initialization;
+                }
+
+                initialization = InitializeAuthentication(initialization, args);
+                if (!initialization.CanContinue)
+                {
+                    return initialization;
+                }
+
+                // Re-attempt command resolution after authentication/decryption
+                // (encrypted request bodies are only parseable after auth decrypts them).
+                // The handler skips if command was already resolved in the first attempt.
+                initialization = InitializeCommand(initialization, args);
+            }
+
             initialization = InitializeAuthorization(initialization, args);
             if (!initialization.CanContinue)
             {
@@ -178,6 +208,13 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         return initialization;
     }
 
+    private BamServerInitializationContext InitializeAnonymousAccess(BamServerInitializationContext initialization,
+        BamServerEventArgs args)
+    {
+        initialization = AnonymousAccessInitializationHandler.HandleInitialization(initialization);
+        return initialization;
+    }
+
     private BamServerInitializationContext InitializeCommand(BamServerInitializationContext initialization,
         BamServerEventArgs args)
     {
@@ -202,6 +239,23 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         FireEvent(ResolveSessionStateStarted, args);
         initialization = ServerSessionInitializationHandler.HandleInitialization(initialization);
         FireEvent(ResolveSessionStateComplete, args);
+        return initialization;
+    }
+
+    private BamServerInitializationContext DecryptAnonymousRequest(BamServerInitializationContext initialization)
+    {
+        IBamServerContext context = initialization.ServerContext;
+        if (context.ServerSessionState == null)
+        {
+            return initialization;
+        }
+
+        string decrypted = RequestSecurityValidator.DecryptBody(context);
+        if (decrypted != null)
+        {
+            context.BamRequest.Content = decrypted;
+        }
+
         return initialization;
     }
 
@@ -251,7 +305,19 @@ public class BamServerContextInitializer : Loggable, IBamServerContextInitialize
         set;
     }
 
+    protected AnonymousAccessInitializationHandler AnonymousAccessInitializationHandler
+    {
+        get;
+        set;
+    }
+
     protected AuthorizationCalculatorInitializationHandler AuthorizationCalculatorInitializationHandlerInitializationHandler
+    {
+        get;
+        set;
+    }
+
+    protected RequestSecurityValidator RequestSecurityValidator
     {
         get;
         set;

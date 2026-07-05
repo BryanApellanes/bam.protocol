@@ -46,7 +46,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 			}
 		}
 
-        System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> _hostAddresses = null!;
+        System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> _hostAddresses;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Common.HostAddressData> HostAddresses
 		{
 			get
@@ -61,7 +61,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 			{
 				_hostAddresses = value;
 			}
-		}        System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> _networkInterfaces = null!;
+		}        System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> _networkInterfaces;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Common.NicData> NetworkInterfaces
 		{
 			get

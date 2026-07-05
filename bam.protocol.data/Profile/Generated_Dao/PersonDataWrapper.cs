@@ -51,7 +51,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
         // left xref
 
 // Left Xref property: Left -> PersonData ; Right -> OrganizationData
-		List<Bam.Protocol.Data.Profile.OrganizationData> _organizationDatas = null!;
+		List<Bam.Protocol.Data.Profile.OrganizationData> _organizationDatas;
 		public override List<Bam.Protocol.Data.Profile.OrganizationData> Organizations
 		{
 			get
@@ -61,7 +61,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 					var xref = new XrefDaoCollection<Bam.Protocol.Data.Profile.Dao.PersonDataOrganizationData, Bam.Protocol.Data.Profile.Dao.OrganizationData>(DaoRepository.GetDaoInstance(this), false);
 					xref.Load(DaoRepository.Database);
 					_organizationDatas = ((IEnumerable)xref).CopyAs<Bam.Protocol.Data.Profile.OrganizationData>().ToList();
-					SetUpdatedXrefCollectionProperty("OrganizationDatas", this.GetType().GetProperty("Organizations")!);
+					SetUpdatedXrefCollectionProperty("OrganizationDatas", this.GetType().GetProperty("Organizations"));					
 				}
 
 				return _organizationDatas;
@@ -69,14 +69,14 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 			set
 			{
 				_organizationDatas = value;
-				SetUpdatedXrefCollectionProperty("OrganizationDatas", this.GetType().GetProperty("Organizations")!);
+				SetUpdatedXrefCollectionProperty("OrganizationDatas", this.GetType().GetProperty("Organizations"));
 			}
 		}
 
         // right xref
 
 // Right Xref property: Left -> GroupData ; Right -> PersonData
-		List<Bam.Protocol.Data.Profile.GroupData> _groupDatas = null!;
+		List<Bam.Protocol.Data.Profile.GroupData> _groupDatas;
 		public override List<Bam.Protocol.Data.Profile.GroupData> GroupDatas
 		{
 			get
@@ -86,7 +86,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 					var xref = new XrefDaoCollection<Bam.Protocol.Data.Profile.Dao.GroupDataPersonData, Bam.Protocol.Data.Profile.Dao.GroupData>(DaoRepository.GetDaoInstance(this), false);
 					xref.Load(DaoRepository.Database);
 					_groupDatas = ((IEnumerable)xref).CopyAs<Bam.Protocol.Data.Profile.GroupData>().ToList();
-					SetUpdatedXrefCollectionProperty("GroupDatas", this.GetType().GetProperty("GroupDatas")!);
+					SetUpdatedXrefCollectionProperty("GroupDatas", this.GetType().GetProperty("GroupDatas"));					
 				}
 
 				return _groupDatas;
@@ -94,7 +94,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 			set
 			{
 				_groupDatas = value;
-				SetUpdatedXrefCollectionProperty("GroupDatas", this.GetType().GetProperty("GroupDatas")!);
+				SetUpdatedXrefCollectionProperty("GroupDatas", this.GetType().GetProperty("GroupDatas"));
 			}
 		}
 

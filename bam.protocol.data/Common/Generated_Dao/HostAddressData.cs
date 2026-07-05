@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -99,7 +99,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("Cuid", value);
+            SetValue("Cuid", value!);
         }
     }
 
@@ -113,7 +113,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("IpAddress", value);
+            SetValue("IpAddress", value!);
         }
     }
 
@@ -127,7 +127,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("AddressFamily", value);
+            SetValue("AddressFamily", value!);
         }
     }
 
@@ -141,7 +141,7 @@ namespace Bam.Protocol.Data.Common.Dao
         }
         set
         {
-            SetValue("HostName", value);
+            SetValue("HostName", value!);
         }
     }
 
@@ -182,7 +182,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 	}
 
-    DeviceData _deviceDataOfDeviceDataId = null!;
+    DeviceData _deviceDataOfDeviceDataId;
 	public DeviceData DeviceDataOfDeviceDataId
 	{
 		get
@@ -217,7 +217,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 	}
 
-    MachineData _machineDataOfMachineDataId = null!;
+    MachineData _machineDataOfMachineDataId;
 	public MachineData MachineDataOfMachineDataId
 	{
 		get
@@ -769,7 +769,7 @@ namespace Bam.Protocol.Data.Common.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<HostAddressData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

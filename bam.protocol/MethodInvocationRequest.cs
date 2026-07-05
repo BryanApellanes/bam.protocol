@@ -14,7 +14,7 @@ public class MethodInvocationRequest : IInvocationRequest
     /// </summary>
     public MethodInvocationRequest()
     {
-        this.Arguments = new List<Argument>();
+        this.Arguments = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public class MethodInvocationRequest : IInvocationRequest
         string operationIdentifier = Protocol.OperationIdentifier.For(methodInfo!);
         return new MethodInvocationRequest(instance, operationIdentifier)
         {
-            Arguments = Argument.ListForValues(methodInfo!, arguments)
+            Arguments = Argument.ForValues(methodInfo!, arguments)
         };
     }
 
@@ -118,7 +118,7 @@ public class MethodInvocationRequest : IInvocationRequest
         
         return new MethodInvocationRequest(methodInfo)
         {
-            Arguments =  Argument.ListForValues(methodInfo, arguments)
+            Arguments = Argument.ForValues(methodInfo, arguments)
         };
     }
 
@@ -197,7 +197,7 @@ public class MethodInvocationRequest : IInvocationRequest
     public string SerializedContext { get; set; } = null!;
 
     /// <inheritdoc />
-    public List<Argument> Arguments { get; set; } = null!;
+    public Dictionary<string, object?> Arguments { get; set; } = null!;
 
     /// <summary>
     /// Invokes the method and returns the result cast to the specified type.
@@ -210,12 +210,27 @@ public class MethodInvocationRequest : IInvocationRequest
     }
 
     /// <summary>
-    /// Invokes the method with the stored arguments and returns the result.
+    /// Invokes the method with the stored arguments, matching by parameter name.
     /// </summary>
     /// <returns>The result of the method invocation.</returns>
     public object Invoke()
     {
-        return MethodInfo.Invoke(Instance, Arguments.Select(a => a.Value).ToArray())!;
+        ParameterInfo[] parameters = MethodInfo.GetParameters();
+        object?[] values = new object?[parameters.Length];
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            string name = parameters[i].Name!;
+            if (Arguments.TryGetValue(name, out object? value))
+            {
+                values[i] = value;
+            }
+            else
+            {
+                values[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : null;
+            }
+        }
+
+        return MethodInfo.Invoke(Instance, values)!;
     }
     
     /// <summary>

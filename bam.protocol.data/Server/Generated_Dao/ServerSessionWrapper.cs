@@ -46,7 +46,7 @@ namespace Bam.Protocol.Data.Server.Wrappers
 			}
 		}
 
-        System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> _keyValues = null!;
+        System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> _keyValues;
 		public override System.Collections.Generic.List<Bam.Protocol.Data.Server.ServerSessionKeyValuePair> KeyValues
 		{
 			get

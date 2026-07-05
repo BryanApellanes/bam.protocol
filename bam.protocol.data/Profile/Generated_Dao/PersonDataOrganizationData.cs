@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Profile.Dao
         }
         set
         {
-            SetValue("Uuid", value);
+            SetValue("Uuid", value!);
         }
     }
 
@@ -112,7 +112,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 	}
 
-    PersonData _personDataOfPersonDataId = null!;
+    PersonData _personDataOfPersonDataId;
 	public PersonData PersonDataOfPersonDataId
 	{
 		get
@@ -147,7 +147,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 	}
 
-    OrganizationData _organizationDataOfOrganizationDataId = null!;
+    OrganizationData _organizationDataOfOrganizationDataId;
 	public OrganizationData OrganizationDataOfOrganizationDataId
 	{
 		get
@@ -699,7 +699,7 @@ namespace Bam.Protocol.Data.Profile.Dao
             IQuerySet query = GetQuerySet(db);
             query.Count<PersonDataOrganizationData>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>

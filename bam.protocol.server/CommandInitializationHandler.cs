@@ -22,14 +22,17 @@ public class CommandInitializationHandler: IBamServerContextInitializationHandle
     public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
-        ICommand command = CommandResolver.ResolveCommand(context.BamRequest);
-        if (command == null)
+        if (context.Command != null)
         {
-            initialization.CanContinue = false;
-            initialization.Status = InitializationStatus.CommandResolutionFailed;
+            return initialization;
         }
 
-        context.SetCommand(command!);
+        ICommand command = CommandResolver.ResolveCommand(context.BamRequest);
+        if (command != null)
+        {
+            context.SetCommand(command);
+        }
+
         return initialization;
     }
 }

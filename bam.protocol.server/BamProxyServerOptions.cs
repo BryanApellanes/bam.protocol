@@ -13,6 +13,8 @@ namespace Bam.Protocol.Server
     /// </summary>
     public class BamProxyServerOptions : BamServerOptions
     {
+        private BamProxyServerCommunicationHandler _communicationHandler;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BamProxyServerOptions"/> class with a service registry and proxy types.
         /// </summary>
@@ -63,6 +65,16 @@ namespace Bam.Protocol.Server
         {
             this.HttpHostBinding = hostBinding;
             return this;
+        }
+
+        public override ICommunicationHandler? GetCommunicationHandler(bool reinit = false)
+        {
+            if (_communicationHandler == null || reinit)
+            {
+                _communicationHandler = ComponentRegistry.Get<BamProxyServerCommunicationHandler>();
+            }
+
+            return _communicationHandler;
         }
     }
 }

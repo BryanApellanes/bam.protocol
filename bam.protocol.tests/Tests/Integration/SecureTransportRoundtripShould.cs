@@ -136,6 +136,41 @@ public class SecureTransportRoundtripShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public async Task InvokeAsyncOverTcpRoundtrip()
+    {
+        // #15: BamClient<T>.InvokeAsync<TR>(BamClientProtocols.Tcp, ...) must roundtrip over TCP,
+        // exercising the new multi-transport overload (previously hard-coded to Http).
+        string actorHandle = "test-tcp-invokeasync-actor";
+        var (server, sessionState, info) = await StartServerWithSession(actorHandle);
+
+        try
+        {
+            // Uses the new BamClient<T> multi-binding ctor so the generic client can target the
+            // server's name-based TCP/UDP ports.
+            BamClient<TestEchoService> client = new BamClient<TestEchoService>(
+                info.HttpHostBinding,
+                new BamHostBinding("localhost", info.TcpPort),
+                new BamHostBinding("localhost", info.UdpPort));
+            client.SessionState = sessionState;
+
+            string result = await client.InvokeAsync<string>(BamClientProtocols.Tcp, "Echo", "Hello TCP");
+
+            Message.PrintLine($"InvokeAsync<string>(Tcp) result: {result}", ConsoleColor.Cyan);
+
+            if (result == null || !result.Contains("Echo: Hello TCP"))
+            {
+                throw new Exception($"Expected result to contain 'Echo: Hello TCP' but got: {result}");
+            }
+
+            Message.PrintLine("PASSED: BamClient<T>.InvokeAsync over TCP roundtrip succeeded", ConsoleColor.Green);
+        }
+        finally
+        {
+            server.Stop();
+        }
+    }
+
+    [UnitTest]
     public async Task TcpRoundtripWithBadSignatureIsRejected()
     {
         string actorHandle = "test-tcp-badsig-actor";

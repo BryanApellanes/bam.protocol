@@ -103,4 +103,54 @@ public class EncryptedProfileRepository : IProfileRepository
     {
         return Repository.Query<AgentCertificateData>(c => c.AgentHandle == agentHandle).FirstOrDefault()!;
     }
+
+    public GroupData SaveGroup(GroupData groupData)
+    {
+        return Repository.Create(groupData);
+    }
+
+    public GroupData FindGroupByName(string name)
+    {
+        return Repository.Query<GroupData>(g => g.Name == name).FirstOrDefault()!;
+    }
+
+    public IEnumerable<GroupData> GetGroupsForPerson(string personHandle)
+    {
+        PersonData person = FindPersonByHandle(personHandle);
+        if (person?.GroupDatas != null)
+        {
+            return person.GroupDatas;
+        }
+        return Enumerable.Empty<GroupData>();
+    }
+
+    public void AddPersonToGroup(string personHandle, string groupName)
+    {
+        PersonData person = FindPersonByHandle(personHandle);
+        GroupData group = FindGroupByName(groupName);
+        if (group == null)
+        {
+            group = SaveGroup(new GroupData { Name = groupName, Description = groupName });
+        }
+
+        person.GroupDatas ??= new List<GroupData>();
+        if (!person.GroupDatas.Any(g => g.Name == groupName))
+        {
+            person.GroupDatas.Add(group);
+            SavePerson(person);
+        }
+    }
+
+    public void RemovePersonFromGroup(string personHandle, string groupName)
+    {
+        PersonData person = FindPersonByHandle(personHandle);
+        if (person?.GroupDatas == null) return;
+
+        var group = person.GroupDatas.FirstOrDefault(g => g.Name == groupName);
+        if (group != null)
+        {
+            person.GroupDatas.Remove(group);
+            SavePerson(person);
+        }
+    }
 }

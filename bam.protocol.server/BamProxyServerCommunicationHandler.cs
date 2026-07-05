@@ -9,10 +9,10 @@ namespace Bam.Protocol.Server
     /// <summary>
     /// Communication handler for proxy server operations, extending the default <see cref="CommunicationHandler"/>.
     /// </summary>
-    public class ProxyServerCommunicationHandler : CommunicationHandler
+    public class BamProxyServerCommunicationHandler : CommunicationHandler
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProxyServerCommunicationHandler"/> class with the specified communication components.
+        /// Initializes a new instance of the <see cref="BamProxyServerCommunicationHandler"/> class with the specified communication components.
         /// </summary>
         /// <param name="tcpIpAddressProvider">The TCP IP address provider.</param>
         /// <param name="udpIpAddressProvider">The UDP IP address provider.</param>
@@ -24,7 +24,7 @@ namespace Bam.Protocol.Server
         /// <param name="authorizationCalculator">The authorization calculator.</param>
         /// <param name="requestProcessor">The request processor.</param>
         /// <param name="objectEncoderDecoder">The object encoder/decoder.</param>
-        public ProxyServerCommunicationHandler(ITcpIPAddressProvider tcpIpAddressProvider, IUdpIPAddressProvider udpIpAddressProvider, IBamRequestReader requestReader, IBamServerContextProvider serverContextProvider, IBamResponseProvider responseProvider, IActorResolver actorResolver, IServerSessionManager serverSessionManager, IAuthorizationCalculator authorizationCalculator, IBamRequestProcessor requestProcessor, IObjectEncoderDecoder objectEncoderDecoder) : base(tcpIpAddressProvider, udpIpAddressProvider, requestReader, serverContextProvider, responseProvider, actorResolver, serverSessionManager, authorizationCalculator, requestProcessor, objectEncoderDecoder)
+        public BamProxyServerCommunicationHandler(ITcpIPAddressProvider tcpIpAddressProvider, IUdpIPAddressProvider udpIpAddressProvider, IBamRequestReader requestReader, IBamServerContextProvider serverContextProvider, IBamResponseProvider responseProvider, IActorResolver actorResolver, IServerSessionManager serverSessionManager, IAuthorizationCalculator authorizationCalculator, IBamRequestProcessor requestProcessor, IObjectEncoderDecoder objectEncoderDecoder) : base(tcpIpAddressProvider, udpIpAddressProvider, requestReader, serverContextProvider, responseProvider, actorResolver, serverSessionManager, authorizationCalculator, requestProcessor, objectEncoderDecoder)
         {
         }
     }

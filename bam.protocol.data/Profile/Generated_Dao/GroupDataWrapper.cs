@@ -51,7 +51,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
         // left xref
 
 // Left Xref property: Left -> GroupData ; Right -> PersonData
-		List<Bam.Protocol.Data.Profile.PersonData> _personDatas = null!;
+		List<Bam.Protocol.Data.Profile.PersonData> _personDatas;
 		public override List<Bam.Protocol.Data.Profile.PersonData> PersonDatas
 		{
 			get
@@ -61,7 +61,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 					var xref = new XrefDaoCollection<Bam.Protocol.Data.Profile.Dao.GroupDataPersonData, Bam.Protocol.Data.Profile.Dao.PersonData>(DaoRepository.GetDaoInstance(this), false);
 					xref.Load(DaoRepository.Database);
 					_personDatas = ((IEnumerable)xref).CopyAs<Bam.Protocol.Data.Profile.PersonData>().ToList();
-					SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("PersonDatas")!);
+					SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("PersonDatas"));					
 				}
 
 				return _personDatas;
@@ -69,7 +69,7 @@ namespace Bam.Protocol.Data.Profile.Wrappers
 			set
 			{
 				_personDatas = value;
-				SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("PersonDatas")!);
+				SetUpdatedXrefCollectionProperty("PersonDatas", this.GetType().GetProperty("PersonDatas"));
 			}
 		}
 

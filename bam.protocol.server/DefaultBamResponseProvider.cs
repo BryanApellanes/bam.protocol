@@ -63,6 +63,17 @@ public class DefaultBamResponseProvider : BamResponseProvider
     }
 
     /// <summary>
+    /// Creates a response for an execute access request by processing the request context.
+    /// </summary>
+    /// <param name="serverContext">The server context for the execute request.</param>
+    /// <returns>The execute response.</returns>
+    public override IBamResponse CreateExecuteResponse(IBamServerContext serverContext)
+    {
+        object result = RequestProcessor.ProcessRequestContext(serverContext);
+        return new BamResponse<object>(_currentInitialization, 200) { Content = result };
+    }
+
+    /// <summary>
     /// Creates a response for a read access request by processing the request context.
     /// </summary>
     /// <param name="serverContext">The server context for the read request.</param>

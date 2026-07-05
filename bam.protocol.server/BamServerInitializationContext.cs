@@ -38,6 +38,16 @@ public abstract class BamServerInitializationContext
     public InitializationStatus Status { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the current request is anonymous (unauthenticated) access.
+    /// </summary>
+    public bool IsAnonymousAccess { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether encryption is required for an anonymous request.
+    /// </summary>
+    public bool IsAnonymousEncryptionRequired { get; set; }
+
+    /// <summary>
     /// Gets or sets a message describing the initialization result or failure reason.
     /// </summary>
     public string Message { get; set; } = null!;

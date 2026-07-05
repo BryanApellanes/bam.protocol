@@ -309,8 +309,11 @@ namespace Bam.Protocol.Server
                 FireEvent(Starting);
                 try
                 {
-                    HttpServer = new HttpServer(HandleHttpRequests);
-                    HttpServer.Start(HttpHostBinding);
+                    if (Options.EnableHttpListener)
+                    {
+                        HttpServer = new HttpServer(HandleHttpRequests);
+                        HttpServer.Start(HttpHostBinding);
+                    }
                     TcpListener = new TcpListener(TcpIPAddress, TcpPort);
                     TcpListener.Start();
                     Task.Run(HandleTcpRequests);

@@ -14,6 +14,10 @@ public enum BamAccess
     /// </summary>
     Read,
     /// <summary>
+    /// Execute access is granted.
+    /// </summary>
+    Execute,
+    /// <summary>
     /// Read and write access is granted.
     /// </summary>
     Write,
