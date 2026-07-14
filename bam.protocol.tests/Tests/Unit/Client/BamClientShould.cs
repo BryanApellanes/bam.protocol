@@ -176,6 +176,37 @@ public class BamClientShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public async Task EstablishSessionAsyncPopulatesSessionState()
+    {
+        BamServer server = new BamServer();
+        BamServerInfo info = server.GetInfo();
+        Message.PrintLine(info.ToJson(true), ConsoleColor.Cyan);
+        await server.StartAsync();
+
+        After.Setup((reg) =>
+        {
+            reg.For<BamClient>().Use(new BamClient(new JsonObjectDataEncoder(), info.HttpHostBinding));
+        })
+        .When<BamClient>("BamClient calls EstablishSessionAsync", async (client) =>
+        {
+            await client.EstablishSessionAsync();
+            return client.SessionState;
+        })
+        .It
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+            IClientSessionState sessionState = because.TheResult.As<IClientSessionState>();
+            because.ItsTrue("SessionId is populated", !string.IsNullOrEmpty(sessionState.SessionId));
+        })
+        .SoBeHappy((reg) =>
+        {
+            server.Stop();
+        })
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
     public async Task StartSession()
     {
         BamServer server = new BamServer();

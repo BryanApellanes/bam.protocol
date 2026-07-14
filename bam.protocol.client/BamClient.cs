@@ -112,6 +112,21 @@ public class BamClient : IBamClient
     public IClientSessionState SessionState { get; set; } = null!;
     private ClientRequestSecurityProvider SecurityProvider { get; } = new ClientRequestSecurityProvider();
 
+    /// <summary>
+    /// Establishes a BAM protocol session against <see cref="HttpBaseAddress"/> (session creation is always
+    /// an HTTP call, regardless of which transport subsequent invocations use) and assigns the result to
+    /// <see cref="SessionState"/>. Every request requires an established session — see
+    /// <c>ServerSessionInitializationHandler</c> — independent of whether the invoked method allows
+    /// <c>[AnonymousAccess]</c>; anonymous access only exempts actor/JWT authentication, not session
+    /// establishment itself. This overload covers the anonymous case only: it does not attach an
+    /// authorization token, so it is not sufficient for methods that require actor identity.
+    /// </summary>
+    public async Task EstablishSessionAsync()
+    {
+        ClientSessionManager sessionManager = new ClientSessionManager(HttpClient, HttpBaseAddress);
+        SessionState = await sessionManager.StartSessionAsync();
+    }
+
     public IBamClientRequest CreateHttpRequest(string path)
     {
         return CreateRequestBuilder(BamClientProtocols.Http)
