@@ -248,6 +248,145 @@ public class AuthPipelineShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RunRequestDecryptionInitializationHandlerDecryptsWhenSessionResolved()
+    {
+        EccPublicPrivateKeyPair serverKeyPair = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair clientKeyPair = new EccPublicPrivateKeyPair();
+        string originalBody = "anonymous request body";
+
+        When.A<RequestDecryptionInitializationHandler>("decrypts the body when session state is already resolved",
+            () => new RequestDecryptionInitializationHandler(new RequestSecurityValidator()),
+            (handler) =>
+            {
+                AesKey sessionKey = clientKeyPair.GetSharedAesKey(serverKeyPair.PublicKeyPem);
+                string encryptedBody = Aes.Encrypt(originalBody, sessionKey);
+
+                IBamRequest request = Substitute.For<IBamRequest>();
+                request.Content = encryptedBody;
+
+                IServerSessionState sessionState = Substitute.For<IServerSessionState>();
+                string serverPrivateKeyPem = new PrivateKeyProvider(serverKeyPair).GetPrivateKey().ToPem();
+                sessionState.Get<string>("ServerPrivateKey").Returns(serverPrivateKeyPem);
+                sessionState.Get<string>("ClientPublicKey").Returns(clientKeyPair.PublicKeyPem);
+
+                IBamServerContext context = Substitute.For<IBamServerContext>();
+                context.BamRequest.Returns(request);
+                context.ServerSessionState.Returns(sessionState);
+
+                BamServerInitializationContext initialization = new HttpBamServerInitializationContext();
+                initialization.ServerContext = context;
+                initialization.CanContinue = true;
+
+                handler.HandleInitialization(initialization);
+                return request.Content;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.IsNotNull();
+            because.ItsTrue("body was decrypted in place", because.Result.Equals(originalBody));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RunRequestDecryptionInitializationHandlerNoOpsWhenNoSessionState()
+    {
+        string originalContent = "plaintext, no session";
+
+        When.A<RequestDecryptionInitializationHandler>("no-ops when session state is not resolved",
+            () => new RequestDecryptionInitializationHandler(new RequestSecurityValidator()),
+            (handler) =>
+            {
+                IBamRequest request = Substitute.For<IBamRequest>();
+                request.Content = originalContent;
+
+                IBamServerContext context = Substitute.For<IBamServerContext>();
+                context.BamRequest.Returns(request);
+                context.ServerSessionState.Returns((IServerSessionState)null!);
+
+                BamServerInitializationContext initialization = new HttpBamServerInitializationContext();
+                initialization.ServerContext = context;
+                initialization.CanContinue = true;
+
+                BamServerInitializationContext result = handler.HandleInitialization(initialization);
+                return result.CanContinue && request.Content == originalContent;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.As<bool>("handler passed through without touching the request", b => b);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RunAnonymousActorInitializationHandlerAssignsUnknownActor()
+    {
+        IActor assignedActor = null!;
+
+        When.A<AnonymousActorInitializationHandler>("assigns the well-known anonymous actor",
+            () => new AnonymousActorInitializationHandler(new AnonymousActorProvider()),
+            (handler) =>
+            {
+                IBamServerContext context = Substitute.For<IBamServerContext>();
+                context.When(c => c.SetActor(Arg.Any<IActor>())).Do(callInfo => assignedActor = callInfo.Arg<IActor>());
+
+                BamServerInitializationContext initialization = new HttpBamServerInitializationContext();
+                initialization.ServerContext = context;
+                initialization.CanContinue = true;
+
+                BamServerInitializationContext result = handler.HandleInitialization(initialization);
+                return result.CanContinue;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.As<bool>("CanContinue stays true", b => b);
+            because.ItsTrue("actor handle is the well-known UNKNOWN constant", assignedActor != null && assignedActor.Handle == AnonymousActorProvider.AnonymousHandle);
+            because.ItsTrue("actor name is Anonymous", assignedActor != null && assignedActor.Name == AnonymousActorProvider.AnonymousName);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void ServerSessionInitializationHandlerIsIdempotentWhenSessionAlreadyResolved()
+    {
+        bool getSessionCalled = false;
+
+        When.A<ServerSessionInitializationHandler>("skips resolution when session state is already set",
+            () =>
+            {
+                IServerSessionManager sessionManager = Substitute.For<IServerSessionManager>();
+                sessionManager.When(m => m.GetSession(Arg.Any<IBamRequest>())).Do(_ => getSessionCalled = true);
+                return new ServerSessionInitializationHandler(sessionManager);
+            },
+            (handler) =>
+            {
+                IBamServerContext context = Substitute.For<IBamServerContext>();
+                IServerSessionState sessionState = Substitute.For<IServerSessionState>();
+                context.ServerSessionState.Returns(sessionState);
+
+                BamServerInitializationContext initialization = new HttpBamServerInitializationContext();
+                initialization.ServerContext = context;
+                initialization.CanContinue = true;
+
+                handler.HandleInitialization(initialization);
+                return !getSessionCalled;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult.As<bool>("GetSession was not called because the session was already resolved", b => b);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
     private static IBamServerContext CreateMockContext(string actorHandle, string sessionId, string encodedToken, string clientPublicKeyPem)
     {
         IBamServerContext context = Substitute.For<IBamServerContext>();

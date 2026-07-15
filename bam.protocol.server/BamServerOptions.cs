@@ -198,6 +198,7 @@ public class BamServerOptions
             .For<IBamServerContextProvider>().Use<BamServerContextProvider>()
             .For<IBamResponseProvider>().Use<DefaultBamResponseProvider>()
             .For<IActorResolver>().Use<ActorResolver>()
+            .For<IAnonymousActorProvider>().Use<AnonymousActorProvider>()
             .For<IServerSessionManager>().Use<ServerSessionManager>()
             .For<IGroupAccessConfiguration>().UseSingleton(new GroupAccessConfiguration())
             .For<IAccessLevelProvider>().Use<GroupAccessLevelProvider>()
