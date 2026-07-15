@@ -26,6 +26,11 @@ public class ServerSessionInitializationHandler : IBamServerContextInitializatio
     public BamServerInitializationContext HandleInitialization(BamServerInitializationContext initialization)
     {
         IBamServerContext context = initialization.ServerContext;
+        if (context.ServerSessionState != null)
+        {
+            return initialization;
+        }
+
         IBamRequest request = context.BamRequest;
         if (SessionManager.HasSessionId(request))
         {
