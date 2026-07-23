@@ -100,7 +100,9 @@ using Bam.Protocol.Data;
 
 IProfileRepository repo = serviceRegistry.Get<IProfileRepository>();
 
-// Save and look up a public key set
+// Register a public key set (first registration wins — the registered key set is the
+// trust anchor for device-key account confirmation; a second registration for the same
+// handle throws PublicKeySetConflictException)
 PublicKeySetData keySet = new PublicKeySetData
 {
     KeySetHandle = actorHandle,
@@ -109,9 +111,26 @@ PublicKeySetData keySet = new PublicKeySetData
 };
 repo.SavePublicKeySet(keySet);
 
-// Find by handle
+// Find by handle (deterministic — if duplicate rows exist, the earliest-created wins)
 PublicKeySetData found = repo.FindPublicKeySetByHandle(actorHandle);
+
+// Replace a registered key set: rotation requires proof of possession of the currently
+// registered key — a SHA512WITHRSA signature over KeySetRotationPayload.Compose(newKeySet)
+// made with the private key matching the registered public RSA key.  The row is updated
+// in place; an invalid proof throws InvalidKeySetRotationException.
+PublicKeySetData newKeySet = new PublicKeySetData
+{
+    KeySetHandle = actorHandle,
+    PublicRsaKey = newRsaPublicKeyPem,
+    PublicEccKey = newEccPublicKeyPem
+};
+byte[] rotationSignature = SignWithCurrentPrivateKey(KeySetRotationPayload.Compose(newKeySet));
+repo.RotatePublicKeySet(newKeySet, rotationSignature);
 ```
+
+> Consumers exposing key-set registration or rotation over a network surface remain
+> responsible for authenticating and authorizing the caller; the policy above bounds what
+> any caller can do to an already-registered handle (see `IPublicKeySetRegistrar`).
 
 ### Device initialization
 ```csharp

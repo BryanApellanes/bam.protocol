@@ -1,4 +1,5 @@
 using Bam.Data.Objects;
+using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Common;
 using Bam.Protocol.Data.Profile;
@@ -7,12 +8,36 @@ namespace Bam.Protocol.Profile;
 
 public class EncryptedProfileRepository : IProfileRepository
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with
+    /// the default key-set registration policy — a <see cref="PublicKeySetRegistrar"/>
+    /// verifying rotation proofs via <see cref="RsaKeySetRotationVerifier"/>.
+    /// </summary>
+    /// <param name="repository">The object-data repository profile data is persisted in.</param>
     public EncryptedProfileRepository(ObjectDataRepository repository)
+        : this(repository, new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class.
+    /// </summary>
+    /// <param name="repository">The object-data repository profile data is persisted in.</param>
+    /// <param name="publicKeySetRegistrar">The registration policy guarding the key-set trust anchor; see <see cref="IPublicKeySetRegistrar"/>.</param>
+    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar)
     {
         this.Repository = repository;
+        this.PublicKeySetRegistrar = publicKeySetRegistrar;
     }
 
     protected ObjectDataRepository Repository { get; }
+
+    /// <summary>
+    /// Gets the registration policy guarding the key-set trust anchor.  The key-set members
+    /// of this repository delegate to it so the policy stays in one independently testable
+    /// place.
+    /// </summary>
+    protected IPublicKeySetRegistrar PublicKeySetRegistrar { get; }
 
     public ProfileData SaveProfile(ProfileData profileData)
     {
@@ -69,14 +94,22 @@ public class EncryptedProfileRepository : IProfileRepository
         return Repository.Query<AgentData>(a => a.Handle == handle).FirstOrDefault()!;
     }
 
+    /// <inheritdoc />
     public PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData)
     {
-        return Repository.Create(publicKeySetData);
+        return PublicKeySetRegistrar.Register(publicKeySetData);
     }
 
+    /// <inheritdoc />
+    public PublicKeySetData RotatePublicKeySet(PublicKeySetData newKeySet, byte[] rotationSignature)
+    {
+        return PublicKeySetRegistrar.Rotate(newKeySet, rotationSignature);
+    }
+
+    /// <inheritdoc />
     public PublicKeySetData FindPublicKeySetByHandle(string keySetHandle)
     {
-        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle).FirstOrDefault()!;
+        return PublicKeySetRegistrar.Resolve(keySetHandle);
     }
 
     public IEnumerable<PublicKeySetData> GetAllPublicKeySets()

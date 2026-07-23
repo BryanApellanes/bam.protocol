@@ -32,6 +32,9 @@ public static class ProfileRepositoryServiceRegistration
             .For<IObjectDataDeleter>().Use<ObjectDataDeleter>()
             .For<IObjectDataArchiver>().Use<ObjectDataArchiver>()
             .For<ObjectDataRepository>().Use<ObjectDataRepository>()
+            .For<ISignatureProvider>().Use<RsaSignatureProvider>()
+            .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
+            .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>()
             .For<IProfileRepository>().Use<EncryptedProfileRepository>();
 
         return registry;

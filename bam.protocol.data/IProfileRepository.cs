@@ -21,8 +21,42 @@ public interface IProfileRepository
     AgentData SaveAgent(AgentData agentData);
     AgentData FindAgentByHandle(string handle);
 
+    /// <summary>
+    /// Registers the first key set for a handle.  First registration wins: implementations
+    /// MUST reject the save when a key set is already registered for the handle, because the
+    /// registered key set is the trust anchor for device-key account confirmation (see
+    /// <see cref="IPublicKeySetRegistrar"/>).  Consumers exposing this operation remain
+    /// responsible for authenticating the caller.
+    /// </summary>
+    /// <param name="publicKeySetData">The key set to register.</param>
+    /// <returns>The persisted key set.</returns>
+    /// <exception cref="PublicKeySetConflictException">A key set is already registered for the handle.</exception>
     PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData);
+
+    /// <summary>
+    /// Replaces the registered key set for a handle, gated on proof of possession of the
+    /// currently registered key: <paramref name="rotationSignature"/> must be a valid
+    /// SHA512WITHRSA signature over <see cref="KeySetRotationPayload.Compose"/> of
+    /// <paramref name="newKeySet"/>, made with the private key matching the currently
+    /// registered public RSA key.  Implementations MUST update the existing row in place —
+    /// rotation never creates a second row for the handle.
+    /// </summary>
+    /// <param name="newKeySet">The key set to rotate to, carrying the handle being rotated.</param>
+    /// <param name="rotationSignature">The raw signature bytes proving possession of the current key.</param>
+    /// <returns>The updated key set.</returns>
+    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, or the proof is invalid.</exception>
+    PublicKeySetData RotatePublicKeySet(PublicKeySetData newKeySet, byte[] rotationSignature);
+
+    /// <summary>
+    /// Finds the authoritative key set registered for a handle.  Implementations MUST resolve
+    /// deterministically: when duplicate rows exist (legacy data or direct store tampering),
+    /// the earliest-created row wins, so a later-added row can never displace the first
+    /// registration.
+    /// </summary>
+    /// <param name="keySetHandle">The handle to resolve.</param>
+    /// <returns>The authoritative key set, or null when none is registered.</returns>
     PublicKeySetData FindPublicKeySetByHandle(string keySetHandle);
+
     IEnumerable<PublicKeySetData> GetAllPublicKeySets();
 
     CertificateData SaveCertificate(CertificateData certificateData);
