@@ -52,9 +52,10 @@ public interface IPublicKeySetRegistrar
 
     /// <summary>
     /// Resolves the authoritative key set for a handle deterministically: if duplicate rows
-    /// exist (legacy data or direct store tampering — the registration path cannot create
-    /// them), the earliest-created row wins, so a later-added row can never displace the
-    /// first registration.
+    /// exist, the earliest-created row wins, so a later-added row can never displace the first
+    /// registration.  Neither <see cref="Register"/> nor <see cref="Rotate"/> creates
+    /// cross-handle key-material duplicates (both enforce one handle-to-one key set), so
+    /// duplicates arise only from legacy data or direct store tampering below the registrar.
     /// </summary>
     /// <param name="keySetHandle">The handle to resolve.</param>
     /// <returns>The authoritative key set, or null when none is registered.</returns>

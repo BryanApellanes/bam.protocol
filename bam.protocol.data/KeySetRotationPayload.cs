@@ -46,7 +46,11 @@ public static class KeySetRotationPayload
     private static void AppendField(StringBuilder payload, string? value)
     {
         string fieldValue = value ?? string.Empty;
-        payload.Append(fieldValue.Length);
+        // Prefix the UTF-8 BYTE count, not the UTF-16 char count: the signature is computed over
+        // the UTF-8 bytes of this payload, so a char-count prefix would let a lone surrogate and
+        // the replacement character (both Length==1, same UTF-8 bytes) collide, and would mislead
+        // a non-.NET signer. Byte-length prefixing keeps the concatenation injective over bytes.
+        payload.Append(Encoding.UTF8.GetByteCount(fieldValue));
         payload.Append(':');
         payload.Append(fieldValue);
         payload.Append(',');

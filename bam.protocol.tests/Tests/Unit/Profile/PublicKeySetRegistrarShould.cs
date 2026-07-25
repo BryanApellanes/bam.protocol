@@ -170,7 +170,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
     public void StampCreatedServerSideIgnoringCallerValue()
     {
         RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
-        DateTime beforeRegister = DateTime.UtcNow.AddSeconds(-5);
+        DateTime beforeRegister = DateTime.UtcNow.AddSeconds(-1);
 
         When.A<PublicKeySetRegistrar>("stamps Created server-side ignoring a caller-supplied value",
             () => CreateRegistrar(CreateObjectDataRepository(nameof(StampCreatedServerSideIgnoringCallerValue))),
@@ -184,15 +184,178 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     PublicRsaKey = keyPair.PublicKeyPem,
                     Created = DateTime.MinValue,
                 });
-                PublicKeySetData? resolved = registrar.Resolve("stamped");
-                return resolved!;
+                // capture the upper bound AFTER Register returns but BEFORE resolving: a Created
+                // that is stamped at READ time (i.e. persistence regressed, e.g. a stale bam.data
+                // where DateTime? is dropped) reads back LATER than this and fails the test, and
+                // two fresh resolves would return different read-time values (C3c — the test must
+                // be capable of failing, not merely assert >= a lower bound the lazy getter meets).
+                DateTime afterRegister = DateTime.UtcNow;
+                PublicKeySetData? first = registrar.Resolve("stamped");
+                PublicKeySetData? second = registrar.Resolve("stamped");
+                return new StampOutcome(first!.Created, second!.Created, beforeRegister, afterRegister);
             })
         .TheTest
         .ShouldPass(because =>
         {
             because.TheResult
                 .IsNotNull()
-                .As<PublicKeySetData>("the persisted Created is server-stamped, not the caller's MinValue", k => k.Created != null && k.Created.Value >= beforeRegister);
+                .As<StampOutcome>("Created is not null", o => o.First != null)
+                .As<StampOutcome>("Created is at or after the register call began", o => o.First!.Value >= o.Before)
+                .As<StampOutcome>("Created is at or before Register returned, so it was stamped at register time not read time", o => o.First!.Value <= o.After)
+                .As<StampOutcome>("Created is stable across two fresh resolves, so it is persisted not re-stamped per read", o => o.First == o.Second);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void NormalizeUuidAndCuidServerSide()
+    {
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        string attackerUuid = "00000000-0000-0000-0000-000000000000";
+        string attackerCuid = "aaaaaaaaaaaaaaaaaaaaaaaa";
+
+        When.A<PublicKeySetRegistrar>("regenerates Uuid and Cuid server-side so the caller cannot grind the Id tiebreak",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(NormalizeUuidAndCuidServerSide))),
+            (registrar) =>
+            {
+                // Id = CalculateULongKey(Uuid, Cuid); both are publicly settable on RepoData, so an
+                // attacker could choose them to win the Created-tie tiebreak. Register must ignore
+                // caller-supplied identifiers (C3b).
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "normalized",
+                    PublicRsaKey = keyPair.PublicKeyPem,
+                    Uuid = attackerUuid,
+                    Cuid = attackerCuid,
+                });
+                PublicKeySetData? resolved = registrar.Resolve("normalized");
+                return new IdentifierOutcome(resolved!.Uuid, resolved.Cuid);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<IdentifierOutcome>("the persisted Uuid is server-generated, not the caller's", o => o.Uuid != attackerUuid)
+                .As<IdentifierOutcome>("the persisted Cuid is server-generated, not the caller's", o => o.Cuid != attackerCuid);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRotationToKeyMaterialOfAnotherHandle()
+    {
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair attackerKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRotationToKeyMaterialOfAnotherHandle));
+
+        When.A<PublicKeySetRegistrar>("rejects rotating a handle to another handle's registered key material",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = victimKeyPair.PublicKeyPem });
+                registrar.Register(new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = attackerKeyPair.PublicKeyPem });
+
+                // The attacker rotates THEIR OWN handle to the victim's public key, signing with
+                // the attacker's key (the current registered key for 'attacker') — a legitimately
+                // valid possession proof. Without the rotation-path uniqueness guard this plants
+                // the victim's key under 'attacker' (C4 / challenger B1).
+                PublicKeySetData proposed = new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = victimKeyPair.PublicKeyPem };
+                byte[] signature = SignRotation(attackerKeyPair, attackerKeyPair.PublicKeyPem, proposed);
+
+                bool rejected = false;
+                try
+                {
+                    registrar.Rotate(proposed, signature);
+                }
+                catch (PublicKeySetKeyMaterialConflictException)
+                {
+                    rejected = true;
+                }
+
+                PublicKeySetData? attackerRow = registrar.Resolve("attacker");
+                int victimKeyRowCount = repository.Query<PublicKeySetData>(p => p.PublicRsaKey == victimKeyPair.PublicKeyPem).Count();
+                return new RotationBypassOutcome(rejected, attackerRow!.PublicRsaKey == attackerKeyPair.PublicKeyPem, victimKeyRowCount);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RotationBypassOutcome>("the cross-handle rotation threw PublicKeySetKeyMaterialConflictException", o => o.Rejected)
+                .As<RotationBypassOutcome>("the attacker handle still resolves to its own key", o => o.AttackerRowUnchanged)
+                .As<RotationBypassOutcome>("the victim's key material remains under exactly one handle", o => o.VictimKeyRowCount == 1);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRotationToEmptyRsaKey()
+    {
+        RsaPublicPrivateKeyPair currentKeyPair = new RsaPublicPrivateKeyPair();
+
+        When.A<PublicKeySetRegistrar>("rejects rotating to an empty RSA key that would brick the handle",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(RejectRotationToEmptyRsaKey))),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "rotator", PublicRsaKey = currentKeyPair.PublicKeyPem });
+
+                PublicKeySetData proposed = new PublicKeySetData { KeySetHandle = "rotator", PublicRsaKey = "" };
+
+                bool rejected = false;
+                try
+                {
+                    registrar.Rotate(proposed, new byte[] { 1, 2, 3 });
+                }
+                catch (InvalidKeySetRotationException)
+                {
+                    rejected = true;
+                }
+
+                PublicKeySetData? resolved = registrar.Resolve("rotator");
+                return new RotationRejectionOutcome(rejected, resolved!.PublicRsaKey);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RotationRejectionOutcome>("rotating to an empty RSA key threw InvalidKeySetRotationException", o => o.Rejected)
+                .As<RotationRejectionOutcome>("the handle still resolves to the original key", o => o.ResolvedRsaKey == currentKeyPair.PublicKeyPem);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRegistrationWithNoKeyMaterial()
+    {
+        When.A<PublicKeySetRegistrar>("rejects registering a key set with no RSA or ECC material",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(RejectRegistrationWithNoKeyMaterial))),
+            (registrar) =>
+            {
+                bool rejected = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "empty" });
+                }
+                catch (InvalidPublicKeySetException)
+                {
+                    rejected = true;
+                }
+                PublicKeySetData? resolved = registrar.Resolve("empty");
+                return new RejectionOutcome(rejected, resolved == null);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RejectionOutcome>("registering with no key material threw InvalidPublicKeySetException", o => o.Rejected)
+                .As<RejectionOutcome>("no row was persisted", o => o.StoreUnchanged);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -562,6 +725,12 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
     private sealed record KeyMaterialConflictOutcome(bool ConflictThrown, bool NoRowForSecondHandle);
 
     private sealed record RejectionOutcome(bool Rejected, bool StoreUnchanged);
+
+    private sealed record StampOutcome(DateTime? First, DateTime? Second, DateTime Before, DateTime After);
+
+    private sealed record IdentifierOutcome(string Uuid, string Cuid);
+
+    private sealed record RotationBypassOutcome(bool Rejected, bool AttackerRowUnchanged, int VictimKeyRowCount);
 
     private sealed record ValidationOutcome(bool NullRejected, bool EmptyRejected, bool WhitespaceRejected);
 
