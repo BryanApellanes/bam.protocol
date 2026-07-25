@@ -18,6 +18,12 @@ public class KeyManagerShould : UnitTestMenuContainer
     private static IProfileRepository CreateRepository(string testName)
     {
         string rootPath = $"./.bam/tests/{testName}";
+        // key-set registration is first-registration-wins; a store left over from a prior
+        // run would reject this run's SavePublicKeySet, so each run starts from a clean store
+        if (Directory.Exists(rootPath))
+        {
+            Directory.Delete(rootPath, true);
+        }
         AesKey aesKey = new AesKey();
         ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
         IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();

@@ -21,8 +21,10 @@ X.509 certificate generation is handled by `CertificateAuthority`, which extends
 | `CertificateManager` | Implements `ICertificateManager`: creates root CA and signed X.509 certificates, loads certificates from repository, persists cert + agent-cert associations. |
 | `CertificateAuthority` | Extends `CertificateIssuer`: creates X.509 certificates with configurable options, issuer name, subject name, and key material. |
 | `PrivateKeyManager` | Implements `IPrivateKeyManager`: generates RSA/ECC private keys and stores them in opaque encrypted filesystem storage keyed by public key SHA. |
-| `EncryptedProfileRepository` | Implements `IProfileRepository`: encrypted CRUD for profiles, persons, devices, organizations, agents, public key sets, certificates, and agent certificates using `ObjectDataRepository`. |
-| `ProfileRepositoryServiceRegistration` | Static extension `AddEncryptedProfileRepository` that registers all encrypted profile storage dependencies into a `ServiceRegistry`. |
+| `EncryptedProfileRepository` | Implements `IProfileRepository`: encrypted CRUD for profiles, persons, devices, organizations, agents, public key sets, certificates, and agent certificates using `ObjectDataRepository`. Key-set members delegate to `IPublicKeySetRegistrar`. |
+| `PublicKeySetRegistrar` | Implements `IPublicKeySetRegistrar`: enforces the key-set registration policy that anchors device-key account confirmation — first registration wins (`PublicKeySetConflictException` on conflict), rotation requires proof of possession of the currently registered key and updates in place, resolution is deterministic (earliest-created wins). |
+| `RsaKeySetRotationVerifier` | Implements `IKeySetRotationVerifier`: verifies SHA512WITHRSA rotation signatures over `KeySetRotationPayload.Compose(proposed)` against the currently registered public RSA key. |
+| `ProfileRepositoryServiceRegistration` | Static extension `AddEncryptedProfileRepository` that registers all encrypted profile storage dependencies into a `ServiceRegistry`, including the key-set registration policy (`IPublicKeySetRegistrar`, `IKeySetRotationVerifier`, `ISignatureProvider`). |
 | `GenerateCertificateOptions` | Configuration object for certificate generation (issuer name, subject name, keys). |
 | `IX509NameProvider` | Interface for constructing `X509Name` from actor or string subject. |
 | `X509NameProvider` | Default `IX509NameProvider` implementation. |

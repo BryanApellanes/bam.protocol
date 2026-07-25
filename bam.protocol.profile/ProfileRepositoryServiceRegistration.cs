@@ -32,7 +32,18 @@ public static class ProfileRepositoryServiceRegistration
             .For<IObjectDataDeleter>().Use<ObjectDataDeleter>()
             .For<IObjectDataArchiver>().Use<ObjectDataArchiver>()
             .For<ObjectDataRepository>().Use<ObjectDataRepository>()
-            .For<IProfileRepository>().Use<EncryptedProfileRepository>();
+            .For<ISignatureProvider>().Use<RsaSignatureProvider>()
+            .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
+            .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>()
+            // Construct EncryptedProfileRepository via its two-arg constructor through a
+            // factory: DependencyProvider.GetCtorParams selects the FIRST satisfiable
+            // constructor, which is the one-arg convenience ctor — resolving IProfileRepository
+            // without this factory would self-compose the default policy and silently ignore the
+            // IPublicKeySetRegistrar registered above (bam.protocol#8 review SF1).
+            .For<IProfileRepository>().Use<EncryptedProfileRepository>(
+                serviceRegistry => new EncryptedProfileRepository(
+                    serviceRegistry.Get<ObjectDataRepository>(),
+                    serviceRegistry.Get<IPublicKeySetRegistrar>()));
 
         return registry;
     }
