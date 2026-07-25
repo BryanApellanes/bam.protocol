@@ -17,10 +17,21 @@ public interface IPublicKeySetRegistrar
     /// Registers the first key set for a handle.  First registration wins: if a key set is
     /// already registered for <see cref="Bam.Protocol.IKeySet.KeySetHandle"/>, the attempt is
     /// rejected and the registered key set is unchanged.
+    /// <para>
+    /// Handle equality is <b>ordinal and case-sensitive</b>; a consumer that treats handles
+    /// case-insensitively must canonicalize before calling, or <c>alice</c> and <c>Alice</c>
+    /// become distinct trust anchors.  The registrar stamps the persisted row's creation time
+    /// server-side (a caller-supplied <c>Created</c> is ignored) and enforces that public key
+    /// material maps to exactly one handle.
+    /// </para>
     /// </summary>
     /// <param name="publicKeySetData">The key set to register.</param>
     /// <returns>The persisted key set.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="publicKeySetData"/> is null.</exception>
+    /// <exception cref="ArgumentException">The key set's handle is null, empty, or whitespace.</exception>
     /// <exception cref="PublicKeySetConflictException">A key set is already registered for the handle.</exception>
+    /// <exception cref="PublicKeySetKeyMaterialConflictException">The key material is already registered under a different handle.</exception>
+    /// <exception cref="InvalidPublicKeySetException">The key material is not a parseable public key.</exception>
     PublicKeySetData Register(PublicKeySetData publicKeySetData);
 
     /// <summary>
@@ -34,7 +45,9 @@ public interface IPublicKeySetRegistrar
     /// <param name="newKeySet">The key set to rotate to, carrying the handle being rotated.</param>
     /// <param name="rotationSignature">The raw signature bytes proving possession of the current key.</param>
     /// <returns>The updated key set.</returns>
-    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, or the proof is invalid.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="newKeySet"/> is null.</exception>
+    /// <exception cref="ArgumentException">The key set's handle is null, empty, or whitespace.</exception>
+    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, the proof is invalid, or the proposed key material is not parseable.</exception>
     PublicKeySetData Rotate(PublicKeySetData newKeySet, byte[] rotationSignature);
 
     /// <summary>
@@ -45,5 +58,5 @@ public interface IPublicKeySetRegistrar
     /// </summary>
     /// <param name="keySetHandle">The handle to resolve.</param>
     /// <returns>The authoritative key set, or null when none is registered.</returns>
-    PublicKeySetData Resolve(string keySetHandle);
+    PublicKeySetData? Resolve(string keySetHandle);
 }

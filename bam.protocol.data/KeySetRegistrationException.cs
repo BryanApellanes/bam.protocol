@@ -19,6 +19,19 @@ public class KeySetRegistrationException : Exception
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="KeySetRegistrationException"/> class,
+    /// preserving the underlying cause.
+    /// </summary>
+    /// <param name="keySetHandle">The handle whose registration operation was rejected.</param>
+    /// <param name="message">A description of the policy violation.</param>
+    /// <param name="innerException">The underlying exception that caused this rejection.</param>
+    public KeySetRegistrationException(string keySetHandle, string message, Exception? innerException)
+        : base(message, innerException)
+    {
+        this.KeySetHandle = keySetHandle;
+    }
+
+    /// <summary>
     /// Gets the handle whose registration operation was rejected.
     /// </summary>
     public string KeySetHandle { get; }

@@ -1,24 +1,54 @@
+using System.Text;
+
 namespace Bam.Protocol.Data;
 
 /// <summary>
-/// Composes the single canonical serialization of a key set that rotation signatures are made
-/// over.  Both sides of a rotation — the client signing with the private key matching the
-/// currently registered RSA key, and the server-side verifier — MUST use this composition;
+/// Composes the single canonical serialization of a key-set rotation that rotation signatures
+/// are made over.  Both sides of a rotation — the client signing with the private key matching
+/// the currently registered RSA key, and the server-side verifier — MUST use this composition;
 /// any drift between signer and verifier makes legitimate rotations fail.
+/// <para>
+/// The serialization is <b>unambiguous</b>: each field is length-prefixed (netstring form
+/// <c>{charLength}:{value},</c>) so no re-splitting of the fields across the multi-line PEM
+/// boundaries can produce identical bytes for a different field tuple.  A newline-joined form
+/// is <i>malleable</i> — because PEM values themselves contain newlines, one signature could be
+/// re-interpreted as authorizing a different key set (bam.protocol#8 review, condition C1).
+/// </para>
+/// <para>
+/// The payload also binds the SHA-256 of the <i>currently registered</i> public RSA key (the
+/// key being rotated away from), so a captured proof names the exact key it rotates from and
+/// cannot be replayed against a different current key (condition C2a).  Freshness against
+/// straight replay after a rollback (a nonce) is tracked separately (bam.protocol#15).
+/// </para>
 /// </summary>
 public static class KeySetRotationPayload
 {
     /// <summary>
-    /// Composes the canonical rotation payload for the specified key set: the key-set handle,
-    /// the PEM-encoded public RSA key, and the PEM-encoded public ECC key, joined by single
-    /// newline characters.  The rotation signature is a SHA512WITHRSA signature over the UTF-8
-    /// encoding of this string, produced with the private key matching the currently
-    /// registered public RSA key.
+    /// Composes the canonical rotation payload: the SHA-256 of the currently registered public
+    /// RSA key, followed by the proposed key set's handle, public RSA key, and public ECC key —
+    /// each length-prefixed so the concatenation is injective.  The rotation signature is a
+    /// SHA512WITHRSA signature over the UTF-8 encoding of this string, produced with the private
+    /// key matching the currently registered public RSA key.
     /// </summary>
-    /// <param name="keySet">The proposed key set being rotated to.</param>
+    /// <param name="currentPublicRsaKeySha256">SHA-256 of the currently registered public RSA key (the key being rotated away from).</param>
+    /// <param name="proposed">The proposed key set being rotated to.</param>
     /// <returns>The canonical payload string to sign or verify.</returns>
-    public static string Compose(IKeySet keySet)
+    public static string Compose(string currentPublicRsaKeySha256, IKeySet proposed)
     {
-        return $"{keySet.KeySetHandle}\n{keySet.PublicRsaKey}\n{keySet.PublicEccKey}";
+        StringBuilder payload = new StringBuilder();
+        AppendField(payload, currentPublicRsaKeySha256);
+        AppendField(payload, proposed.KeySetHandle);
+        AppendField(payload, proposed.PublicRsaKey);
+        AppendField(payload, proposed.PublicEccKey);
+        return payload.ToString();
+    }
+
+    private static void AppendField(StringBuilder payload, string? value)
+    {
+        string fieldValue = value ?? string.Empty;
+        payload.Append(fieldValue.Length);
+        payload.Append(':');
+        payload.Append(fieldValue);
+        payload.Append(',');
     }
 }

@@ -109,7 +109,7 @@ public class EncryptedProfileRepository : IProfileRepository
     /// <inheritdoc />
     public PublicKeySetData FindPublicKeySetByHandle(string keySetHandle)
     {
-        return PublicKeySetRegistrar.Resolve(keySetHandle);
+        return PublicKeySetRegistrar.Resolve(keySetHandle)!;
     }
 
     public IEnumerable<PublicKeySetData> GetAllPublicKeySets()

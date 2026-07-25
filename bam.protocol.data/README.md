@@ -101,11 +101,14 @@ using Bam.Protocol.Data;
 IProfileRepository repo = serviceRegistry.Get<IProfileRepository>();
 
 // Register a public key set (first registration wins — the registered key set is the
-// trust anchor for device-key account confirmation; a second registration for the same
-// handle throws PublicKeySetConflictException)
+// trust anchor for device-key account confirmation). A second registration for the same
+// handle throws PublicKeySetConflictException; key material already registered under a
+// different handle throws PublicKeySetKeyMaterialConflictException; unparseable key
+// material throws InvalidPublicKeySetException. The registrar stamps the creation time
+// server-side, so a caller-supplied Created cannot influence resolution.
 PublicKeySetData keySet = new PublicKeySetData
 {
-    KeySetHandle = actorHandle,
+    KeySetHandle = actorHandle,   // handle equality is ORDINAL and case-sensitive
     PublicRsaKey = rsaPublicKeyPem,
     PublicEccKey = eccPublicKeyPem
 };
@@ -115,22 +118,36 @@ repo.SavePublicKeySet(keySet);
 PublicKeySetData found = repo.FindPublicKeySetByHandle(actorHandle);
 
 // Replace a registered key set: rotation requires proof of possession of the currently
-// registered key — a SHA512WITHRSA signature over KeySetRotationPayload.Compose(newKeySet)
-// made with the private key matching the registered public RSA key.  The row is updated
-// in place; an invalid proof throws InvalidKeySetRotationException.
+// registered key — a SHA512WITHRSA signature over
+// KeySetRotationPayload.Compose(currentPublicRsaKeySha256, newKeySet), made with the
+// private key matching the currently registered public RSA key. The payload binds the
+// SHA-256 of the current key and is length-prefixed so it cannot be re-split into a
+// different key set. The row is updated in place; an invalid proof or unparseable key
+// throws InvalidKeySetRotationException.
 PublicKeySetData newKeySet = new PublicKeySetData
 {
     KeySetHandle = actorHandle,
     PublicRsaKey = newRsaPublicKeyPem,
     PublicEccKey = newEccPublicKeyPem
 };
-byte[] rotationSignature = SignWithCurrentPrivateKey(KeySetRotationPayload.Compose(newKeySet));
+string currentPublicRsaKeySha256 = found.PublicRsaKey.Sha256();
+byte[] rotationSignature = SignWithCurrentPrivateKey(
+    KeySetRotationPayload.Compose(currentPublicRsaKeySha256, newKeySet));
 repo.RotatePublicKeySet(newKeySet, rotationSignature);
 ```
 
 > Consumers exposing key-set registration or rotation over a network surface remain
 > responsible for authenticating and authorizing the caller; the policy above bounds what
 > any caller can do to an already-registered handle (see `IPublicKeySetRegistrar`).
+>
+> **Permanent-denial trade-off:** because registration is first-registration-wins, rotation
+> requires the current private key, and there is no revocation path yet
+> (BryanApellanes/bam.protocol#11), a handle whose registered key becomes unusable (a lost
+> private key, or key material that no longer parses) cannot currently be recovered or
+> re-registered. Registration validates key parseability up front to avoid bricking a handle
+> with unparseable material, but a valid-but-uncontrolled first registration is still
+> unrecoverable until revocation lands. Rotation freshness against replay after a key
+> rollback is tracked as BryanApellanes/bam.protocol#15.
 
 ### Device initialization
 ```csharp

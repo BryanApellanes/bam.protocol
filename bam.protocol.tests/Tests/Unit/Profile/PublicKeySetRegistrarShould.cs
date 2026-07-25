@@ -1,3 +1,4 @@
+using Bam;
 using Bam.Data.Dynamic.Objects;
 using Bam.Data.Objects;
 using Bam.Encryption;
@@ -43,10 +44,11 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
         return new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider()));
     }
 
-    private static byte[] SignRotation(RsaPublicPrivateKeyPair signingKeyPair, PublicKeySetData proposed)
+    private static byte[] SignRotation(RsaPublicPrivateKeyPair signingKeyPair, string currentPublicRsaKeyPem, PublicKeySetData proposed)
     {
         RsaSignatureProvider signatureProvider = new RsaSignatureProvider();
-        ISignature signature = signatureProvider.Sign(signingKeyPair, KeySetRotationPayload.Compose(proposed), RsaKeySetRotationVerifier.Algorithm);
+        string payload = KeySetRotationPayload.Compose(currentPublicRsaKeyPem.Sha256(), proposed);
+        ISignature signature = signatureProvider.Sign(signingKeyPair, payload, RsaKeySetRotationVerifier.Algorithm);
         return signature.SignatureBytes;
     }
 
@@ -64,8 +66,8 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     KeySetHandle = "first-registrant",
                     PublicRsaKey = keyPair.PublicKeyPem,
                 });
-                PublicKeySetData resolved = registrar.Resolve("first-registrant");
-                return resolved;
+                PublicKeySetData? resolved = registrar.Resolve("first-registrant");
+                return resolved!;
             })
         .TheTest
         .ShouldPass(because =>
@@ -108,8 +110,8 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     conflictThrown = true;
                 }
 
-                PublicKeySetData resolved = registrar.Resolve("victim");
-                return new DuplicateRegistrationOutcome(conflictThrown, resolved.PublicRsaKey);
+                PublicKeySetData? resolved = registrar.Resolve("victim");
+                return new DuplicateRegistrationOutcome(conflictThrown, resolved!.PublicRsaKey);
             })
         .TheTest
         .ShouldPass(because =>
@@ -150,8 +152,8 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     Created = new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc),
                 });
 
-                PublicKeySetData resolved = registrar.Resolve("contested");
-                return resolved;
+                PublicKeySetData? resolved = registrar.Resolve("contested");
+                return resolved!;
             })
         .TheTest
         .ShouldPass(because =>
@@ -159,6 +161,268 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
             because.TheResult
                 .IsNotNull()
                 .As<PublicKeySetData>("the earliest-created key set wins regardless of insertion order", k => k.PublicRsaKey == victimKeyPair.PublicKeyPem);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void StampCreatedServerSideIgnoringCallerValue()
+    {
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        DateTime beforeRegister = DateTime.UtcNow.AddSeconds(-5);
+
+        When.A<PublicKeySetRegistrar>("stamps Created server-side ignoring a caller-supplied value",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(StampCreatedServerSideIgnoringCallerValue))),
+            (registrar) =>
+            {
+                // an attacker submits Created = MinValue hoping to win earliest-created-wins;
+                // the registrar must stamp the real UtcNow and ignore the supplied value (C3)
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "stamped",
+                    PublicRsaKey = keyPair.PublicKeyPem,
+                    Created = DateTime.MinValue,
+                });
+                PublicKeySetData? resolved = registrar.Resolve("stamped");
+                return resolved!;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<PublicKeySetData>("the persisted Created is server-stamped, not the caller's MinValue", k => k.Created != null && k.Created.Value >= beforeRegister);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRsaKeyMaterialAlreadyRegisteredUnderAnotherHandle()
+    {
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRsaKeyMaterialAlreadyRegisteredUnderAnotherHandle));
+
+        When.A<PublicKeySetRegistrar>("rejects registering the same RSA key under a different handle",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "victim",
+                    PublicRsaKey = victimKeyPair.PublicKeyPem,
+                });
+
+                bool conflictThrown = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData
+                    {
+                        KeySetHandle = "evil",
+                        PublicRsaKey = victimKeyPair.PublicKeyPem,
+                    });
+                }
+                catch (PublicKeySetKeyMaterialConflictException)
+                {
+                    conflictThrown = true;
+                }
+
+                PublicKeySetData? evil = registrar.Resolve("evil");
+                return new KeyMaterialConflictOutcome(conflictThrown, evil == null);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<KeyMaterialConflictOutcome>("the reused-RSA registration threw PublicKeySetKeyMaterialConflictException", o => o.ConflictThrown)
+                .As<KeyMaterialConflictOutcome>("no row was created for the attacker handle", o => o.NoRowForSecondHandle);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectEccKeyMaterialAlreadyRegisteredUnderAnotherHandle()
+    {
+        EccPublicPrivateKeyPair victimKeyPair = new EccPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectEccKeyMaterialAlreadyRegisteredUnderAnotherHandle));
+
+        When.A<PublicKeySetRegistrar>("rejects registering the same ECC key under a different handle",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "victim",
+                    PublicEccKey = victimKeyPair.PublicKeyPem,
+                });
+
+                bool conflictThrown = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData
+                    {
+                        KeySetHandle = "evil",
+                        PublicEccKey = victimKeyPair.PublicKeyPem,
+                    });
+                }
+                catch (PublicKeySetKeyMaterialConflictException)
+                {
+                    conflictThrown = true;
+                }
+
+                PublicKeySetData? evil = registrar.Resolve("evil");
+                return new KeyMaterialConflictOutcome(conflictThrown, evil == null);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<KeyMaterialConflictOutcome>("the reused-ECC registration threw PublicKeySetKeyMaterialConflictException", o => o.ConflictThrown)
+                .As<KeyMaterialConflictOutcome>("no row was created for the attacker handle", o => o.NoRowForSecondHandle);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectUnparseableKeyOnRegister()
+    {
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectUnparseableKeyOnRegister));
+
+        When.A<PublicKeySetRegistrar>("rejects registering unparseable key material and leaves the store unchanged",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                bool rejected = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData
+                    {
+                        KeySetHandle = "garbage",
+                        PublicRsaKey = "not a pem",
+                    });
+                }
+                catch (InvalidPublicKeySetException)
+                {
+                    rejected = true;
+                }
+
+                PublicKeySetData? resolved = registrar.Resolve("garbage");
+                return new RejectionOutcome(rejected, resolved == null);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RejectionOutcome>("registering garbage threw InvalidPublicKeySetException", o => o.Rejected)
+                .As<RejectionOutcome>("no row was persisted for the garbage key", o => o.StoreUnchanged);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectUnparseableKeyOnRotate()
+    {
+        RsaPublicPrivateKeyPair currentKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectUnparseableKeyOnRotate));
+
+        When.A<PublicKeySetRegistrar>("rejects rotating to unparseable key material and keeps the current key",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "rotator",
+                    PublicRsaKey = currentKeyPair.PublicKeyPem,
+                });
+
+                PublicKeySetData garbageProposal = new PublicKeySetData
+                {
+                    KeySetHandle = "rotator",
+                    PublicRsaKey = "not a pem",
+                };
+
+                bool rejected = false;
+                try
+                {
+                    // signature content is irrelevant — parse validation runs before verification
+                    registrar.Rotate(garbageProposal, new byte[] { 1, 2, 3 });
+                }
+                catch (InvalidKeySetRotationException)
+                {
+                    rejected = true;
+                }
+
+                PublicKeySetData? resolved = registrar.Resolve("rotator");
+                return new RotationRejectionOutcome(rejected, resolved!.PublicRsaKey);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RotationRejectionOutcome>("rotating to garbage threw InvalidKeySetRotationException", o => o.Rejected)
+                .As<RotationRejectionOutcome>("the handle still resolves to the original key", o => o.ResolvedRsaKey == currentKeyPair.PublicKeyPem);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectNullOrEmptyHandleAndNullKeySet()
+    {
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+
+        When.A<PublicKeySetRegistrar>("argument-validates the key set and handle",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(RejectNullOrEmptyHandleAndNullKeySet))),
+            (registrar) =>
+            {
+                bool nullRejected = false;
+                try
+                {
+                    registrar.Register(null!);
+                }
+                catch (ArgumentNullException)
+                {
+                    nullRejected = true;
+                }
+
+                bool emptyRejected = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "", PublicRsaKey = keyPair.PublicKeyPem });
+                }
+                catch (ArgumentException)
+                {
+                    emptyRejected = true;
+                }
+
+                bool whitespaceRejected = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "   ", PublicRsaKey = keyPair.PublicKeyPem });
+                }
+                catch (ArgumentException)
+                {
+                    whitespaceRejected = true;
+                }
+
+                return new ValidationOutcome(nullRejected, emptyRejected, whitespaceRejected);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<ValidationOutcome>("null key set threw ArgumentNullException", o => o.NullRejected)
+                .As<ValidationOutcome>("empty handle threw ArgumentException", o => o.EmptyRejected)
+                .As<ValidationOutcome>("whitespace handle threw ArgumentException", o => o.WhitespaceRejected);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -186,13 +450,13 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     KeySetHandle = "rotator",
                     PublicRsaKey = nextKeyPair.PublicKeyPem,
                 };
-                byte[] rotationSignature = SignRotation(currentKeyPair, proposed);
+                byte[] rotationSignature = SignRotation(currentKeyPair, currentKeyPair.PublicKeyPem, proposed);
 
                 registrar.Rotate(proposed, rotationSignature);
 
-                PublicKeySetData resolved = registrar.Resolve("rotator");
+                PublicKeySetData? resolved = registrar.Resolve("rotator");
                 int rowCount = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "rotator").Count();
-                return new RotationSuccessOutcome(resolved.PublicRsaKey, rowCount);
+                return new RotationSuccessOutcome(resolved!.PublicRsaKey, rowCount);
             })
         .TheTest
         .ShouldPass(because =>
@@ -227,8 +491,8 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     KeySetHandle = "target",
                     PublicRsaKey = attackerKeyPair.PublicKeyPem,
                 };
-                // the attacker signs with their own key, not the currently registered key
-                byte[] forgedSignature = SignRotation(attackerKeyPair, proposed);
+                // the attacker binds the correct current-key SHA but signs with their own key
+                byte[] forgedSignature = SignRotation(attackerKeyPair, currentKeyPair.PublicKeyPem, proposed);
 
                 bool rotationRejected = false;
                 try
@@ -240,8 +504,8 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     rotationRejected = true;
                 }
 
-                PublicKeySetData resolved = registrar.Resolve("target");
-                return new RotationRejectionOutcome(rotationRejected, resolved.PublicRsaKey);
+                PublicKeySetData? resolved = registrar.Resolve("target");
+                return new RotationRejectionOutcome(rotationRejected, resolved!.PublicRsaKey);
             })
         .TheTest
         .ShouldPass(because =>
@@ -269,7 +533,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                     KeySetHandle = "unregistered",
                     PublicRsaKey = keyPair.PublicKeyPem,
                 };
-                byte[] rotationSignature = SignRotation(keyPair, proposed);
+                byte[] rotationSignature = SignRotation(keyPair, keyPair.PublicKeyPem, proposed);
 
                 bool rotationRejected = false;
                 try
@@ -294,6 +558,12 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
     }
 
     private sealed record DuplicateRegistrationOutcome(bool ConflictThrown, string ResolvedRsaKey);
+
+    private sealed record KeyMaterialConflictOutcome(bool ConflictThrown, bool NoRowForSecondHandle);
+
+    private sealed record RejectionOutcome(bool Rejected, bool StoreUnchanged);
+
+    private sealed record ValidationOutcome(bool NullRejected, bool EmptyRejected, bool WhitespaceRejected);
 
     private sealed record RotationSuccessOutcome(string ResolvedRsaKey, int RowCount);
 
