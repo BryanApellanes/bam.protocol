@@ -23,8 +23,6 @@ namespace Bam.Protocol.Profile;
 /// </summary>
 public class PublicKeySetRegistrar : IPublicKeySetRegistrar
 {
-    private static readonly object _registrationLock = new object();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PublicKeySetRegistrar"/> class.
     /// </summary>
@@ -72,36 +70,50 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 unparseable.Value.Item2);
         }
 
-        lock (_registrationLock)
+        lock (KeySetRegistrationLock.Sync)
         {
             // Single materialization: check both first-registration-wins (handle already taken)
             // and one-handle-to-one-key-material in one pass, rather than a Resolve scan plus a
             // separate uniqueness scan (bam.protocol#8 review S6). True indexed lookup is a
-            // store-level concern tracked in bam.protocol#13.
-            bool handleExists = false;
-            string? conflictingHandle = null;
+            // store-level concern tracked in bam.protocol#13. Revoked tombstones (bam.protocol#11)
+            // are asymmetric here: a revoked row frees its handle for re-registration, but its
+            // key material stays blocklisted from re-registration under any handle.
+            bool activeHandleExists = false;
+            PublicKeySetData? activeMaterialConflict = null;
+            PublicKeySetData? revokedMaterialConflict = null;
             foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
             {
-                if (existing.KeySetHandle == handle)
+                if (existing.KeySetHandle == handle && existing.RevokedUtc == null)
                 {
-                    handleExists = true;
-                    continue;
+                    activeHandleExists = true;
                 }
-                if (conflictingHandle == null && SharesKeyMaterial(existing, publicKeySetData))
+                else if (SharesKeyMaterial(existing, publicKeySetData))
                 {
-                    conflictingHandle = existing.KeySetHandle;
+                    if (existing.RevokedUtc == null)
+                    {
+                        activeMaterialConflict ??= existing;
+                    }
+                    else
+                    {
+                        revokedMaterialConflict ??= existing;
+                    }
                 }
             }
 
-            if (handleExists)
+            if (activeHandleExists)
             {
                 Log.Warn("Rejected key-set registration for handle '{0}': a key set is already registered.", handle);
                 throw new PublicKeySetConflictException(handle);
             }
-            if (conflictingHandle != null)
+            if (activeMaterialConflict != null)
             {
-                Log.Warn("Rejected key-set registration for handle '{0}': key material already registered under handle '{1}'.", handle, conflictingHandle);
-                throw new PublicKeySetKeyMaterialConflictException(handle, conflictingHandle);
+                Log.Warn("Rejected key-set registration for handle '{0}': key material already registered under handle '{1}'.", handle, activeMaterialConflict.KeySetHandle);
+                throw new PublicKeySetKeyMaterialConflictException(handle, activeMaterialConflict.KeySetHandle);
+            }
+            if (revokedMaterialConflict != null)
+            {
+                Log.Warn("Rejected key-set registration for handle '{0}': key material is revoked and blocklisted.", handle);
+                throw new RevokedKeyMaterialException(handle);
             }
 
             NormalizeServerControlledFields(publicKeySetData);
@@ -135,7 +147,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 unparseable.Value.Item2);
         }
 
-        lock (_registrationLock)
+        lock (KeySetRegistrationLock.Sync)
         {
             PublicKeySetData? current = Resolve(handle);
             if (current == null)
@@ -167,12 +179,18 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             // otherwise an attacker rotates a handle they control to a victim's public key, and
             // FindProfileByPublicKey misattributes the victim's session (bam.protocol#8 review C4 /
             // challenger B1). The helper skips the handle being rotated, so rotating to your own
-            // current material remains a permitted no-op.
-            string? conflictingHandle = FindHandleRegisteringSameKeyMaterial(newKeySet);
-            if (conflictingHandle != null)
+            // current material remains a permitted no-op. A revoked match means the proposed
+            // material is blocklisted (bam.protocol#11).
+            PublicKeySetData? materialConflict = FindRowRegisteringSameKeyMaterial(newKeySet);
+            if (materialConflict != null)
             {
-                Log.Warn("Rejected key-set rotation for handle '{0}': key material already registered under handle '{1}'.", handle, conflictingHandle);
-                throw new PublicKeySetKeyMaterialConflictException(handle, conflictingHandle);
+                if (materialConflict.RevokedUtc != null)
+                {
+                    Log.Warn("Rejected key-set rotation for handle '{0}': proposed key material is revoked and blocklisted.", handle);
+                    throw new RevokedKeyMaterialException(handle);
+                }
+                Log.Warn("Rejected key-set rotation for handle '{0}': key material already registered under handle '{1}'.", handle, materialConflict.KeySetHandle);
+                throw new PublicKeySetKeyMaterialConflictException(handle, materialConflict.KeySetHandle);
             }
 
             current.PublicRsaKey = newKeySet.PublicRsaKey;
@@ -184,7 +202,9 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// <inheritdoc />
     public PublicKeySetData? Resolve(string keySetHandle)
     {
-        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle)
+        // Skip revoked tombstones (bam.protocol#11): a revoked key set is no longer authoritative,
+        // so FindPublicKeySetByHandle and device-key confirmation stop honoring it.
+        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle && p.RevokedUtc == null)
             .OrderBy(p => p.Created)
             .ThenBy(p => p.Id)
             .FirstOrDefault();
@@ -206,13 +226,14 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     }
 
     /// <summary>
-    /// Returns the handle a piece of the key set's public key material is already registered
-    /// under (RSA or ECC) by a <i>different</i> handle, or null when the material is not
-    /// registered elsewhere.  Enforces the one handle-to-one key-set invariant that
-    /// <c>FindProfileByPublicKey</c> relies on; used by the rotation path (Register uses a
-    /// combined single-pass scan).
+    /// Returns the first row (active or revoked) under a <i>different</i> handle that shares this
+    /// key set's public key material, or null when the material is not registered elsewhere.
+    /// Enforces the one handle-to-one key-set invariant that <c>FindProfileByPublicKey</c> relies
+    /// on; used by the rotation path (Register uses a combined single-pass scan). The caller
+    /// inspects <see cref="PublicKeySetData.RevokedUtc"/> to distinguish an active conflict from
+    /// blocklisted (revoked) material.
     /// </summary>
-    private string? FindHandleRegisteringSameKeyMaterial(PublicKeySetData keySet)
+    private PublicKeySetData? FindRowRegisteringSameKeyMaterial(PublicKeySetData keySet)
     {
         foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
         {
@@ -222,7 +243,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             }
             if (SharesKeyMaterial(existing, keySet))
             {
-                return existing.KeySetHandle;
+                return existing;
             }
         }
         return null;

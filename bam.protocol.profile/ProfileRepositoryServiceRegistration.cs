@@ -35,15 +35,22 @@ public static class ProfileRepositoryServiceRegistration
             .For<ISignatureProvider>().Use<RsaSignatureProvider>()
             .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
             .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>()
-            // Construct EncryptedProfileRepository via its two-arg constructor through a
+            // Break-glass revocation (bam.protocol#11). The admin key is left unconfigured here
+            // (fail-closed — no revocation can be authorized); a consumer overrides
+            // IAdminPublicKeySource with the offline YubiKey's public key per deployment.
+            .For<IAdminPublicKeySource>().Use(new StaticAdminPublicKeySource(null))
+            .For<IRevocationAuthority>().Use<RsaRevocationAuthority>()
+            .For<IKeySetRevocation>().Use<KeySetRevocation>()
+            // Construct EncryptedProfileRepository via its three-arg constructor through a
             // factory: DependencyProvider.GetCtorParams selects the FIRST satisfiable
             // constructor, which is the one-arg convenience ctor — resolving IProfileRepository
-            // without this factory would self-compose the default policy and silently ignore the
-            // IPublicKeySetRegistrar registered above (bam.protocol#8 review SF1).
+            // without this factory would self-compose the default policies and silently ignore the
+            // registry-supplied IPublicKeySetRegistrar/IKeySetRevocation (bam.protocol#8 review SF1).
             .For<IProfileRepository>().Use<EncryptedProfileRepository>(
                 serviceRegistry => new EncryptedProfileRepository(
                     serviceRegistry.Get<ObjectDataRepository>(),
-                    serviceRegistry.Get<IPublicKeySetRegistrar>()));
+                    serviceRegistry.Get<IPublicKeySetRegistrar>(),
+                    serviceRegistry.Get<IKeySetRevocation>()));
 
         return registry;
     }

@@ -134,20 +134,31 @@ string currentPublicRsaKeySha256 = found.PublicRsaKey.Sha256();
 byte[] rotationSignature = SignWithCurrentPrivateKey(
     KeySetRotationPayload.Compose(currentPublicRsaKeySha256, newKeySet));
 repo.RotatePublicKeySet(newKeySet, rotationSignature);
+
+// Break-glass revocation: an authorized administrator revokes the active key set, freeing the
+// handle for re-registration while keeping the revoked (compromised) key material blocklisted.
+// The admin signs the target-bound RevocationPayload offline (e.g. on a YubiKey / PIV applet);
+// only the admin PUBLIC key is held by the framework (IAdminPublicKeySource), and revocation
+// fails closed when no admin key is configured. A revoked key set is no longer authoritative,
+// so FindPublicKeySetByHandle and device-key confirmation stop honoring it.
+PublicKeySetData target = repo.FindPublicKeySetByHandle(actorHandle);
+byte[] adminProof = SignWithBreakGlassAdminPrivateKey(RevocationPayload.Compose(target));
+repo.RevokePublicKeySet(actorHandle, adminProof);
 ```
 
 > Consumers exposing key-set registration or rotation over a network surface remain
 > responsible for authenticating and authorizing the caller; the policy above bounds what
 > any caller can do to an already-registered handle (see `IPublicKeySetRegistrar`).
 >
-> **Permanent-denial trade-off:** because registration is first-registration-wins, rotation
-> requires the current private key, and there is no revocation path yet
-> (BryanApellanes/bam.protocol#11), a handle whose registered key becomes unusable (a lost
-> private key, or key material that no longer parses) cannot currently be recovered or
-> re-registered. Registration validates key parseability up front to avoid bricking a handle
-> with unparseable material, but a valid-but-uncontrolled first registration is still
-> unrecoverable until revocation lands. Rotation freshness against replay after a key
-> rollback is tracked as BryanApellanes/bam.protocol#15.
+> **Recovery via revocation:** registration is first-registration-wins and rotation requires the
+> current private key, so a handle whose registered key becomes unusable (a lost private key, or a
+> valid-but-uncontrolled first registration) cannot recover by itself. The recovery path is
+> **break-glass revocation** (`RevokePublicKeySet`, BryanApellanes/bam.protocol#11): an authorized
+> administrator revokes the key set, which frees the handle for re-registration while keeping the
+> revoked key material blocklisted. This also recovers a **squatted** handle (below) and an
+> **ECC-only** handle (below). Break-glass admin-key rotation is tracked as
+> BryanApellanes/bam.protocol#17, and revocation-proof freshness beyond target-binding as
+> BryanApellanes/bam.protocol#15.
 >
 > **Pre-registration squatting:** because a public key maps to exactly one handle, an attacker
 > who learns a victim's public key *before* the victim registers it (the client public key
