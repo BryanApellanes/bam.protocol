@@ -44,13 +44,11 @@ public class CertificateManagerShould : UnitTestMenuContainer
 
     private static CertificateAuthority CreateCertificateAuthority(
         IActor issuer,
-        IKeyManager keyManager,
-        ICertificateManager certificateManager)
+        IKeyManager keyManager)
     {
         return new CertificateAuthority(
             issuer,
             keyManager,
-            certificateManager,
             new BamX509NameProvider(),
             new CompositeKeyCalculator(),
             new CertificateSerialNumberProvider()
@@ -79,8 +77,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = issuerKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -121,8 +118,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = issuerKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -173,8 +169,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = subjectKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -232,8 +227,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                 issuer.Name.Returns("No Key Issuer");
 
                 IKeyManager keyManager = Substitute.For<IKeyManager>();
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
