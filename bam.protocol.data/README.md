@@ -148,6 +148,24 @@ repo.RotatePublicKeySet(newKeySet, rotationSignature);
 > with unparseable material, but a valid-but-uncontrolled first registration is still
 > unrecoverable until revocation lands. Rotation freshness against replay after a key
 > rollback is tracked as BryanApellanes/bam.protocol#15.
+>
+> **Pre-registration squatting:** because a public key maps to exactly one handle, an attacker
+> who learns a victim's public key *before* the victim registers it (the client public key
+> travels in `StartSessionRequest` and is stored into session state, so it is observable
+> pre-registration) can register it under a squatted handle first and permanently block the
+> victim's own registration of that key. It is recoverable — the victim generates a fresh
+> keypair — and it needs the same unauthenticated registration surface that consumer authz
+> (BryanApellanes/bamsvc#6, BryanApellanes/socialkeyinfrastructure.io#9) is responsible for
+> closing. Enforcing uniqueness is still strictly safer than not; this is the accepted trade.
+>
+> **ECC-only registrations are role-limited and unrotatable:** registering a key set with only
+> a `PublicEccKey` (no RSA) is allowed for encryption-only actors (ECDH shared-key derivation),
+> but such a handle can never rotate (rotation proves possession of the current *RSA* key) and
+> can never pass device-key confirmation (which requires a non-empty RSA key). There is no
+> in-place upgrade to add an RSA key later — rotation needs a current RSA key, re-registration
+> conflicts, and revocation does not exist yet (BryanApellanes/bam.protocol#11) — so an
+> ECC-only handle is permanently encryption-only, recoverable only by using a different handle
+> with fresh key material.
 
 ### Device initialization
 ```csharp
