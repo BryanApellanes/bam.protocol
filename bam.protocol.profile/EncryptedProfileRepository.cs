@@ -18,7 +18,7 @@ public class EncryptedProfileRepository : IProfileRepository
     public EncryptedProfileRepository(ObjectDataRepository repository)
         : this(repository,
             new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())),
-            new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null)), new StaticAdminPublicKeySource(null)))
+            new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null))))
     {
     }
 

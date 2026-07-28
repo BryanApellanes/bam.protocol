@@ -111,4 +111,25 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void FailClosedWhenAdminKeyMalformed()
+    {
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        PublicKeySetData target = Target("holder", keyPair.PublicKeyPem);
+
+        When.A<RsaRevocationAuthority>("fails closed (returns a failed verification, not a throw) when the admin key is malformed",
+            () => CreateAuthority("not a pem"),
+            (authority) => authority.Verify(target, Sign(adminKeyPair, target)))
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<ISignatureVerification>("verification fails closed for malformed admin key material", v => !v.Success);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
 }

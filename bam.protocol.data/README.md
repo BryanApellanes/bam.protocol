@@ -155,10 +155,23 @@ repo.RevokePublicKeySet(actorHandle, adminProof);
 > valid-but-uncontrolled first registration) cannot recover by itself. The recovery path is
 > **break-glass revocation** (`RevokePublicKeySet`, BryanApellanes/bam.protocol#11): an authorized
 > administrator revokes the key set, which frees the handle for re-registration while keeping the
-> revoked key material blocklisted. This also recovers a **squatted** handle (below) and an
-> **ECC-only** handle (below). Break-glass admin-key rotation is tracked as
+> revoked key material blocklisted. This can recover an **ECC-only** handle (below), and a
+> **squatted** handle *only when the consumer authorizes the re-registration* — revocation frees
+> the handle but does not itself bind the successor, so against a persistent squatter it re-opens
+> the same registration race (admin-authorized successor binding is tracked as
+> BryanApellanes/bam.protocol#21). Break-glass admin-key rotation is tracked as
 > BryanApellanes/bam.protocol#17, and revocation-proof freshness beyond target-binding as
 > BryanApellanes/bam.protocol#15.
+>
+> **Revocation does not, by itself, terminate access on the default server pipeline.** Until the
+> revoked-key filter in `ProfileManager.FindProfileByPublicKey` lands (BryanApellanes/bam.protocol#13),
+> a holder of a revoked private key still **authenticates** (the JWT is verified against the
+> client-supplied public key from session state, with no active-key-set check) and still **retains
+> the victim's access level** (`ActorResolver` → `FindProfileByPublicKey` unfiltered scan →
+> `GroupAccessLevelProvider`). Revocation stops certificate minting and handle resolution via
+> `FindPublicKeySetByHandle`/device-key confirmation, but not authentication or the actor's
+> authorization level — an operator revoking to end an intrusion must also land #13 (and rely on
+> consumer-side session invalidation) to fully cut access.
 >
 > **Pre-registration squatting:** because a public key maps to exactly one handle, an attacker
 > who learns a victim's public key *before* the victim registers it (the client public key
@@ -173,10 +186,10 @@ repo.RevokePublicKeySet(actorHandle, adminProof);
 > a `PublicEccKey` (no RSA) is allowed for encryption-only actors (ECDH shared-key derivation),
 > but such a handle can never rotate (rotation proves possession of the current *RSA* key) and
 > can never pass device-key confirmation (which requires a non-empty RSA key). There is no
-> in-place upgrade to add an RSA key later — rotation needs a current RSA key, re-registration
-> conflicts, and revocation does not exist yet (BryanApellanes/bam.protocol#11) — so an
-> ECC-only handle is permanently encryption-only, recoverable only by using a different handle
-> with fresh key material.
+> in-place upgrade to add an RSA key later — rotation needs a current RSA key and re-registration
+> conflicts on the handle — so an ECC-only handle is permanently encryption-only until its key set
+> is **revoked** (BryanApellanes/bam.protocol#11), after which the freed handle can be
+> re-registered with an RSA-bearing key set, or a different handle with fresh key material is used.
 
 ### Device initialization
 ```csharp

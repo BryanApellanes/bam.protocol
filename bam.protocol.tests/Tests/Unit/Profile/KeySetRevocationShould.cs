@@ -45,13 +45,21 @@ public class KeySetRevocationShould : UnitTestMenuContainer
     private static KeySetRevocation CreateRevocation(ObjectDataRepository repository, RsaPublicPrivateKeyPair adminKeyPair)
     {
         StaticAdminPublicKeySource adminSource = new StaticAdminPublicKeySource(adminKeyPair.PublicKeyPem);
-        return new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), adminSource), adminSource);
+        return new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), adminSource));
     }
 
     private static byte[] SignRevocation(RsaPublicPrivateKeyPair adminKeyPair, PublicKeySetData target)
     {
         RsaSignatureProvider signatureProvider = new RsaSignatureProvider();
         ISignature signature = signatureProvider.Sign(adminKeyPair, RevocationPayload.Compose(target), RsaRevocationAuthority.Algorithm);
+        return signature.SignatureBytes;
+    }
+
+    private static byte[] SignRotation(RsaPublicPrivateKeyPair signingKeyPair, string currentPublicRsaKeyPem, PublicKeySetData proposed)
+    {
+        RsaSignatureProvider signatureProvider = new RsaSignatureProvider();
+        string payload = KeySetRotationPayload.Compose(currentPublicRsaKeyPem.Sha256(), proposed);
+        ISignature signature = signatureProvider.Sign(signingKeyPair, payload, RsaKeySetRotationVerifier.Algorithm);
         return signature.SignatureBytes;
     }
 
@@ -293,6 +301,211 @@ public class KeySetRevocationShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void RejectRotationBackToOwnRevokedMaterial()
+    {
+        RsaPublicPrivateKeyPair compromisedKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair freshKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRotationBackToOwnRevokedMaterial));
+
+        When.A<KeySetRevocation>("blocks rotating a handle back to its own revoked key material",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = compromisedKeyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("holder")!;
+                revocation.Revoke("holder", SignRevocation(adminKeyPair, active));
+
+                registrar.Register(new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = freshKeyPair.PublicKeyPem });
+
+                PublicKeySetData proposed = new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = compromisedKeyPair.PublicKeyPem };
+                byte[] rotationSignature = SignRotation(freshKeyPair, freshKeyPair.PublicKeyPem, proposed);
+
+                bool blocked = false;
+                try
+                {
+                    registrar.Rotate(proposed, rotationSignature);
+                }
+                catch (RevokedKeyMaterialException)
+                {
+                    blocked = true;
+                }
+
+                PublicKeySetData? resolved = registrar.Resolve("holder");
+                return new RotationBlocklistOutcome(blocked, resolved != null && resolved.PublicRsaKey == compromisedKeyPair.PublicKeyPem);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<RotationBlocklistOutcome>("rotating back to the handle's own revoked material is blocked", o => o.Blocked)
+                .As<RotationBlocklistOutcome>("the revoked material did not become authoritative again", o => !o.RevokedMaterialActiveAgain);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRotationToAnotherHandlesRevokedMaterial()
+    {
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair attackerKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRotationToAnotherHandlesRevokedMaterial));
+
+        When.A<KeySetRevocation>("blocks rotating a handle to another handle's revoked key material",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = victimKeyPair.PublicKeyPem });
+                PublicKeySetData victimActive = registrar.Resolve("victim")!;
+                revocation.Revoke("victim", SignRevocation(adminKeyPair, victimActive));
+
+                registrar.Register(new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = attackerKeyPair.PublicKeyPem });
+
+                PublicKeySetData proposed = new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = victimKeyPair.PublicKeyPem };
+                byte[] rotationSignature = SignRotation(attackerKeyPair, attackerKeyPair.PublicKeyPem, proposed);
+
+                bool blocked = false;
+                try
+                {
+                    registrar.Rotate(proposed, rotationSignature);
+                }
+                catch (RevokedKeyMaterialException)
+                {
+                    blocked = true;
+                }
+                return blocked;
+            })
+        .TheTest
+        .ShouldPass<bool>((because, _, blocked) =>
+        {
+            because.ItsTrue("rotating to another handle's revoked material is blocked", blocked);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectReRegisteringWhitespaceVariantOfRevokedMaterial()
+    {
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectReRegisteringWhitespaceVariantOfRevokedMaterial));
+
+        When.A<KeySetRevocation>("blocklists a whitespace-re-encoded variant of revoked key material",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = victimKeyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("victim")!;
+                revocation.Revoke("victim", SignRevocation(adminKeyPair, active));
+
+                // the same key, re-encoded with an appended newline: string- and SHA-unequal, but
+                // parses to the identical key — must still be caught by the canonical comparison
+                string reEncoded = victimKeyPair.PublicKeyPem + "\n";
+                bool blocked = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "evil", PublicRsaKey = reEncoded });
+                }
+                catch (RevokedKeyMaterialException)
+                {
+                    blocked = true;
+                }
+                return blocked;
+            })
+        .TheTest
+        .ShouldPass<bool>((because, _, blocked) =>
+        {
+            because.ItsTrue("a re-encoded variant of revoked material is blocklisted", blocked);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRevocationOfAnAlreadyRevokedHandle()
+    {
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRevocationOfAnAlreadyRevokedHandle));
+
+        When.A<KeySetRevocation>("rejects revoking a handle whose key set is already revoked",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = keyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("holder")!;
+                byte[] proof = SignRevocation(adminKeyPair, active);
+                revocation.Revoke("holder", proof);
+
+                bool secondRejected = false;
+                try
+                {
+                    revocation.Revoke("holder", proof);
+                }
+                catch (KeySetRevocationException)
+                {
+                    secondRejected = true;
+                }
+                return secondRejected;
+            })
+        .TheTest
+        .ShouldPass<bool>((because, _, secondRejected) =>
+        {
+            because.ItsTrue("revoking an already-revoked handle threw KeySetRevocationException (no active key set)", secondRejected);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void FreeTheRevokeToReRegisterWindowToAnyCaller()
+    {
+        // Documents the CURRENT revoke->re-register behavior: the framework does not authenticate
+        // callers, so a freed handle is re-registrable by whoever calls first (first-registration-
+        // wins). Binding the re-registration to an admin-authorized successor is deferred to
+        // bam.protocol#21; until then, hijack resistance during the window is the consumer's authz
+        // responsibility (bamsvc#6, socialkeyinfrastructure.io#9).
+        RsaPublicPrivateKeyPair originalKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair successorKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(FreeTheRevokeToReRegisterWindowToAnyCaller));
+
+        When.A<KeySetRevocation>("frees the handle to any caller during the revoke-to-re-register window (consumer-gated)",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "handle", PublicRsaKey = originalKeyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("handle")!;
+                revocation.Revoke("handle", SignRevocation(adminKeyPair, active));
+
+                // any caller with fresh (non-blocklisted) material can claim the freed handle
+                registrar.Register(new PublicKeySetData { KeySetHandle = "handle", PublicRsaKey = successorKeyPair.PublicKeyPem });
+                PublicKeySetData? resolved = registrar.Resolve("handle");
+                return resolved!;
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<PublicKeySetData>("the freed handle is re-registrable with fresh successor material", k => k.PublicRsaKey == successorKeyPair.PublicKeyPem);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record RotationBlocklistOutcome(bool Blocked, bool RevokedMaterialActiveAgain);
 
     private sealed record RevokeOutcome(bool RevokedUtcSet, bool RevokedBySet, bool ResolvesNullAfter);
 

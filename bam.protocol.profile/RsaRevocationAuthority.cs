@@ -53,13 +53,28 @@ public class RsaRevocationAuthority : IRevocationAuthority
             };
         }
 
+        RsaPublicKey adminPublicKey;
+        try
+        {
+            adminPublicKey = new RsaPublicKey(adminPublicRsaKey);
+        }
+        catch (Exception ex)
+        {
+            // Fail closed on malformed admin key material rather than throwing, so the contract
+            // holds for any direct consumer of IRevocationAuthority (review nit).
+            return new SignatureVerification
+            {
+                Success = false,
+                Message = $"The configured break-glass admin key is not a parseable RSA public key: {ex.Message}"
+            };
+        }
+
         Signature signature = new Signature
         {
             SignatureBytes = adminProof,
             Data = RevocationPayload.Compose(target),
             Algorithm = Algorithm
         };
-        RsaPublicKey adminPublicKey = new RsaPublicKey(adminPublicRsaKey);
         return SignatureProvider.VerifySignature(signature, adminPublicKey);
     }
 }

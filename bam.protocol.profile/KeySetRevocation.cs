@@ -24,12 +24,10 @@ public class KeySetRevocation : IKeySetRevocation
     /// </summary>
     /// <param name="repository">The object-data repository the key sets are persisted in.</param>
     /// <param name="revocationAuthority">The authority that verifies break-glass admin proofs.</param>
-    /// <param name="adminPublicKeySource">The source of the admin public key, used to record which key authorized a revocation.</param>
-    public KeySetRevocation(ObjectDataRepository repository, IRevocationAuthority revocationAuthority, IAdminPublicKeySource adminPublicKeySource)
+    public KeySetRevocation(ObjectDataRepository repository, IRevocationAuthority revocationAuthority)
     {
         this.Repository = repository;
         this.RevocationAuthority = revocationAuthority;
-        this.AdminPublicKeySource = adminPublicKeySource;
     }
 
     /// <summary>
@@ -42,11 +40,6 @@ public class KeySetRevocation : IKeySetRevocation
     /// </summary>
     protected IRevocationAuthority RevocationAuthority { get; }
 
-    /// <summary>
-    /// Gets the source of the admin public key.
-    /// </summary>
-    protected IAdminPublicKeySource AdminPublicKeySource { get; }
-
     /// <inheritdoc />
     public PublicKeySetData Revoke(string keySetHandle, byte[] adminProof)
     {
@@ -54,6 +47,7 @@ public class KeySetRevocation : IKeySetRevocation
         {
             throw new ArgumentException("A key set handle is required.", nameof(keySetHandle));
         }
+        ArgumentNullException.ThrowIfNull(adminProof);
 
         lock (KeySetRegistrationLock.Sync)
         {
@@ -82,7 +76,10 @@ public class KeySetRevocation : IKeySetRevocation
             }
 
             active.RevokedUtc = DateTime.UtcNow;
-            active.RevokedBy = (AdminPublicKeySource.AdminPublicRsaKey ?? string.Empty).Sha256();
+            // Record the key that ACTUALLY authorized this revocation, taken from the verification
+            // result, not a separately-injected admin-key source — so the audit trail stays correct
+            // once bam.protocol#17 introduces more than one valid admin key (review SF1 / T5).
+            active.RevokedBy = verification.IssuerPublicKey?.Pem?.Sha256();
             PublicKeySetData tombstoned = Repository.Update(active);
             Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}).", keySetHandle, tombstoned.RevokedBy);
             return tombstoned;

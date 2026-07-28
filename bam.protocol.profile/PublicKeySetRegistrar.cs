@@ -1,9 +1,11 @@
+using Bam;
 using Bam.Data.Objects;
 using Bam.Encryption;
 using Bam.Logging;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.X509;
 
 namespace Bam.Protocol.Profile;
 
@@ -237,7 +239,10 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     {
         foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
         {
-            if (existing.KeySetHandle == keySet.KeySetHandle)
+            // Skip only the handle's own ACTIVE row (rotating to your own current material is a
+            // permitted no-op). A revoked tombstone of the same handle is NOT skipped, so rotating
+            // a handle back to its own revoked/blocklisted material is caught (bam.protocol#18 B1).
+            if (existing.KeySetHandle == keySet.KeySetHandle && existing.RevokedUtc == null)
             {
                 continue;
             }
@@ -251,19 +256,60 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
 
     /// <summary>
     /// True when <paramref name="existing"/> carries the same non-empty RSA or ECC public key
-    /// material as <paramref name="candidate"/>.
+    /// material as <paramref name="candidate"/>, compared over the parsed key's <b>canonical</b>
+    /// DER encoding rather than the raw PEM string.  Ordinal PEM comparison is bypassable: a
+    /// trivial re-encoding (an appended newline, CRLF line endings, trailing spaces) parses to the
+    /// identical key while being string- and SHA-unequal, which would let a revoked/compromised key
+    /// slip past the blocklist and uniqueness checks (bam.protocol#18 review, condition C1 / T1).
     /// </summary>
     private static bool SharesKeyMaterial(PublicKeySetData existing, PublicKeySetData candidate)
     {
-        if (!string.IsNullOrEmpty(candidate.PublicRsaKey) && existing.PublicRsaKey == candidate.PublicRsaKey)
+        if (!string.IsNullOrEmpty(candidate.PublicRsaKey) && SameCanonicalKey(existing.PublicRsaKey, candidate.PublicRsaKey))
         {
             return true;
         }
-        if (!string.IsNullOrEmpty(candidate.PublicEccKey) && existing.PublicEccKey == candidate.PublicEccKey)
+        if (!string.IsNullOrEmpty(candidate.PublicEccKey) && SameCanonicalKey(existing.PublicEccKey, candidate.PublicEccKey))
         {
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// True when two PEM strings parse to the same public key (equal canonical DER
+    /// <c>SubjectPublicKeyInfo</c>).  Returns false when either side is empty or unparseable.
+    /// </summary>
+    private static bool SameCanonicalKey(string? existingPem, string? candidatePem)
+    {
+        if (string.IsNullOrEmpty(existingPem) || string.IsNullOrEmpty(candidatePem))
+        {
+            return false;
+        }
+        string? existingFingerprint = CanonicalKeyFingerprint(existingPem);
+        string? candidateFingerprint = CanonicalKeyFingerprint(candidatePem);
+        return existingFingerprint != null && existingFingerprint == candidateFingerprint;
+    }
+
+    /// <summary>
+    /// Returns the SHA-256 of the parsed key's canonical DER <c>SubjectPublicKeyInfo</c> encoding,
+    /// or null when the PEM does not parse — a re-encoding-independent fingerprint of the key.
+    /// </summary>
+    private static string? CanonicalKeyFingerprint(string pem)
+    {
+        try
+        {
+            AsymmetricKeyParameter parsedKey = pem.PemToKey();
+            if (parsedKey == null)
+            {
+                return null;
+            }
+            byte[] canonicalDer = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(parsedKey).GetDerEncoded();
+            return canonicalDer.Sha256();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>
