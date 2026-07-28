@@ -9,13 +9,16 @@ namespace Bam.Protocol.Profile;
 public class EncryptedProfileRepository : IProfileRepository
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with
-    /// the default key-set registration policy — a <see cref="PublicKeySetRegistrar"/>
-    /// verifying rotation proofs via <see cref="RsaKeySetRotationVerifier"/>.
+    /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with the
+    /// default key-set policies — a <see cref="PublicKeySetRegistrar"/> verifying rotation proofs
+    /// via <see cref="RsaKeySetRotationVerifier"/>, and a <see cref="KeySetRevocation"/> whose
+    /// admin key is unconfigured (revocation fails closed until a break-glass key is supplied).
     /// </summary>
     /// <param name="repository">The object-data repository profile data is persisted in.</param>
     public EncryptedProfileRepository(ObjectDataRepository repository)
-        : this(repository, new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())))
+        : this(repository,
+            new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())),
+            new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null))))
     {
     }
 
@@ -24,10 +27,12 @@ public class EncryptedProfileRepository : IProfileRepository
     /// </summary>
     /// <param name="repository">The object-data repository profile data is persisted in.</param>
     /// <param name="publicKeySetRegistrar">The registration policy guarding the key-set trust anchor; see <see cref="IPublicKeySetRegistrar"/>.</param>
-    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar)
+    /// <param name="keySetRevocation">The break-glass revocation policy; see <see cref="IKeySetRevocation"/>.</param>
+    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar, IKeySetRevocation keySetRevocation)
     {
         this.Repository = repository;
         this.PublicKeySetRegistrar = publicKeySetRegistrar;
+        this.KeySetRevocation = keySetRevocation;
     }
 
     protected ObjectDataRepository Repository { get; }
@@ -38,6 +43,11 @@ public class EncryptedProfileRepository : IProfileRepository
     /// place.
     /// </summary>
     protected IPublicKeySetRegistrar PublicKeySetRegistrar { get; }
+
+    /// <summary>
+    /// Gets the break-glass revocation policy.  <see cref="RevokePublicKeySet"/> delegates to it.
+    /// </summary>
+    protected IKeySetRevocation KeySetRevocation { get; }
 
     public ProfileData SaveProfile(ProfileData profileData)
     {
@@ -104,6 +114,12 @@ public class EncryptedProfileRepository : IProfileRepository
     public PublicKeySetData RotatePublicKeySet(PublicKeySetData newKeySet, byte[] rotationSignature)
     {
         return PublicKeySetRegistrar.Rotate(newKeySet, rotationSignature);
+    }
+
+    /// <inheritdoc />
+    public PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof)
+    {
+        return KeySetRevocation.Revoke(keySetHandle, adminProof);
     }
 
     /// <inheritdoc />
