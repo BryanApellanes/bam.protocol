@@ -141,9 +141,25 @@ repo.RotatePublicKeySet(newKeySet, rotationSignature);
 // only the admin PUBLIC key is held by the framework (IAdminPublicKeySource), and revocation
 // fails closed when no admin key is configured. A revoked key set is no longer authoritative,
 // so FindPublicKeySetByHandle and device-key confirmation stop honoring it.
+//
+// The third argument is the OPTIONAL authorized-successor binding (bam.protocol#21). Pass null to
+// leave the freed handle openly re-registrable (the pre-#21 behavior); pass a successor fingerprint
+// to restrict re-registration to exactly that key, closing the revoke->re-register hijack window.
+// The successor is a signed field of RevocationPayload, so ONE admin proof both revokes and names
+// the successor.
 PublicKeySetData target = repo.FindPublicKeySetByHandle(actorHandle);
-byte[] adminProof = SignWithBreakGlassAdminPrivateKey(RevocationPayload.Compose(target));
-repo.RevokePublicKeySet(actorHandle, adminProof);
+
+// (a) Unbound revocation — handle is openly re-registrable afterward:
+byte[] openProof = SignWithBreakGlassAdminPrivateKey(RevocationPayload.Compose(target, null));
+repo.RevokePublicKeySet(actorHandle, openProof, null);
+
+// (b) Successor-bound revocation — only successorPublicRsaKeyPem may re-register the handle:
+string successorFingerprint = PublicKeyFingerprint.Of(successorPublicRsaKeyPem);
+byte[] boundProof = SignWithBreakGlassAdminPrivateKey(
+    RevocationPayload.Compose(target, successorFingerprint));
+repo.RevokePublicKeySet(actorHandle, boundProof, successorFingerprint);
+// A re-registration whose RSA identity key is not the bound successor now throws
+// UnauthorizedSuccessorException; the bound successor's own Register(...) succeeds.
 ```
 
 > Consumers exposing key-set registration or rotation over a network surface remain
@@ -155,13 +171,23 @@ repo.RevokePublicKeySet(actorHandle, adminProof);
 > valid-but-uncontrolled first registration) cannot recover by itself. The recovery path is
 > **break-glass revocation** (`RevokePublicKeySet`, BryanApellanes/bam.protocol#11): an authorized
 > administrator revokes the key set, which frees the handle for re-registration while keeping the
-> revoked key material blocklisted. This can recover an **ECC-only** handle (below), and a
-> **squatted** handle *only when the consumer authorizes the re-registration* — revocation frees
-> the handle but does not itself bind the successor, so against a persistent squatter it re-opens
-> the same registration race (admin-authorized successor binding is tracked as
-> BryanApellanes/bam.protocol#21). Break-glass admin-key rotation is tracked as
-> BryanApellanes/bam.protocol#17, and revocation-proof freshness beyond target-binding as
-> BryanApellanes/bam.protocol#15.
+> revoked key material blocklisted. This can recover an **ECC-only** handle (below).
+>
+> **Successor binding (BryanApellanes/bam.protocol#21):** revocation optionally binds an
+> **admin-authorized successor** — the canonical fingerprint (`PublicKeyFingerprint.Of`) of the one
+> key permitted to re-register the freed handle, carried as a signed field of `RevocationPayload` so a
+> single admin proof both revokes and names the successor. When a successor is bound, a re-registration
+> whose RSA identity key does not match is rejected with `UnauthorizedSuccessorException`, closing the
+> revoke→re-register hijack window against a squatter racing for the freed handle (which an unbound
+> revocation leaves open to the consumer's own authz). When the governing (latest) revocation binds no
+> successor, the handle stays openly re-registrable, unchanged from #11. **Interim caveat:** the
+> binding names a *single* successor and there is no admin path to re-point it if that successor key is
+> itself lost before it claims the handle — re-binding a lost successor is tracked as
+> BryanApellanes/bam.protocol#23; until it lands, do not bind an irreplaceable handle to a successor
+> key you cannot guarantee will be available to claim it.
+>
+> Break-glass admin-key rotation is tracked as BryanApellanes/bam.protocol#17, and revocation-proof
+> freshness beyond target-binding as BryanApellanes/bam.protocol#15.
 >
 > **Revocation does not, by itself, terminate access on the default server pipeline.** Until the
 > revoked-key filter in `ProfileManager.FindProfileByPublicKey` lands (BryanApellanes/bam.protocol#13),

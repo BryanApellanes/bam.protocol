@@ -17,7 +17,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
     private static byte[] Sign(RsaPublicPrivateKeyPair signingKeyPair, PublicKeySetData target)
     {
         RsaSignatureProvider signatureProvider = new RsaSignatureProvider();
-        ISignature signature = signatureProvider.Sign(signingKeyPair, RevocationPayload.Compose(target), RsaRevocationAuthority.Algorithm);
+        ISignature signature = signatureProvider.Sign(signingKeyPair, RevocationPayload.Compose(target, null), RsaRevocationAuthority.Algorithm);
         return signature.SignatureBytes;
     }
 
@@ -35,7 +35,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
 
         When.A<RsaRevocationAuthority>("verifies a target-bound proof signed by the admin key",
             () => CreateAuthority(adminKeyPair.PublicKeyPem),
-            (authority) => authority.Verify(target, Sign(adminKeyPair, target)))
+            (authority) => authority.Verify(target, Sign(adminKeyPair, target), null))
         .TheTest
         .ShouldPass(because =>
         {
@@ -57,7 +57,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
 
         When.A<RsaRevocationAuthority>("rejects a proof signed by a key other than the admin key",
             () => CreateAuthority(adminKeyPair.PublicKeyPem),
-            (authority) => authority.Verify(target, Sign(attackerKeyPair, target)))
+            (authority) => authority.Verify(target, Sign(attackerKeyPair, target), null))
         .TheTest
         .ShouldPass(because =>
         {
@@ -79,7 +79,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
 
         When.A<RsaRevocationAuthority>("rejects a proof bound to a different target than the one presented",
             () => CreateAuthority(adminKeyPair.PublicKeyPem),
-            (authority) => authority.Verify(otherTarget, Sign(adminKeyPair, signedTarget)))
+            (authority) => authority.Verify(otherTarget, Sign(adminKeyPair, signedTarget), null))
         .TheTest
         .ShouldPass(because =>
         {
@@ -100,7 +100,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
 
         When.A<RsaRevocationAuthority>("fails closed when no admin key is configured",
             () => CreateAuthority(null),
-            (authority) => authority.Verify(target, Sign(adminKeyPair, target)))
+            (authority) => authority.Verify(target, Sign(adminKeyPair, target), null))
         .TheTest
         .ShouldPass(because =>
         {
@@ -121,7 +121,7 @@ public class RsaRevocationAuthorityShould : UnitTestMenuContainer
 
         When.A<RsaRevocationAuthority>("fails closed (returns a failed verification, not a throw) when the admin key is malformed",
             () => CreateAuthority("not a pem"),
-            (authority) => authority.Verify(target, Sign(adminKeyPair, target)))
+            (authority) => authority.Verify(target, Sign(adminKeyPair, target), null))
         .TheTest
         .ShouldPass(because =>
         {

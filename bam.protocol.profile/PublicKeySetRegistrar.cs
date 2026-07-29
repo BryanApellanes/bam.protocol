@@ -5,7 +5,6 @@ using Bam.Logging;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.X509;
 
 namespace Bam.Protocol.Profile;
 
@@ -83,21 +82,38 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             bool activeHandleExists = false;
             PublicKeySetData? activeMaterialConflict = null;
             PublicKeySetData? revokedMaterialConflict = null;
+            PublicKeySetData? governingTombstone = null;
             foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
             {
-                if (existing.KeySetHandle == handle && existing.RevokedUtc == null)
+                bool sameHandle = existing.KeySetHandle == handle;
+                if (sameHandle && existing.RevokedUtc == null)
                 {
                     activeHandleExists = true;
                 }
-                else if (SharesKeyMaterial(existing, publicKeySetData))
+                else
                 {
-                    if (existing.RevokedUtc == null)
+                    // Material blocklist/uniqueness applies to every OTHER row — including a
+                    // same-handle revoked tombstone, so re-registering a handle's own revoked
+                    // material stays blocked (bam.protocol#18 B1).
+                    if (SharesKeyMaterial(existing, publicKeySetData))
                     {
-                        activeMaterialConflict ??= existing;
+                        if (existing.RevokedUtc == null)
+                        {
+                            activeMaterialConflict ??= existing;
+                        }
+                        else
+                        {
+                            revokedMaterialConflict ??= existing;
+                        }
                     }
-                    else
+
+                    // Successor gate (bam.protocol#21): track the governing tombstone for this handle,
+                    // the same-handle revoked row with the latest RevokedUtc (Id tiebreak), mirroring
+                    // Resolve's deterministic ordering. If it bound a successor, only that key may
+                    // re-register the freed handle.
+                    if (sameHandle && existing.RevokedUtc != null && IsMoreRecentTombstone(existing, governingTombstone))
                     {
-                        revokedMaterialConflict ??= existing;
+                        governingTombstone = existing;
                     }
                 }
             }
@@ -116,6 +132,22 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             {
                 Log.Warn("Rejected key-set registration for handle '{0}': key material is revoked and blocklisted.", handle);
                 throw new RevokedKeyMaterialException(handle);
+            }
+
+            // If the handle's governing revocation bound an authorized successor, the freed handle
+            // can only be re-registered with that exact key — otherwise the revoke→re-register window
+            // would let any first caller hijack the handle (bam.protocol#21). An unbound tombstone
+            // (null fingerprint) leaves the handle openly re-registrable, unchanged. Compared over the
+            // candidate's RSA identity key via the shared PublicKeyFingerprint so the basis matches
+            // what the admin signed.
+            if (governingTombstone?.AuthorizedSuccessorFingerprint != null)
+            {
+                string? candidateFingerprint = PublicKeyFingerprint.Of(publicKeySetData.PublicRsaKey);
+                if (candidateFingerprint == null || candidateFingerprint != governingTombstone.AuthorizedSuccessorFingerprint)
+                {
+                    Log.Warn("Rejected key-set registration for handle '{0}': presented key is not the successor authorized by the revocation that freed it.", handle);
+                    throw new UnauthorizedSuccessorException(handle);
+                }
             }
 
             NormalizeServerControlledFields(publicKeySetData);
@@ -213,6 +245,30 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     }
 
     /// <summary>
+    /// True when <paramref name="candidate"/> is a later revocation than <paramref name="incumbent"/>
+    /// — a strictly-greater <see cref="PublicKeySetData.RevokedUtc"/>, or an equal timestamp with a
+    /// greater <see cref="Bam.Data.Repositories.RepoData.Id"/> as a deterministic tiebreak.  Selects
+    /// the <i>governing</i> tombstone (most recent revocation) among multiple tombstones for a handle,
+    /// so the successor binding a caller must satisfy is always the one from the latest revocation
+    /// (bam.protocol#21).  Any incumbent-null candidate wins.  Both are assumed same-handle revoked
+    /// rows (<c>RevokedUtc != null</c>).
+    /// </summary>
+    private static bool IsMoreRecentTombstone(PublicKeySetData candidate, PublicKeySetData? incumbent)
+    {
+        if (incumbent == null)
+        {
+            return true;
+        }
+        DateTime candidateRevoked = candidate.RevokedUtc ?? DateTime.MinValue;
+        DateTime incumbentRevoked = incumbent.RevokedUtc ?? DateTime.MinValue;
+        if (candidateRevoked != incumbentRevoked)
+        {
+            return candidateRevoked > incumbentRevoked;
+        }
+        return candidate.Id > incumbent.Id;
+    }
+
+    /// <summary>
     /// Stamps the fields the registrar owns rather than the caller: the creation time and the
     /// composite-key identifiers (<see cref="Bam.Data.Repositories.RepoData.Uuid"/> /
     /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>).  All three are publicly settable on
@@ -278,38 +334,14 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// <summary>
     /// True when two PEM strings parse to the same public key (equal canonical DER
     /// <c>SubjectPublicKeyInfo</c>).  Returns false when either side is empty or unparseable.
+    /// Both fingerprints come from the shared <see cref="PublicKeyFingerprint.Of"/> so the equality
+    /// basis stays identical to the successor gate in <see cref="Register"/>.
     /// </summary>
     private static bool SameCanonicalKey(string? existingPem, string? candidatePem)
     {
-        if (string.IsNullOrEmpty(existingPem) || string.IsNullOrEmpty(candidatePem))
-        {
-            return false;
-        }
-        string? existingFingerprint = CanonicalKeyFingerprint(existingPem);
-        string? candidateFingerprint = CanonicalKeyFingerprint(candidatePem);
+        string? existingFingerprint = PublicKeyFingerprint.Of(existingPem);
+        string? candidateFingerprint = PublicKeyFingerprint.Of(candidatePem);
         return existingFingerprint != null && existingFingerprint == candidateFingerprint;
-    }
-
-    /// <summary>
-    /// Returns the SHA-256 of the parsed key's canonical DER <c>SubjectPublicKeyInfo</c> encoding,
-    /// or null when the PEM does not parse — a re-encoding-independent fingerprint of the key.
-    /// </summary>
-    private static string? CanonicalKeyFingerprint(string pem)
-    {
-        try
-        {
-            AsymmetricKeyParameter parsedKey = pem.PemToKey();
-            if (parsedKey == null)
-            {
-                return null;
-            }
-            byte[] canonicalDer = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(parsedKey).GetDerEncoded();
-            return canonicalDer.Sha256();
-        }
-        catch (Exception)
-        {
-            return null;
-        }
     }
 
     /// <summary>
