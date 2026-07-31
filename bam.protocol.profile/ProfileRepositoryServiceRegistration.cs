@@ -34,23 +34,31 @@ public static class ProfileRepositoryServiceRegistration
             .For<ObjectDataRepository>().Use<ObjectDataRepository>()
             .For<ISignatureProvider>().Use<RsaSignatureProvider>()
             .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
-            .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>()
+            .For<IPublicKeySetResolver>().Use<PublicKeySetResolver>()
+            .For<IPublicKeySetAudit>().Use<PublicKeySetAudit>()
             // Break-glass revocation (bam.protocol#11). The admin key is left unconfigured here
             // (fail-closed — no revocation can be authorized); a consumer overrides
             // IAdminPublicKeySource with the offline YubiKey's public key per deployment.
             .For<IAdminPublicKeySource>().Use(new StaticAdminPublicKeySource(null))
             .For<IRevocationAuthority>().Use<RsaRevocationAuthority>()
             .For<IKeySetRevocation>().Use<KeySetRevocation>()
-            // Construct EncryptedProfileRepository via its three-arg constructor through a
-            // factory: DependencyProvider.GetCtorParams selects the FIRST satisfiable
-            // constructor, which is the one-arg convenience ctor — resolving IProfileRepository
-            // without this factory would self-compose the default policies and silently ignore the
-            // registry-supplied IPublicKeySetRegistrar/IKeySetRevocation (bam.protocol#8 review SF1).
+            // Construct the registrar and repository through factories that name their FULL
+            // constructors: DependencyProvider.GetCtorParams selects the FIRST satisfiable
+            // constructor, which for both types is a convenience ctor that self-composes
+            // defaults — resolving without these factories would silently ignore the
+            // registry-supplied IPublicKeySetResolver / IPublicKeySetRegistrar /
+            // IKeySetRevocation (bam.protocol#8 review SF1; extended by #13 and #11).
+            .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>(
+                serviceRegistry => new PublicKeySetRegistrar(
+                    serviceRegistry.Get<ObjectDataRepository>(),
+                    serviceRegistry.Get<IKeySetRotationVerifier>(),
+                    serviceRegistry.Get<IPublicKeySetResolver>()))
             .For<IProfileRepository>().Use<EncryptedProfileRepository>(
                 serviceRegistry => new EncryptedProfileRepository(
                     serviceRegistry.Get<ObjectDataRepository>(),
                     serviceRegistry.Get<IPublicKeySetRegistrar>(),
-                    serviceRegistry.Get<IKeySetRevocation>()));
+                    serviceRegistry.Get<IKeySetRevocation>(),
+                    serviceRegistry.Get<IPublicKeySetResolver>()));
 
         return registry;
     }

@@ -35,7 +35,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
         IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
         IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
         IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
-        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
         return new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
     }
 
@@ -737,4 +737,198 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
     private sealed record RotationSuccessOutcome(string ResolvedRsaKey, int RowCount);
 
     private sealed record RotationRejectionOutcome(bool Rejected, string ResolvedRsaKey);
+
+    [UnitTest]
+    public void KeepKeyMaterialOutOfTheCompositeKey()
+    {
+        When.A<PublicKeySetData>("declares its composite-key properties",
+            () => new PublicKeySetData(),
+            (keySet) =>
+            {
+                // Rotation mutates key material and Updates in place; if key material were ever
+                // part of the composite key, Update would fork a NEW row and the rotated-away
+                // key would legitimately still resolve (bam.data.objects#3 security review,
+                // condition 5b). Uuid/Cuid serve as the positive control proving the attribute
+                // probe works.
+                Type type = typeof(PublicKeySetData);
+                bool rsaIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicRsaKey));
+                bool eccIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicEccKey));
+                bool handleIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.KeySetHandle));
+                bool uuidIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.Uuid));
+                bool cuidIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.Cuid));
+
+                return new CompositeKeyGuardOutcome(rsaIsCompositeKey, eccIsCompositeKey, handleIsCompositeKey, uuidIsCompositeKey, cuidIsCompositeKey);
+            })
+        .TheTest
+        .ShouldPass<CompositeKeyGuardOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("PublicRsaKey is NOT a composite-key property", !outcome.RsaIsCompositeKey);
+            because.ItsTrue("PublicEccKey is NOT a composite-key property", !outcome.EccIsCompositeKey);
+            because.ItsTrue("KeySetHandle is NOT a composite-key property", !outcome.HandleIsCompositeKey);
+            because.ItsTrue("Uuid IS a composite-key property (positive control)", outcome.UuidIsCompositeKey);
+            because.ItsTrue("Cuid IS a composite-key property (positive control)", outcome.CuidIsCompositeKey);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void ConfirmEmptyIndexedResultsByScanBeforeAdmitting()
+    {
+        string testName = nameof(ConfirmEmptyIndexedResultsByScanBeforeAdmitting);
+        string rootPath = $"./.bam/tests/{testName}";
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair attackerKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair bystanderKeyPair = new RsaPublicPrivateKeyPair();
+
+        When.A<PublicKeySetRegistrar>("faces registration attempts after index entries go missing",
+            () => CreateRegistrar(CreateObjectDataRepository(testName)),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = victimKeyPair.PublicKeyPem });
+                // a second registration keeps the type/property index directories present
+                registrar.Register(new PublicKeySetData { KeySetHandle = "bystander", PublicRsaKey = bystanderKeyPair.PublicKeyPem });
+
+                // Simulate an index miss (crash-window / unmigrated-store class): remove the
+                // victim's specific index entry files so the resolver's indexed lookups return
+                // empty while the row still exists in the store.
+                bool handleEntryRemoved = DeleteIndexEntry(rootPath, nameof(PublicKeySetData.KeySetHandle), "victim");
+                bool materialEntryRemoved = DeleteIndexEntry(rootPath, nameof(PublicKeySetData.PublicRsaKey), victimKeyPair.PublicKeyPem);
+
+                bool handleConflictThrown = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = attackerKeyPair.PublicKeyPem });
+                }
+                catch (PublicKeySetConflictException)
+                {
+                    handleConflictThrown = true;
+                }
+
+                bool materialConflictThrown = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = victimKeyPair.PublicKeyPem });
+                }
+                catch (PublicKeySetKeyMaterialConflictException)
+                {
+                    materialConflictThrown = true;
+                }
+
+                return new ScanConfirmOutcome(handleEntryRemoved, materialEntryRemoved, handleConflictThrown, materialConflictThrown);
+            })
+        .TheTest
+        .ShouldPass<ScanConfirmOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the victim's handle index entry existed and was removed", outcome.HandleEntryRemoved);
+            because.ItsTrue("the victim's material index entry existed and was removed", outcome.MaterialEntryRemoved);
+            because.ItsTrue("re-registering the handle is still rejected (scan confirm)", outcome.HandleConflictThrown);
+            because.ItsTrue("claiming the material is still rejected (scan confirm)", outcome.MaterialConflictThrown);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private static bool HasCompositeKeyAttribute(Type type, string propertyName)
+    {
+        return type.GetProperty(propertyName)!
+            .GetCustomAttributes(typeof(Bam.Data.Repositories.CompositeKeyAttribute), true)
+            .Any();
+    }
+
+    // Deletes the search-index entry file for a property value, returning whether it existed —
+    // path layout per ObjectDataSearchIndexer: {root}/search-index/{Type.FullName parts}/{Property}/{SHA256(encoded value)}.
+    private static bool DeleteIndexEntry(string rootPath, string propertyName, string value)
+    {
+        string valueHash = JsonObjectDataEncoder.Default.Encode(value).ToString()!
+            .HashHexString(HashAlgorithms.SHA256);
+        string entryPath = Path.Combine(
+            rootPath, "search-index", "Bam", "Protocol", "Data", "Profile", "PublicKeySetData",
+            propertyName, valueHash);
+        if (!File.Exists(entryPath))
+        {
+            return false;
+        }
+
+        File.Delete(entryPath);
+        return true;
+    }
+
+    private sealed record CompositeKeyGuardOutcome(bool RsaIsCompositeKey, bool EccIsCompositeKey, bool HandleIsCompositeKey, bool UuidIsCompositeKey, bool CuidIsCompositeKey);
+
+    private sealed record ScanConfirmOutcome(bool HandleEntryRemoved, bool MaterialEntryRemoved, bool HandleConflictThrown, bool MaterialConflictThrown);
+
+    [UnitTest]
+    public void RejectReEncodedDuplicateMaterialByCanonicalIdentity()
+    {
+        RsaPublicPrivateKeyPair victimKeyPair = new RsaPublicPrivateKeyPair();
+
+        When.A<PublicKeySetRegistrar>("faces a re-encoded copy of registered material",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(RejectReEncodedDuplicateMaterialByCanonicalIdentity))),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "victim", PublicRsaKey = victimKeyPair.PublicKeyPem });
+
+                // The bam.protocol#18 C1 attack shape: identical key, trivially re-encoded PEM
+                // (CRLF endings + trailing newline) — string-unequal, canonically equal.
+                string reEncodedPem = victimKeyPair.PublicKeyPem.Replace("\r\n", "\n").Replace("\n", "\r\n") + "\r\n";
+                bool stringUnequal = reEncodedPem != victimKeyPair.PublicKeyPem;
+
+                bool rejected = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "attacker", PublicRsaKey = reEncodedPem });
+                }
+                catch (PublicKeySetKeyMaterialConflictException)
+                {
+                    rejected = true;
+                }
+
+                return new CanonicalIdentityOutcome(stringUnequal, rejected);
+            })
+        .TheTest
+        .ShouldPass<CanonicalIdentityOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the re-encoded PEM is string-unequal to the original", outcome.StringUnequal);
+            because.ItsTrue("registration of the re-encoded duplicate is rejected", outcome.Rejected);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void StampCanonicalFingerprintsServerSide()
+    {
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+
+        When.A<PublicKeySetRegistrar>("registers a key set with caller-supplied fingerprints",
+            () => CreateRegistrar(CreateObjectDataRepository(nameof(StampCanonicalFingerprintsServerSide))),
+            (registrar) =>
+            {
+                PublicKeySetData registered = registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "stamped",
+                    PublicRsaKey = keyPair.PublicKeyPem,
+                    PublicRsaKeyFingerprint = "caller-supplied-forgery",
+                });
+
+                return new FingerprintStampOutcome(
+                    registered.PublicRsaKeyFingerprint,
+                    registered.PublicEccKeyFingerprint == null,
+                    registered.PublicRsaKeyFingerprint != "caller-supplied-forgery"
+                        && !string.IsNullOrEmpty(registered.PublicRsaKeyFingerprint));
+            })
+        .TheTest
+        .ShouldPass<FingerprintStampOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the RSA fingerprint was stamped server-side over the caller's value", outcome.ServerStamped);
+            because.ItsTrue("the empty ECC field has no fingerprint", outcome.EccFingerprintIsNull);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record CanonicalIdentityOutcome(bool StringUnequal, bool Rejected);
+
+    private sealed record FingerprintStampOutcome(string? RsaFingerprint, bool EccFingerprintIsNull, bool ServerStamped);
 }

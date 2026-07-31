@@ -24,7 +24,7 @@ public class AnonymousAccessRoundtripShould : UnitTestMenuContainer
     {
         // No matching profile for any public key — the exact scenario bamtk#15 repros.
         IProfileManager mockProfileManager = Substitute.For<IProfileManager>();
-        mockProfileManager.FindProfileByPublicKey(Arg.Any<string>()).Returns((IProfile)null!);
+        mockProfileManager.FindProfileByPublicKeyPem(Arg.Any<string>()).Returns((IProfile)null!);
 
         IAccessLevelProvider mockAccessLevelProvider = Substitute.For<IAccessLevelProvider>();
         mockAccessLevelProvider.GetAccessLevel(Arg.Any<IBamServerContext>()).Returns(BamAccess.Read);
@@ -158,7 +158,7 @@ public class AnonymousAccessRoundtripShould : UnitTestMenuContainer
 
         IProfileManager mockProfileManager = Substitute.For<IProfileManager>();
         mockProfileManager.FindProfileByHandle(actorHandle).Returns(mockProfile);
-        mockProfileManager.FindProfileByPublicKey(Arg.Any<string>()).Returns(mockProfile);
+        mockProfileManager.FindProfileByPublicKeyPem(Arg.Any<string>()).Returns(mockProfile);
 
         IAccessLevelProvider mockAccessLevelProvider = Substitute.For<IAccessLevelProvider>();
         mockAccessLevelProvider.GetAccessLevel(Arg.Any<IBamServerContext>()).Returns(BamAccess.Read);

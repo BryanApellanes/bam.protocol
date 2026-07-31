@@ -24,4 +24,22 @@ public class PublicKeySetData : RepoData, IKeySet
     /// admin public key), for the audit trail, or null when the key set is active.
     /// </summary>
     public string? RevokedBy { get; set; }
+
+    /// <summary>
+    /// Server-stamped canonical identity of <see cref="PublicRsaKey"/> — the SHA-256 of the
+    /// parsed key's canonical DER <c>SubjectPublicKeyInfo</c> — or null when the field is empty,
+    /// unparseable, or the row predates fingerprint stamping (legacy; the key-set audit stamps
+    /// missing fingerprints during repair).  Being a plain string property, it is search-indexed
+    /// by the object store, which is what lets key-material lookups be both indexed AND
+    /// re-encoding-independent (raw PEM equality is bypassable — bam.protocol#18 C1).  Owned by
+    /// the registrar (stamped at registration and rotation); caller-supplied values are
+    /// overwritten.
+    /// </summary>
+    public string? PublicRsaKeyFingerprint { get; set; }
+
+    /// <summary>
+    /// Server-stamped canonical identity of <see cref="PublicEccKey"/>; see
+    /// <see cref="PublicRsaKeyFingerprint"/> for semantics and ownership.
+    /// </summary>
+    public string? PublicEccKeyFingerprint { get; set; }
 }

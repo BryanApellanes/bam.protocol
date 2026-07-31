@@ -21,7 +21,10 @@ public class ActorResolver : IActorResolver
     protected IProfileManager ProfileManager { get; set; }
 
     /// <summary>
-    /// Resolves the actor from the server context using the client's public key stored in session state.
+    /// Resolves the actor from the server context using the client's public key stored in
+    /// session state.  The full PEM is passed through to the profile lookup (rather than being
+    /// hashed down to a digest) so resolution runs on the store's indexed, deterministic
+    /// key-set resolution path (bam.protocol#13).
     /// </summary>
     /// <param name="context">The server context to resolve the actor from.</param>
     /// <returns>The resolved actor, or null if the public key or profile is not found.</returns>
@@ -33,7 +36,7 @@ public class ActorResolver : IActorResolver
             return null!;
         }
 
-        IProfile profile = ProfileManager.FindProfileByPublicKey(clientPublicKey.Sha256());
+        IProfile profile = ProfileManager.FindProfileByPublicKeyPem(clientPublicKey);
         if (profile == null)
         {
             return null!;
