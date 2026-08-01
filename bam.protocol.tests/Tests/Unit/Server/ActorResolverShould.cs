@@ -25,7 +25,7 @@ public class ActorResolverShould : UnitTestMenuContainer
                 IProfile profile = Substitute.For<IProfile>();
                 profile.PersonHandle.Returns(personHandle);
                 profile.Name.Returns(profileName);
-                profileManager.FindProfileByPublicKey(clientPublicKey.Sha256()).Returns(profile);
+                profileManager.FindProfileByPublicKeyPem(clientPublicKey).Returns(profile);
                 return new ActorResolver(profileManager);
             },
             (resolver) =>
@@ -80,7 +80,7 @@ public class ActorResolverShould : UnitTestMenuContainer
             () =>
             {
                 IProfileManager profileManager = Substitute.For<IProfileManager>();
-                profileManager.FindProfileByPublicKey(clientPublicKey.Sha256()).Returns((IProfile)null!);
+                profileManager.FindProfileByPublicKeyPem(clientPublicKey).Returns((IProfile)null!);
                 return new ActorResolver(profileManager);
             },
             (resolver) =>

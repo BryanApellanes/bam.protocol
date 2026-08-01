@@ -33,7 +33,7 @@ public class KeySetRevocationShould : UnitTestMenuContainer
         IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
         IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
         IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
-        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
         return new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
     }
 

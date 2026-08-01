@@ -11,14 +11,30 @@ public class EncryptedProfileRepository : IProfileRepository
     /// <summary>
     /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with the
     /// default key-set policies — a <see cref="PublicKeySetRegistrar"/> verifying rotation proofs
-    /// via <see cref="RsaKeySetRotationVerifier"/>, and a <see cref="KeySetRevocation"/> whose
-    /// admin key is unconfigured (revocation fails closed until a break-glass key is supplied).
+    /// via <see cref="RsaKeySetRotationVerifier"/>, a <see cref="KeySetRevocation"/> whose
+    /// admin key is unconfigured (revocation fails closed until a break-glass key is supplied),
+    /// and a <see cref="PublicKeySetResolver"/> over the same repository as the resolution
+    /// authority.
     /// </summary>
     /// <param name="repository">The object-data repository profile data is persisted in.</param>
     public EncryptedProfileRepository(ObjectDataRepository repository)
         : this(repository,
             new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())),
-            new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null))))
+            new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null))),
+            new PublicKeySetResolver(repository))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with the
+    /// default resolution authority, a <see cref="PublicKeySetResolver"/> over the same
+    /// repository.
+    /// </summary>
+    /// <param name="repository">The object-data repository profile data is persisted in.</param>
+    /// <param name="publicKeySetRegistrar">The registration policy guarding the key-set trust anchor; see <see cref="IPublicKeySetRegistrar"/>.</param>
+    /// <param name="keySetRevocation">The break-glass revocation policy; see <see cref="IKeySetRevocation"/>.</param>
+    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar, IKeySetRevocation keySetRevocation)
+        : this(repository, publicKeySetRegistrar, keySetRevocation, new PublicKeySetResolver(repository))
     {
     }
 
@@ -28,11 +44,13 @@ public class EncryptedProfileRepository : IProfileRepository
     /// <param name="repository">The object-data repository profile data is persisted in.</param>
     /// <param name="publicKeySetRegistrar">The registration policy guarding the key-set trust anchor; see <see cref="IPublicKeySetRegistrar"/>.</param>
     /// <param name="keySetRevocation">The break-glass revocation policy; see <see cref="IKeySetRevocation"/>.</param>
-    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar, IKeySetRevocation keySetRevocation)
+    /// <param name="publicKeySetResolver">The deterministic key-set resolution authority the read path delegates to; see <see cref="IPublicKeySetResolver"/>.</param>
+    public EncryptedProfileRepository(ObjectDataRepository repository, IPublicKeySetRegistrar publicKeySetRegistrar, IKeySetRevocation keySetRevocation, IPublicKeySetResolver publicKeySetResolver)
     {
         this.Repository = repository;
         this.PublicKeySetRegistrar = publicKeySetRegistrar;
         this.KeySetRevocation = keySetRevocation;
+        this.PublicKeySetResolver = publicKeySetResolver;
     }
 
     protected ObjectDataRepository Repository { get; }
@@ -48,6 +66,12 @@ public class EncryptedProfileRepository : IProfileRepository
     /// Gets the break-glass revocation policy.  <see cref="RevokePublicKeySet"/> delegates to it.
     /// </summary>
     protected IKeySetRevocation KeySetRevocation { get; }
+
+    /// <summary>
+    /// Gets the deterministic key-set resolution authority the read path delegates to, shared
+    /// with the registrar so resolution and registration-time uniqueness can never disagree.
+    /// </summary>
+    protected IPublicKeySetResolver PublicKeySetResolver { get; }
 
     public ProfileData SaveProfile(ProfileData profileData)
     {
@@ -126,6 +150,12 @@ public class EncryptedProfileRepository : IProfileRepository
     public PublicKeySetData FindPublicKeySetByHandle(string keySetHandle)
     {
         return PublicKeySetRegistrar.Resolve(keySetHandle)!;
+    }
+
+    /// <inheritdoc />
+    public PublicKeySetData FindPublicKeySetByPublicKey(string publicKeyPem)
+    {
+        return PublicKeySetResolver.ResolveByKeyMaterial(publicKeyPem)!;
     }
 
     public IEnumerable<PublicKeySetData> GetAllPublicKeySets()
