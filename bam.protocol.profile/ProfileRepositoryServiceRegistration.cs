@@ -34,7 +34,15 @@ public static class ProfileRepositoryServiceRegistration
             .For<ObjectDataRepository>().Use<ObjectDataRepository>()
             .For<ISignatureProvider>().Use<RsaSignatureProvider>()
             .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
-            .For<IPublicKeySetResolver>().Use<PublicKeySetResolver>()
+            // Factory names the full ctor so the resolver gets the search indexer it needs to
+            // gate index-served material lookups (a lookup on an unindexed column would else
+            // degrade to a full scan — bam.protocol#24 round-2 security condition 1). Without
+            // the factory the first-satisfiable ctor would supply null and every material
+            // resolve would scan.
+            .For<IPublicKeySetResolver>().Use<PublicKeySetResolver>(
+                serviceRegistry => new PublicKeySetResolver(
+                    serviceRegistry.Get<ObjectDataRepository>(),
+                    serviceRegistry.Get<IObjectDataSearchIndexer>()))
             .For<IPublicKeySetAudit>().Use<PublicKeySetAudit>()
             // Break-glass revocation (bam.protocol#11). The admin key is left unconfigured here
             // (fail-closed — no revocation can be authorized); a consumer overrides

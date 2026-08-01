@@ -39,6 +39,34 @@ public class PublicKeySetResolverShould : UnitTestMenuContainer
         return new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
     }
 
+    // Builds a repository together with the search indexer wired into it, so a test can
+    // construct the resolver on its index-served path (the production shape).
+    private static (ObjectDataRepository Repository, IObjectDataSearchIndexer SearchIndexer) CreateRepositoryWithIndexer(string testName)
+    {
+        string rootPath = $"./.bam/tests/{testName}";
+        if (Directory.Exists(rootPath))
+        {
+            Directory.Delete(rootPath, true);
+        }
+        AesKey aesKey = new AesKey();
+        ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
+        IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();
+        IObjectDataLocatorFactory locatorFactory = new ObjectDataLocatorFactory(identityCalculator);
+        IObjectEncoderDecoder encoderDecoder = new JsonObjectDataEncoder();
+        IObjectDataFactory factory = new ObjectDataFactory(locatorFactory, encoderDecoder);
+        IRootStorageHolder rootStorage = new RootStorageHolder(rootPath);
+        IObjectDataStorageManager storageManager = new EncryptedFsObjectDataStorageManager(rootStorage, factory, new AesEncryptor(aesKey), new AesDecryptor(aesKey));
+        IObjectDataWriter writer = new ObjectDataWriter(factory, storageManager);
+        IObjectDataReader reader = new ObjectDataReader(storageManager);
+        IObjectDataIndexer indexer = new ObjectDataIndexer(storageManager, compositeKeyCalculator);
+        IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
+        IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
+        IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
+        ObjectDataRepository repository = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
+        return (repository, searchIndexer);
+    }
+
     // Plants a key-set row DIRECTLY in the store, bypassing the registrar — the legacy-data /
     // store-tampering scenario the resolver's determinism exists for.
     private static PublicKeySetData PlantKeySet(ObjectDataRepository repository, string handle, string? rsaPem, string? eccPem, DateTime created)
@@ -282,4 +310,45 @@ public class PublicKeySetResolverShould : UnitTestMenuContainer
     }
 
     private sealed record StampDriftOutcome(string? MaterialClaimHandle, bool ForgedClaimIsNull, bool ForgedResolveIsNull);
+
+    [UnitTest]
+    public void ResolveMaterialInAnRsaOnlyStoreWhereEccColumnsAreUnindexed()
+    {
+        // bam.protocol#24 round-2 condition 1: in an RSA-only store the ECC columns never gain
+        // an index directory, so the old four-unconditional-queries lookup degraded two arms to
+        // full scans on every anonymous request. The index-served path must skip those empty
+        // columns and still resolve correctly against the RSA arms.
+        (ObjectDataRepository repository, IObjectDataSearchIndexer searchIndexer) = CreateRepositoryWithIndexer(nameof(ResolveMaterialInAnRsaOnlyStoreWhereEccColumnsAreUnindexed));
+        DateTime baseline = DateTime.UtcNow;
+
+        When.A<PublicKeySetResolver>("resolves RSA material against an index-served RSA-only store",
+            () => new PublicKeySetResolver(repository, searchIndexer),
+            (resolver) =>
+            {
+                // RSA-only rows: ECC fields stay null, so PublicEccKey / PublicEccKeyFingerprint
+                // never get an index directory.
+                PlantKeySet(repository, "rsa-owner", "rsa-material", null, baseline);
+                PlantKeySet(repository, "rsa-other", "other-rsa-material", null, baseline);
+
+                bool eccColumnUnindexed = !searchIndexer.HasIndex(typeof(PublicKeySetData), nameof(PublicKeySetData.PublicEccKey));
+                bool rsaColumnIndexed = searchIndexer.HasIndex(typeof(PublicKeySetData), nameof(PublicKeySetData.PublicRsaKey));
+
+                PublicKeySetData? resolved = resolver.ResolveByKeyMaterial("rsa-material");
+                PublicKeySetData? missing = resolver.ResolveByKeyMaterial("no-such-material");
+
+                return new RsaOnlyOutcome(eccColumnUnindexed, rsaColumnIndexed, resolved?.KeySetHandle, missing == null);
+            })
+        .TheTest
+        .ShouldPass<RsaOnlyOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the ECC column has no index directory in an RSA-only store", outcome.EccColumnUnindexed);
+            because.ItsTrue("the RSA column is indexed", outcome.RsaColumnIndexed);
+            because.ItsTrue("RSA material resolves to its owner despite the unindexed ECC columns", "rsa-owner".Equals(outcome.ResolvedHandle));
+            because.ItsTrue("unregistered material resolves to null", outcome.MissingIsNull);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record RsaOnlyOutcome(bool EccColumnUnindexed, bool RsaColumnIndexed, string? ResolvedHandle, bool MissingIsNull);
 }

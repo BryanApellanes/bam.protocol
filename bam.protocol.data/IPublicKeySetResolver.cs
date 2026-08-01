@@ -17,12 +17,16 @@ namespace Bam.Protocol.Data;
 /// attribution), while <see cref="FindKeyMaterialClaims"/> surfaces them so admission policy
 /// can enforce the material blocklist.
 /// <para>
-/// Implementations back their lookups with the object store's search index; indexed results
-/// reflect the index (see the store's consistency contract — rows never indexed are invisible
-/// here).  Admission decisions must confirm empty results by scan; the read path accepts
-/// indexed authority for speed.  Composed into <see cref="IPublicKeySetRegistrar"/>
-/// implementations and <see cref="IProfileRepository"/> implementations so both share one
-/// resolution authority.
+/// Implementations MAY accelerate lookups with the object store's search index, but the index
+/// is NOT authoritative: the store serves a query from the index only when the queried column
+/// has a per-property index directory and the value is non-null, otherwise it falls back to a
+/// full scan (rows never indexed are invisible to an index-only lookup).  A material lookup
+/// therefore takes at most ONE full store pass regardless of how many columns it must consult.
+/// Because the index is not authoritative, admission decisions
+/// (<see cref="IPublicKeySetRegistrar"/>) confirm results against a full scan; the read path
+/// accepts the single-pass result for speed.  Composed into
+/// <see cref="IPublicKeySetRegistrar"/> and <see cref="IProfileRepository"/> implementations so
+/// both share one resolution authority.
 /// </para>
 /// </summary>
 public interface IPublicKeySetResolver

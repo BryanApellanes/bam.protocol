@@ -23,14 +23,18 @@ namespace Bam.Protocol.Profile;
 /// rejected registrations and rotations.  Handle equality is ordinal and case-sensitive.
 /// </para>
 /// <para>
-/// Uniqueness checks resolve through the composed <see cref="IPublicKeySetResolver"/>'s
-/// index-backed lookups, and every EMPTY indexed result is CONFIRMED by one shared full scan
-/// before anything is admitted — the store's search index is authoritative but an empty
-/// indexed result is not proof of absence (see the consistency contract on
-/// <c>IObjectDataSearchIndexer</c>), and admission decisions must never fail open on an index
-/// miss.  Registration and rotation are rare, lock-serialized operations, so they pay at most
-/// one scan per admission while hot read paths keep fast indexed lookups
-/// (bam.data.objects#3 security review condition 5; bam.protocol#24 review SF5).
+/// Uniqueness checks resolve through the composed <see cref="IPublicKeySetResolver"/>, and
+/// every admission decision takes the UNION of the resolver's lookup and one shared full-scan
+/// snapshot before anything is admitted.  This scan-confirmation is LOAD-BEARING and must not
+/// be removed on the belief that the resolver's lookups are index-backed: the store's search
+/// index is NOT authoritative (it serves a query only when the queried column has an index
+/// directory and the value is non-null, else it falls back to a scan — see
+/// <see cref="IPublicKeySetResolver"/>'s indexed-vs-scan contract), so an index-only admission
+/// could fail open on a legacy, unmigrated, or partially-indexed store.  The union removes the
+/// question in both directions (empty AND non-empty indexed results).  Registration and
+/// rotation are rare, lock-serialized operations, so they pay at most one scan per admission
+/// while hot read paths keep the single-pass material lookup
+/// (bam.data.objects#3 security review condition 5; bam.protocol#24 review SF5 + round-2 C1/C2).
 /// </para>
 /// </summary>
 public class PublicKeySetRegistrar : IPublicKeySetRegistrar
