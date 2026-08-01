@@ -234,4 +234,52 @@ public class PublicKeySetResolverShould : UnitTestMenuContainer
     private sealed record ConflictOutcome(string? SameOwnerConflict, string? OtherHandleConflict, string? FreshMaterialConflict, string? EccFieldConflict);
 
     private sealed record RevokedSkipOutcome(bool ByHandleIsNull, bool ByMaterialIsNull, string? ClaimHandle, bool ClaimIsRevoked);
+
+    [UnitTest]
+    public void DeriveIdentityFromMaterialNotFromTheStampedFingerprint()
+    {
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(DeriveIdentityFromMaterialNotFromTheStampedFingerprint));
+        DateTime baseline = DateTime.UtcNow;
+
+        When.A<PublicKeySetResolver>("resolves against a row whose stamped fingerprint is wrong",
+            () => new PublicKeySetResolver(repository),
+            (resolver) =>
+            {
+                // A drifted/tampered stamp (bam.protocol#24 review round 2, SF6): the row
+                // carries victim-material but its fingerprint column claims something else.
+                PublicKeySetData driftedRow = new PublicKeySetData
+                {
+                    KeySetHandle = "drifted",
+                    PublicRsaKey = "victim-material",
+                    PublicRsaKeyFingerprint = "forged-or-stale-fingerprint",
+                    Created = baseline,
+                    Uuid = Guid.NewGuid().ToString(),
+                    Cuid = Bam.Cuid.Generate()
+                };
+                repository.Create(driftedRow);
+
+                // Identity must derive from the MATERIAL: byte-identical material still claims
+                // the row despite the wrong stamp...
+                PublicKeySetData sameMaterialCandidate = new PublicKeySetData { KeySetHandle = "claimant", PublicRsaKey = "victim-material" };
+                PublicKeySetData? materialClaim = resolver.FindKeyMaterialClaims(sameMaterialCandidate).FirstOrDefault();
+
+                // ...and material matching the FORGED identity must not resolve or claim the row.
+                PublicKeySetData forgedIdentityCandidate = new PublicKeySetData { KeySetHandle = "claimant", PublicRsaKey = "forged-or-stale-fingerprint" };
+                PublicKeySetData? forgedClaim = resolver.FindKeyMaterialClaims(forgedIdentityCandidate).FirstOrDefault();
+                PublicKeySetData? forgedResolve = resolver.ResolveByKeyMaterial("forged-or-stale-fingerprint");
+
+                return new StampDriftOutcome(materialClaim?.KeySetHandle, forgedClaim == null, forgedResolve == null);
+            })
+        .TheTest
+        .ShouldPass<StampDriftOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("byte-identical material claims the row despite the wrong stamp", "drifted".Equals(outcome.MaterialClaimHandle));
+            because.ItsTrue("the forged identity claims nothing", outcome.ForgedClaimIsNull);
+            because.ItsTrue("the forged identity resolves nothing", outcome.ForgedResolveIsNull);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record StampDriftOutcome(string? MaterialClaimHandle, bool ForgedClaimIsNull, bool ForgedResolveIsNull);
 }

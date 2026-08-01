@@ -71,15 +71,20 @@ internal static class KeyMaterialIdentity
     }
 
     /// <summary>
-    /// Returns the identity keys a stored row's material answers to, preferring stamped
-    /// fingerprints and computing them (or falling back to raw strings) for legacy rows
-    /// stamped before fingerprints existed.
+    /// Returns the identity keys a stored row's material answers to, ALWAYS recomputed from the
+    /// material itself (canonical fingerprint, or the raw string for unparseable material) —
+    /// never read from the row's stamped fingerprint properties.  The stamps exist solely to
+    /// give the search index a canonical column to accelerate lookups; identity DECISIONS
+    /// (uniqueness, blocklist, audit grouping, hit re-verification) must derive from ground
+    /// truth, or a drifted/tampered stamp could hide byte-identical material from the blocklist
+    /// or group a victim's row under material it does not carry
+    /// (bam.protocol#24 review round 2, SF6).
     /// </summary>
     internal static IReadOnlyList<string> RowIdentities(PublicKeySetData row)
     {
         List<string> identities = new List<string>();
-        AddIdentity(identities, row.PublicRsaKey, row.PublicRsaKeyFingerprint);
-        AddIdentity(identities, row.PublicEccKey, row.PublicEccKeyFingerprint);
+        AddIdentity(identities, row.PublicRsaKey);
+        AddIdentity(identities, row.PublicEccKey);
         return identities;
     }
 
@@ -106,14 +111,14 @@ internal static class KeyMaterialIdentity
         return false;
     }
 
-    private static void AddIdentity(List<string> identities, string? pem, string? stampedFingerprint = null)
+    private static void AddIdentity(List<string> identities, string? pem)
     {
         if (string.IsNullOrEmpty(pem))
         {
             return;
         }
 
-        string identity = stampedFingerprint ?? CanonicalKeyFingerprint(pem) ?? pem;
+        string identity = CanonicalKeyFingerprint(pem) ?? pem;
         if (!identities.Contains(identity))
         {
             identities.Add(identity);

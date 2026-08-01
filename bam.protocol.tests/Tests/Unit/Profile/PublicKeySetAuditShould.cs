@@ -307,6 +307,60 @@ public class PublicKeySetAuditShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void NeverGroupRowsByForgedStampedFingerprints()
+    {
+        AuditFixture fixture = CreateFixture(nameof(NeverGroupRowsByForgedStampedFingerprints));
+        DateTime baseline = DateTime.UtcNow;
+
+        When.A<PublicKeySetAudit>("audits rows whose stamps share a forged fingerprint",
+            () => fixture.Audit,
+            (audit) =>
+            {
+                // Audit weaponization shape (bam.protocol#24 review round 2, SF6): two rows
+                // with DIFFERENT material both stamped with the same forged fingerprint. If
+                // grouping trusted stamps, they'd form a shared-material group and repair
+                // would archive the victim's legitimate row.
+                PublicKeySetData victim = new PublicKeySetData
+                {
+                    KeySetHandle = "victim",
+                    PublicRsaKey = "victim-material",
+                    PublicRsaKeyFingerprint = "same-forged-fingerprint",
+                    Created = baseline.AddHours(-1),
+                    Uuid = Guid.NewGuid().ToString(),
+                    Cuid = Bam.Cuid.Generate()
+                };
+                fixture.Repository.Create(victim);
+                PublicKeySetData attacker = new PublicKeySetData
+                {
+                    KeySetHandle = "attacker",
+                    PublicRsaKey = "attacker-material",
+                    PublicRsaKeyFingerprint = "same-forged-fingerprint",
+                    Created = baseline,
+                    Uuid = Guid.NewGuid().ToString(),
+                    Cuid = Bam.Cuid.Generate()
+                };
+                fixture.Repository.Create(attacker);
+
+                PublicKeySetDuplicateReport report = audit.FindDuplicates();
+                PublicKeySetRepairResult result = audit.Repair(report);
+                int liveCount = fixture.Repository.RetrieveAll<PublicKeySetData>().Count();
+
+                return new ForgedStampOutcome(report.HasDuplicates, result.Archived.Count, liveCount);
+            })
+        .TheTest
+        .ShouldPass<ForgedStampOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("forged matching stamps over different material form no group", !outcome.HasDuplicates);
+            because.ItsTrue("repair archives nothing", outcome.ArchivedCount == 0);
+            because.ItsTrue("both rows survive", outcome.LiveCount == 2);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record ForgedStampOutcome(bool HasDuplicates, int ArchivedCount, int LiveCount);
+
     private sealed record OverlapOutcome(bool Succeeded, bool HandleXAlive, bool X2Survives, bool X1Archived, bool Y1Survives, int LiveCount);
 
     private sealed record TombstoneOutcome(bool HasDuplicates, bool Succeeded, int ArchivedCount, bool TombstonePreserved, int RowCount);

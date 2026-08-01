@@ -745,25 +745,30 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
             () => new PublicKeySetData(),
             (keySet) =>
             {
-                // Rotation mutates key material and Updates in place; if key material were ever
-                // part of the composite key, Update would fork a NEW row and the rotated-away
-                // key would legitimately still resolve (bam.data.objects#3 security review,
-                // condition 5b). Uuid/Cuid serve as the positive control proving the attribute
-                // probe works.
+                // Rotation mutates key material AND the stamped fingerprints, then Updates in
+                // place; if any of those were ever part of the composite key, Update would fork
+                // a NEW row and the rotated-away key would legitimately still resolve
+                // (bam.data.objects#3 security review, condition 5b; fingerprint coverage per
+                // bam.protocol#24 review round 2, SF7). Uuid/Cuid serve as the positive control
+                // proving the attribute probe works.
                 Type type = typeof(PublicKeySetData);
                 bool rsaIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicRsaKey));
                 bool eccIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicEccKey));
+                bool rsaFingerprintIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicRsaKeyFingerprint));
+                bool eccFingerprintIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.PublicEccKeyFingerprint));
                 bool handleIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.KeySetHandle));
                 bool uuidIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.Uuid));
                 bool cuidIsCompositeKey = HasCompositeKeyAttribute(type, nameof(PublicKeySetData.Cuid));
 
-                return new CompositeKeyGuardOutcome(rsaIsCompositeKey, eccIsCompositeKey, handleIsCompositeKey, uuidIsCompositeKey, cuidIsCompositeKey);
+                return new CompositeKeyGuardOutcome(rsaIsCompositeKey, eccIsCompositeKey, rsaFingerprintIsCompositeKey, eccFingerprintIsCompositeKey, handleIsCompositeKey, uuidIsCompositeKey, cuidIsCompositeKey);
             })
         .TheTest
         .ShouldPass<CompositeKeyGuardOutcome>((because, outcome) =>
         {
             because.ItsTrue("PublicRsaKey is NOT a composite-key property", !outcome.RsaIsCompositeKey);
             because.ItsTrue("PublicEccKey is NOT a composite-key property", !outcome.EccIsCompositeKey);
+            because.ItsTrue("PublicRsaKeyFingerprint is NOT a composite-key property", !outcome.RsaFingerprintIsCompositeKey);
+            because.ItsTrue("PublicEccKeyFingerprint is NOT a composite-key property", !outcome.EccFingerprintIsCompositeKey);
             because.ItsTrue("KeySetHandle is NOT a composite-key property", !outcome.HandleIsCompositeKey);
             because.ItsTrue("Uuid IS a composite-key property (positive control)", outcome.UuidIsCompositeKey);
             because.ItsTrue("Cuid IS a composite-key property (positive control)", outcome.CuidIsCompositeKey);
@@ -854,7 +859,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
         return true;
     }
 
-    private sealed record CompositeKeyGuardOutcome(bool RsaIsCompositeKey, bool EccIsCompositeKey, bool HandleIsCompositeKey, bool UuidIsCompositeKey, bool CuidIsCompositeKey);
+    private sealed record CompositeKeyGuardOutcome(bool RsaIsCompositeKey, bool EccIsCompositeKey, bool RsaFingerprintIsCompositeKey, bool EccFingerprintIsCompositeKey, bool HandleIsCompositeKey, bool UuidIsCompositeKey, bool CuidIsCompositeKey);
 
     private sealed record ScanConfirmOutcome(bool HandleEntryRemoved, bool MaterialEntryRemoved, bool HandleConflictThrown, bool MaterialConflictThrown);
 
