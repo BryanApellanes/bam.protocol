@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Bam;
 using Bam.Encryption;
+using Bam.Logging;
 using Bam.Protocol.Data.Common;
 using Bam.Protocol.Data.Profile;
 using Bam.Protocol.Profile;
@@ -161,24 +162,68 @@ public class ProfileManager : IProfileManager
         return result;
     }
 
+    /// <summary>
+    /// Finds the profile for a public key by routing the full PEM through the indexed,
+    /// deterministic resolution path (<see cref="FindProfileByPublicKeyPem"/>) rather than
+    /// hashing it down to a digest-only scan.
+    /// </summary>
+    /// <param name="publicKey">The public key to resolve.</param>
+    /// <returns>The resolved profile, or null when the key matches no registered key set.</returns>
     public IProfile FindProfileByPublicKey(IPublicKey publicKey)
     {
-        return FindProfileByPublicKey(publicKey.Pem.Sha256());
+        return FindProfileByPublicKeyPem(publicKey.Pem);
     }
 
-    public IProfile FindProfileByPublicKey(string publicKeyPemSha)
+    /// <inheritdoc />
+    public IProfile FindProfileByPublicKeyPem(string publicKeyPem)
     {
-        IEnumerable<PublicKeySetData> keySets = Repository.GetAllPublicKeySets();
-        foreach (PublicKeySetData keySet in keySets)
+        PublicKeySetData keySet = Repository.FindPublicKeySetByPublicKey(publicKeyPem);
+        if (keySet == null)
         {
-            if ((!string.IsNullOrEmpty(keySet.PublicRsaKey) && keySet.PublicRsaKey.Sha256() == publicKeyPemSha) ||
-                (!string.IsNullOrEmpty(keySet.PublicEccKey) && keySet.PublicEccKey.Sha256() == publicKeyPemSha))
-            {
-                return FindProfileByHandle(keySet.KeySetHandle);
-            }
+            return null!;
         }
 
-        return null!;
+        return FindProfileByHandle(keySet.KeySetHandle);
+    }
+
+    /// <inheritdoc />
+    public IProfile FindProfileByPublicKey(string publicKeyPemSha)
+    {
+        // Digest-only callers cannot be served by the indexed lookup (the index keys on the
+        // full encoded value), so this path materializes the key sets — but resolves
+        // DETERMINISTICALLY: all digest matches are collected and ordered by Created then Id,
+        // mirroring IPublicKeySetResolver, so duplicates can never flip the winner between
+        // runs (bam.protocol#13). Revoked tombstones are skipped — a revoked key must not
+        // resolve for session attribution or access-level lookup (the #13-scoped revoked-skip;
+        // interim exposure recorded on the issue from the bam.protocol#18 review, C2).
+        List<PublicKeySetData> matches = Repository.GetAllPublicKeySets()
+            .Where(keySet => keySet.RevokedUtc == null)
+            .Where(keySet =>
+                (!string.IsNullOrEmpty(keySet.PublicRsaKey) && keySet.PublicRsaKey.Sha256() == publicKeyPemSha) ||
+                (!string.IsNullOrEmpty(keySet.PublicEccKey) && keySet.PublicEccKey.Sha256() == publicKeyPemSha))
+            .OrderBy(keySet => keySet.Created)
+            .ThenBy(keySet => keySet.Id)
+            .ToList();
+
+        if (matches.Count == 0)
+        {
+            return null!;
+        }
+
+        List<string> distinctHandles = matches
+            .Select(keySet => keySet.KeySetHandle)
+            .Distinct()
+            .ToList();
+        if (distinctHandles.Count > 1)
+        {
+            Log.Warn(
+                "Public key digest resolves to {0} handles ({1}); the earliest-created registration ('{2}') wins. Run the public key-set audit to repair the duplicates.",
+                distinctHandles.Count,
+                string.Join(", ", distinctHandles),
+                matches[0].KeySetHandle);
+        }
+
+        return FindProfileByHandle(matches[0].KeySetHandle);
     }
 
     private static DeviceTypes DetectDeviceType()

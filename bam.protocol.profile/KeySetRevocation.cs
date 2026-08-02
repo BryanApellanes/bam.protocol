@@ -49,6 +49,24 @@ public class KeySetRevocation : IKeySetRevocation
         }
         ArgumentNullException.ThrowIfNull(adminProof);
 
+        // Normalize the successor binding once, up front (bam.protocol#25 review B1/B2): collapse null
+        // and any empty/whitespace string to the single "unbound" value, and require a non-null binding
+        // to be a well-formed canonical fingerprint. The signed payload already treats null and "" the
+        // same (RevocationPayload frames an empty field for both), so a caller passing "" for a
+        // legitimately-signed unbound revocation must NOT arm the Register gate — persisting "" (or any
+        // value PublicKeyFingerprint.Of can never emit) would gate every candidate against a fingerprint
+        // no key produces, permanently bricking the freed handle with no re-bind path (#23).
+        string? successorFingerprint = string.IsNullOrWhiteSpace(authorizedSuccessorFingerprint)
+            ? null
+            : authorizedSuccessorFingerprint;
+        if (successorFingerprint != null && !PublicKeyFingerprint.IsCanonical(successorFingerprint))
+        {
+            Log.Warn("Rejected revocation for handle '{0}': authorized successor fingerprint is not a canonical key fingerprint.", keySetHandle);
+            throw new ArgumentException(
+                "The authorized successor fingerprint must be a canonical public-key fingerprint (64-character lowercase hexadecimal, as produced by PublicKeyFingerprint.Of).",
+                nameof(authorizedSuccessorFingerprint));
+        }
+
         lock (KeySetRegistrationLock.Sync)
         {
             PublicKeySetData? active = ResolveActive(keySetHandle);
@@ -64,7 +82,7 @@ public class KeySetRevocation : IKeySetRevocation
                 // The successor fingerprint is part of the signed payload, so the admin proof both
                 // authorizes the revocation and binds the successor in one indivisible signature — a
                 // caller cannot substitute a different successor than the admin signed (bam.protocol#21).
-                verification = RevocationAuthority.Verify(active, adminProof, authorizedSuccessorFingerprint);
+                verification = RevocationAuthority.Verify(active, adminProof, successorFingerprint);
             }
             catch (Exception ex)
             {
@@ -85,15 +103,15 @@ public class KeySetRevocation : IKeySetRevocation
             active.RevokedBy = verification.IssuerPublicKey?.Pem?.Sha256();
             // Bind the admin-authorized successor onto the tombstone so Register can gate re-registration
             // of the freed handle on it (bam.protocol#21); null leaves the handle openly re-registrable.
-            active.AuthorizedSuccessorFingerprint = authorizedSuccessorFingerprint;
+            active.AuthorizedSuccessorFingerprint = successorFingerprint;
             PublicKeySetData tombstoned = Repository.Update(active);
-            if (string.IsNullOrEmpty(authorizedSuccessorFingerprint))
+            if (successorFingerprint == null)
             {
                 Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); no successor bound — handle is openly re-registrable.", keySetHandle, tombstoned.RevokedBy);
             }
             else
             {
-                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); bound successor {2}.", keySetHandle, tombstoned.RevokedBy, authorizedSuccessorFingerprint);
+                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); bound successor {2}.", keySetHandle, tombstoned.RevokedBy, successorFingerprint);
             }
             return tombstoned;
         }

@@ -33,7 +33,7 @@ public class KeySetRevocationShould : UnitTestMenuContainer
         IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
         IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
         IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
-        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
         return new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
     }
 
@@ -714,6 +714,222 @@ public class KeySetRevocationShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void RejectRevocationWhenTheSuccessorFingerprintWasNotTheOneSigned()
+    {
+        // The PR's core property: the successor is covered by the admin signature, so a caller cannot
+        // substitute a different successor than the admin signed (bam.protocol#25 review SF2). Verified
+        // end to end through Revoke, not just at the Compose string level.
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair successorA = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair successorB = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRevocationWhenTheSuccessorFingerprintWasNotTheOneSigned));
+
+        When.A<KeySetRevocation>("rejects a revocation whose successor parameter differs from the one the admin signed",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = keyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("holder")!;
+
+                string fpA = PublicKeyFingerprint.Of(successorA.PublicKeyPem)!;
+                string fpB = PublicKeyFingerprint.Of(successorB.PublicKeyPem)!;
+
+                // proof signed binding successor A, but the call names successor B
+                byte[] proofBoundToA = SignRevocation(adminKeyPair, active, fpA);
+                bool mismatchRejected = false;
+                try
+                {
+                    revocation.Revoke("holder", proofBoundToA, fpB);
+                }
+                catch (UnauthorizedRevocationException)
+                {
+                    mismatchRejected = true;
+                }
+
+                // proof signed UNBOUND, but the call names a successor
+                byte[] proofUnbound = SignRevocation(adminKeyPair, active, null);
+                bool unboundVsBoundRejected = false;
+                try
+                {
+                    revocation.Revoke("holder", proofUnbound, fpA);
+                }
+                catch (UnauthorizedRevocationException)
+                {
+                    unboundVsBoundRejected = true;
+                }
+
+                bool stillActive = registrar.Resolve("holder") != null;
+                return new SignatureMismatchOutcome(mismatchRejected, unboundVsBoundRejected, stillActive);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<SignatureMismatchOutcome>("a successor other than the one signed is rejected", o => o.MismatchedRejected)
+                .As<SignatureMismatchOutcome>("a bound call against an unbound-signed proof is rejected", o => o.UnboundVsBoundRejected)
+                .As<SignatureMismatchOutcome>("the key set stays active after the rejected revocations", o => o.StillActive);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void TreatAnEmptyStringSuccessorAsUnboundAndLeaveTheHandleOpen()
+    {
+        // An empty-string successor with a legitimately-signed UNBOUND proof must not arm the gate:
+        // null and "" are one "unbound" value end to end, so the freed handle stays openly
+        // re-registrable rather than bricking (bam.protocol#25 review B1/B2).
+        RsaPublicPrivateKeyPair originalKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair successorKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(TreatAnEmptyStringSuccessorAsUnboundAndLeaveTheHandleOpen));
+
+        When.A<KeySetRevocation>("treats an empty-string successor as unbound and leaves the handle openly re-registrable",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "handle", PublicRsaKey = originalKeyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("handle")!;
+
+                // admin signs an UNBOUND revocation; the caller passes "" instead of null
+                byte[] unboundProof = SignRevocation(adminKeyPair, active, null);
+                PublicKeySetData tombstoned = revocation.Revoke("handle", unboundProof, "");
+
+                // any successor can claim the freed handle — the gate was NOT armed by ""
+                registrar.Register(new PublicKeySetData { KeySetHandle = "handle", PublicRsaKey = successorKeyPair.PublicKeyPem });
+                PublicKeySetData? resolved = registrar.Resolve("handle");
+
+                return new EmptySuccessorOutcome(
+                    tombstoned.AuthorizedSuccessorFingerprint == null,
+                    resolved != null && resolved.PublicRsaKey == successorKeyPair.PublicKeyPem);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<EmptySuccessorOutcome>("the tombstone records no successor binding (empty normalized to null)", o => o.NoSuccessorBound)
+                .As<EmptySuccessorOutcome>("the freed handle is openly re-registrable", o => o.OpenlyReRegistrable);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectRevocationWithAMalformedSuccessorFingerprint()
+    {
+        // A non-null successor must be a canonical fingerprint (64-char lowercase hex). A malformed
+        // value — uppercase hex, truncated, a raw PEM — could never match a candidate recomputed via
+        // PublicKeyFingerprint.Of and would brick the handle, so it is rejected at bind time
+        // (bam.protocol#25 review B2 / Condition 3).
+        RsaPublicPrivateKeyPair keyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair adminKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectRevocationWithAMalformedSuccessorFingerprint));
+
+        When.A<KeySetRevocation>("rejects a revocation whose successor fingerprint is not canonical",
+            () => CreateRevocation(repository, adminKeyPair),
+            (revocation) =>
+            {
+                PublicKeySetRegistrar registrar = CreateRegistrar(repository);
+                registrar.Register(new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = keyPair.PublicKeyPem });
+                PublicKeySetData active = registrar.Resolve("holder")!;
+
+                byte[] proof = SignRevocation(adminKeyPair, active, "not-a-canonical-fingerprint");
+                bool rejected = false;
+                try
+                {
+                    revocation.Revoke("holder", proof, "not-a-canonical-fingerprint");
+                }
+                catch (ArgumentException)
+                {
+                    rejected = true;
+                }
+
+                bool stillActive = registrar.Resolve("holder") != null;
+                return new MalformedFingerprintOutcome(rejected, stillActive);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<MalformedFingerprintOutcome>("a malformed successor fingerprint threw ArgumentException", o => o.Rejected)
+                .As<MalformedFingerprintOutcome>("the key set stays active (no bricked tombstone persisted)", o => o.StillActive);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void NeutralizeACallerPlantedGoverningTombstone()
+    {
+        // A caller cannot plant a governing tombstone by supplying RevokedUtc +
+        // AuthorizedSuccessorFingerprint on a fresh registration: the registrar server-clears those
+        // fields, so the row is persisted ACTIVE (a normal first-registration) and cannot later
+        // authorize an attacker's real key as a "successor" (bam.protocol#25 review B1).
+        RsaPublicPrivateKeyPair throwawayKeyPair = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair attackerKeyPair = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(NeutralizeACallerPlantedGoverningTombstone));
+
+        When.A<PublicKeySetRegistrar>("neutralizes a caller-planted governing tombstone by clearing caller revocation fields",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                // attacker plants a tombstone: a far-future RevokedUtc + a binding to their own key
+                registrar.Register(new PublicKeySetData
+                {
+                    KeySetHandle = "handle",
+                    PublicRsaKey = throwawayKeyPair.PublicKeyPem,
+                    RevokedUtc = DateTime.MaxValue,
+                    RevokedBy = "planted",
+                    AuthorizedSuccessorFingerprint = PublicKeyFingerprint.Of(attackerKeyPair.PublicKeyPem)
+                });
+
+                // the planted row must be ACTIVE (RevokedUtc cleared) and carry no binding
+                PublicKeySetData? resolved = registrar.Resolve("handle");
+                bool resolvesActive = resolved != null && resolved.PublicRsaKey == throwawayKeyPair.PublicKeyPem;
+                bool fieldsCleared = resolved != null && resolved.RevokedUtc == null && resolved.AuthorizedSuccessorFingerprint == null;
+
+                // the attacker's real key cannot ride a planted binding into the handle — it is now
+                // an ordinary taken handle, so registration conflicts (NOT an authorized-successor pass)
+                bool realKeyBlocked = false;
+                try
+                {
+                    registrar.Register(new PublicKeySetData { KeySetHandle = "handle", PublicRsaKey = attackerKeyPair.PublicKeyPem });
+                }
+                catch (PublicKeySetConflictException)
+                {
+                    realKeyBlocked = true;
+                }
+
+                return new PlantedTombstoneOutcome(resolvesActive, fieldsCleared, realKeyBlocked);
+            })
+        .TheTest
+        .ShouldPass(because =>
+        {
+            because.TheResult
+                .IsNotNull()
+                .As<PlantedTombstoneOutcome>("the planted row is persisted active, not as a tombstone", o => o.ResolvesActive)
+                .As<PlantedTombstoneOutcome>("the caller-supplied revocation fields were cleared server-side", o => o.FieldsCleared)
+                .As<PlantedTombstoneOutcome>("the attacker's real key cannot claim the handle via a planted binding", o => o.RealKeyBlocked);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record SignatureMismatchOutcome(bool MismatchedRejected, bool UnboundVsBoundRejected, bool StillActive);
+
+    private sealed record EmptySuccessorOutcome(bool NoSuccessorBound, bool OpenlyReRegistrable);
+
+    private sealed record MalformedFingerprintOutcome(bool Rejected, bool StillActive);
+
+    private sealed record PlantedTombstoneOutcome(bool ResolvesActive, bool FieldsCleared, bool RealKeyBlocked);
 
     private sealed record SuccessorPersistedOutcome(bool RevokedUtcSet, bool SuccessorFingerprintPersisted);
 

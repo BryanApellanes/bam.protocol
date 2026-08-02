@@ -35,7 +35,7 @@ public class SecureTransportRoundtripShould : UnitTestMenuContainer
         // 2. Create mock IProfileManager
         IProfileManager mockProfileManager = Substitute.For<IProfileManager>();
         mockProfileManager.FindProfileByHandle(actorHandle).Returns(mockProfile);
-        mockProfileManager.FindProfileByPublicKey(Arg.Any<string>()).Returns(mockProfile);
+        mockProfileManager.FindProfileByPublicKeyPem(Arg.Any<string>()).Returns(mockProfile);
 
         // 3. Create mock IAccessLevelProvider — returns Read access
         IAccessLevelProvider mockAccessLevelProvider = Substitute.For<IAccessLevelProvider>();

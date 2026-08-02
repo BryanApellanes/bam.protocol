@@ -50,4 +50,32 @@ public static class PublicKeyFingerprint
             return null;
         }
     }
+
+    /// <summary>
+    /// True when <paramref name="fingerprint"/> is a well-formed canonical fingerprint — exactly the
+    /// shape <see cref="Of"/> produces: 64 lowercase hexadecimal characters (a SHA-256 digest).  The
+    /// break-glass admin binding and the registrar's successor gate compare fingerprints ordinally, so
+    /// a value in any other shape (uppercase hex, truncated, a raw PEM) could never match a candidate
+    /// recomputed via <see cref="Of"/> and would silently brick the handle; the revocation policy
+    /// (<c>IKeySetRevocation</c>) validates a bound successor with this before persisting it
+    /// (bam.protocol#25 review B2 / Condition 3).
+    /// </summary>
+    /// <param name="fingerprint">The candidate fingerprint string, or null.</param>
+    /// <returns>True when the value is 64 lowercase hex characters; false otherwise (including null/empty).</returns>
+    public static bool IsCanonical(string? fingerprint)
+    {
+        if (string.IsNullOrEmpty(fingerprint) || fingerprint.Length != 64)
+        {
+            return false;
+        }
+        foreach (char c in fingerprint)
+        {
+            bool isLowerHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+            if (!isLowerHex)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }

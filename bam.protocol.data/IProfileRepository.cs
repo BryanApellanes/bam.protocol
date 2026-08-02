@@ -78,6 +78,18 @@ public interface IProfileRepository
     /// <returns>The authoritative key set, or null when none is registered.</returns>
     PublicKeySetData FindPublicKeySetByHandle(string keySetHandle);
 
+    /// <summary>
+    /// Finds the authoritative key set carrying the specified PEM-encoded public key material
+    /// (matched against both the RSA and ECC key fields).  Implementations MUST resolve
+    /// deterministically per <see cref="IPublicKeySetResolver"/>: when duplicate rows carry the
+    /// material, the earliest-created row wins, and material spanning more than one handle is
+    /// logged as a misattribution risk.  This is the preferred key-to-profile lookup — unlike a
+    /// digest-based match it can be served by an indexed store lookup.
+    /// </summary>
+    /// <param name="publicKeyPem">The PEM-encoded public key material to resolve.</param>
+    /// <returns>The authoritative key set carrying the material, or null when none does.</returns>
+    PublicKeySetData FindPublicKeySetByPublicKey(string publicKeyPem);
+
     IEnumerable<PublicKeySetData> GetAllPublicKeySets();
 
     CertificateData SaveCertificate(CertificateData certificateData);
