@@ -1,3 +1,4 @@
+using Bam;
 using Bam.Data.Objects;
 using Bam.Encryption;
 using Bam.Logging;
@@ -14,26 +15,53 @@ namespace Bam.Protocol.Profile;
 /// resolution is deterministic (earliest-created row wins over any duplicates).  Composed
 /// into <see cref="EncryptedProfileRepository"/> so the policy stays independently testable.
 /// <para>
-/// The registrar additionally: stamps the persisted creation time server-side so a
-/// caller-supplied <c>Created</c> cannot decide earliest-registration-wins; enforces that
-/// public key material maps to exactly one handle; validates key material is parseable before
-/// persisting; and logs rejected registrations and rotations.  Handle equality is ordinal and
-/// case-sensitive.
+/// The registrar additionally: stamps the persisted creation time, composite-key identifiers,
+/// and canonical key-material fingerprints server-side; enforces that public key material maps
+/// to exactly one handle (compared by canonical identity, never raw PEM strings — see
+/// <see cref="KeyMaterialIdentity"/>); blocklists revoked material while freeing revoked
+/// handles (bam.protocol#11); validates key material is parseable before persisting; and logs
+/// rejected registrations and rotations.  Handle equality is ordinal and case-sensitive.
+/// </para>
+/// <para>
+/// Uniqueness checks resolve through the composed <see cref="IPublicKeySetResolver"/>, and
+/// every admission decision takes the UNION of the resolver's lookup and one shared full-scan
+/// snapshot before anything is admitted.  This scan-confirmation is LOAD-BEARING and must not
+/// be removed on the belief that the resolver's lookups are index-backed: the store's search
+/// index is NOT authoritative (it serves a query only when the queried column has an index
+/// directory and the value is non-null, else it falls back to a scan — see
+/// <see cref="IPublicKeySetResolver"/>'s indexed-vs-scan contract), so an index-only admission
+/// could fail open on a legacy, unmigrated, or partially-indexed store.  The union removes the
+/// question in both directions (empty AND non-empty indexed results).  Registration and
+/// rotation are rare, lock-serialized operations, so they pay at most one scan per admission
+/// while hot read paths keep the single-pass material lookup
+/// (bam.data.objects#3 security review condition 5; bam.protocol#24 review SF5 + round-2 C1/C2).
 /// </para>
 /// </summary>
 public class PublicKeySetRegistrar : IPublicKeySetRegistrar
 {
-    private static readonly object _registrationLock = new object();
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PublicKeySetRegistrar"/> class with the
+    /// default resolution authority — a <see cref="PublicKeySetResolver"/> over the same
+    /// repository.
+    /// </summary>
+    /// <param name="repository">The object-data repository the key sets are persisted in.</param>
+    /// <param name="rotationVerifier">The verifier that decides whether a rotation signature proves possession of the current key.</param>
+    public PublicKeySetRegistrar(ObjectDataRepository repository, IKeySetRotationVerifier rotationVerifier)
+        : this(repository, rotationVerifier, new PublicKeySetResolver(repository))
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PublicKeySetRegistrar"/> class.
     /// </summary>
     /// <param name="repository">The object-data repository the key sets are persisted in.</param>
     /// <param name="rotationVerifier">The verifier that decides whether a rotation signature proves possession of the current key.</param>
-    public PublicKeySetRegistrar(ObjectDataRepository repository, IKeySetRotationVerifier rotationVerifier)
+    /// <param name="resolver">The resolution authority used for handle-exists and key-material-uniqueness checks; see <see cref="IPublicKeySetResolver"/>.</param>
+    public PublicKeySetRegistrar(ObjectDataRepository repository, IKeySetRotationVerifier rotationVerifier, IPublicKeySetResolver resolver)
     {
         this.Repository = repository;
         this.RotationVerifier = rotationVerifier;
+        this.Resolver = resolver;
     }
 
     /// <summary>
@@ -46,6 +74,12 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// currently registered key.
     /// </summary>
     protected IKeySetRotationVerifier RotationVerifier { get; }
+
+    /// <summary>
+    /// Gets the resolution authority the registrar's uniqueness checks run through, so
+    /// registration-time checks and read-path resolution can never disagree.
+    /// </summary>
+    protected IPublicKeySetResolver Resolver { get; }
 
     /// <inheritdoc />
     public PublicKeySetData Register(PublicKeySetData publicKeySetData)
@@ -72,36 +106,33 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 unparseable.Value.Item2);
         }
 
-        lock (_registrationLock)
+        lock (KeySetRegistrationLock.Sync)
         {
-            // Single materialization: check both first-registration-wins (handle already taken)
-            // and one-handle-to-one-key-material in one pass, rather than a Resolve scan plus a
-            // separate uniqueness scan (bam.protocol#8 review S6). True indexed lookup is a
-            // store-level concern tracked in bam.protocol#13.
-            bool handleExists = false;
-            string? conflictingHandle = null;
-            foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
-            {
-                if (existing.KeySetHandle == handle)
-                {
-                    handleExists = true;
-                    continue;
-                }
-                if (conflictingHandle == null && SharesKeyMaterial(existing, publicKeySetData))
-                {
-                    conflictingHandle = existing.KeySetHandle;
-                }
-            }
+            // One lazy snapshot serves every scan-confirmation this admission needs
+            // (bam.protocol#24 review SF5) — at most one full materialization per admission.
+            List<PublicKeySetData>? snapshot = null;
+            List<PublicKeySetData> Snapshot() => snapshot ??= Repository.RetrieveAll<PublicKeySetData>().ToList();
 
-            if (handleExists)
+            // First-registration-wins over ACTIVE rows only: a revoked tombstone frees its
+            // handle for re-registration (bam.protocol#11).
+            if (FindActiveRowByHandleConfirmed(handle, Snapshot) != null)
             {
                 Log.Warn("Rejected key-set registration for handle '{0}': a key set is already registered.", handle);
                 throw new PublicKeySetConflictException(handle);
             }
-            if (conflictingHandle != null)
+
+            // One-handle-to-one-key-material, by canonical identity. Revoked matches are
+            // asymmetric: the material stays blocklisted under ANY handle (bam.protocol#11).
+            PublicKeySetData? materialClaim = FindMaterialClaimConfirmed(publicKeySetData, excludeOwnActiveRow: false, Snapshot);
+            if (materialClaim != null)
             {
-                Log.Warn("Rejected key-set registration for handle '{0}': key material already registered under handle '{1}'.", handle, conflictingHandle);
-                throw new PublicKeySetKeyMaterialConflictException(handle, conflictingHandle);
+                if (materialClaim.RevokedUtc != null)
+                {
+                    Log.Warn("Rejected key-set registration for handle '{0}': key material is revoked and blocklisted.", handle);
+                    throw new RevokedKeyMaterialException(handle);
+                }
+                Log.Warn("Rejected key-set registration for handle '{0}': key material already registered under handle '{1}'.", handle, materialClaim.KeySetHandle);
+                throw new PublicKeySetKeyMaterialConflictException(handle, materialClaim.KeySetHandle);
             }
 
             NormalizeServerControlledFields(publicKeySetData);
@@ -135,9 +166,12 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 unparseable.Value.Item2);
         }
 
-        lock (_registrationLock)
+        lock (KeySetRegistrationLock.Sync)
         {
-            PublicKeySetData? current = Resolve(handle);
+            List<PublicKeySetData>? snapshot = null;
+            List<PublicKeySetData> Snapshot() => snapshot ??= Repository.RetrieveAll<PublicKeySetData>().ToList();
+
+            PublicKeySetData? current = FindActiveRowByHandleConfirmed(handle, Snapshot);
             if (current == null)
             {
                 throw new InvalidKeySetRotationException(handle,
@@ -166,17 +200,25 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             // Enforce one-handle-to-one-key-material on the rotation path too, not just Register:
             // otherwise an attacker rotates a handle they control to a victim's public key, and
             // FindProfileByPublicKey misattributes the victim's session (bam.protocol#8 review C4 /
-            // challenger B1). The helper skips the handle being rotated, so rotating to your own
-            // current material remains a permitted no-op.
-            string? conflictingHandle = FindHandleRegisteringSameKeyMaterial(newKeySet);
-            if (conflictingHandle != null)
+            // challenger B1). Only the handle's own ACTIVE row is exempt (rotating to your own
+            // current material remains a permitted no-op) — a revoked tombstone of the same
+            // handle is NOT skipped, so rotating a handle back to its own revoked/blocklisted
+            // material is caught (bam.protocol#18 B1).
+            PublicKeySetData? materialClaim = FindMaterialClaimConfirmed(newKeySet, excludeOwnActiveRow: true, Snapshot);
+            if (materialClaim != null)
             {
-                Log.Warn("Rejected key-set rotation for handle '{0}': key material already registered under handle '{1}'.", handle, conflictingHandle);
-                throw new PublicKeySetKeyMaterialConflictException(handle, conflictingHandle);
+                if (materialClaim.RevokedUtc != null)
+                {
+                    Log.Warn("Rejected key-set rotation for handle '{0}': proposed key material is revoked and blocklisted.", handle);
+                    throw new RevokedKeyMaterialException(handle);
+                }
+                Log.Warn("Rejected key-set rotation for handle '{0}': key material already registered under handle '{1}'.", handle, materialClaim.KeySetHandle);
+                throw new PublicKeySetKeyMaterialConflictException(handle, materialClaim.KeySetHandle);
             }
 
             current.PublicRsaKey = newKeySet.PublicRsaKey;
             current.PublicEccKey = newKeySet.PublicEccKey;
+            KeyMaterialIdentity.StampFingerprints(current);
             return Repository.Update(current);
         }
     }
@@ -184,65 +226,91 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// <inheritdoc />
     public PublicKeySetData? Resolve(string keySetHandle)
     {
-        return Repository.Query<PublicKeySetData>(p => p.KeySetHandle == keySetHandle)
-            .OrderBy(p => p.Created)
-            .ThenBy(p => p.Id)
+        return Resolver.ResolveByHandle(keySetHandle);
+    }
+
+    /// <summary>
+    /// Finds the handle's authoritative ACTIVE row as the UNION of the resolver's indexed
+    /// lookup and the shared admission scan, earliest row winning.  The union — not
+    /// indexed-first-scan-on-empty — is deliberate: an empty indexed result is not proof of
+    /// absence, and a NON-empty indexed result over a partially-indexed store (a crash-window
+    /// row, or a store never migrated via RebuildAsync) can name a LATER row than the true
+    /// earliest — either way admission must decide from ground truth
+    /// (bam.data.objects#3 security review condition 5; bam.protocol#24 security review
+    /// residual 1 — Rotate's proof-of-possession anchor must not be displaceable by a partial
+    /// index).  The scan cost is one shared snapshot per admission (rare, lock-serialized).
+    /// </summary>
+    private PublicKeySetData? FindActiveRowByHandleConfirmed(string handle, Func<List<PublicKeySetData>> snapshot)
+    {
+        PublicKeySetData? resolved = Resolver.ResolveByHandle(handle);
+        PublicKeySetData? scanned = snapshot()
+            .Where(keySet => keySet.KeySetHandle == handle && keySet.RevokedUtc == null)
+            .OrderBy(keySet => keySet.Created)
+            .ThenBy(keySet => keySet.Id)
+            .FirstOrDefault();
+
+        if (resolved == null || scanned == null)
+        {
+            return resolved ?? scanned;
+        }
+
+        return new[] { resolved, scanned }
+            .OrderBy(keySet => keySet.Created)
+            .ThenBy(keySet => keySet.Id)
+            .First();
+    }
+
+    /// <summary>
+    /// Finds the row whose material claim blocks the candidate, by canonical identity, as the
+    /// UNION of the resolver's indexed claims and the shared admission scan (see
+    /// <see cref="FindActiveRowByHandleConfirmed"/> for why admission never trusts the index
+    /// alone): the earliest ACTIVE row sharing any of the candidate's material (a uniqueness
+    /// conflict), or — only when no active claim exists — the earliest REVOKED row sharing it
+    /// (blocklisted material; the caller distinguishes via
+    /// <see cref="PublicKeySetData.RevokedUtc"/>).  When <paramref name="excludeOwnActiveRow"/>
+    /// is true (rotation), the candidate handle's own ACTIVE row is exempt; its revoked
+    /// tombstones are never exempt.
+    /// </summary>
+    private PublicKeySetData? FindMaterialClaimConfirmed(PublicKeySetData candidate, bool excludeOwnActiveRow, Func<List<PublicKeySetData>> snapshot)
+    {
+        IReadOnlyList<string> candidateIdentities = KeyMaterialIdentity.CandidateIdentities(candidate);
+        Dictionary<string, PublicKeySetData> claimsByUuid = new Dictionary<string, PublicKeySetData>();
+        foreach (PublicKeySetData claim in Resolver.FindKeyMaterialClaims(candidate))
+        {
+            claimsByUuid[claim.Uuid] = claim;
+        }
+        foreach (PublicKeySetData claim in snapshot()
+                     .Where(keySet => keySet.KeySetHandle != candidate.KeySetHandle || keySet.RevokedUtc != null)
+                     .Where(keySet => KeyMaterialIdentity.SharesMaterial(keySet, candidateIdentities)))
+        {
+            claimsByUuid[claim.Uuid] = claim;
+        }
+
+        IEnumerable<PublicKeySetData> eligible = claimsByUuid.Values
+            .Where(keySet => !(excludeOwnActiveRow && keySet.KeySetHandle == candidate.KeySetHandle && keySet.RevokedUtc == null));
+
+        return eligible
+            .OrderBy(keySet => keySet.RevokedUtc != null)
+            .ThenBy(keySet => keySet.Created)
+            .ThenBy(keySet => keySet.Id)
             .FirstOrDefault();
     }
 
     /// <summary>
-    /// Stamps the fields the registrar owns rather than the caller: the creation time and the
+    /// Stamps the fields the registrar owns rather than the caller: the creation time, the
     /// composite-key identifiers (<see cref="Bam.Data.Repositories.RepoData.Uuid"/> /
-    /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>).  All three are publicly settable on
-    /// <c>RepoData</c>; <c>Created</c> is the primary resolution key and <c>Uuid</c>/<c>Cuid</c>
+    /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>), and the canonical key-material
+    /// fingerprints.  <c>Created</c> is the primary resolution key and <c>Uuid</c>/<c>Cuid</c>
     /// derive the <c>Id</c> tiebreak, so leaving any of them caller-controlled would let a
-    /// caller influence which duplicate wins resolution (bam.protocol#8 review C3).
+    /// caller influence which duplicate wins resolution (bam.protocol#8 review C3); the
+    /// fingerprints are the indexed canonical identity (bam.protocol#24 review B1).
     /// </summary>
     private static void NormalizeServerControlledFields(PublicKeySetData publicKeySetData)
     {
         publicKeySetData.Created = DateTime.UtcNow;
         publicKeySetData.Uuid = Guid.NewGuid().ToString();
         publicKeySetData.Cuid = Bam.Cuid.Generate();
-    }
-
-    /// <summary>
-    /// Returns the handle a piece of the key set's public key material is already registered
-    /// under (RSA or ECC) by a <i>different</i> handle, or null when the material is not
-    /// registered elsewhere.  Enforces the one handle-to-one key-set invariant that
-    /// <c>FindProfileByPublicKey</c> relies on; used by the rotation path (Register uses a
-    /// combined single-pass scan).
-    /// </summary>
-    private string? FindHandleRegisteringSameKeyMaterial(PublicKeySetData keySet)
-    {
-        foreach (PublicKeySetData existing in Repository.RetrieveAll<PublicKeySetData>())
-        {
-            if (existing.KeySetHandle == keySet.KeySetHandle)
-            {
-                continue;
-            }
-            if (SharesKeyMaterial(existing, keySet))
-            {
-                return existing.KeySetHandle;
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// True when <paramref name="existing"/> carries the same non-empty RSA or ECC public key
-    /// material as <paramref name="candidate"/>.
-    /// </summary>
-    private static bool SharesKeyMaterial(PublicKeySetData existing, PublicKeySetData candidate)
-    {
-        if (!string.IsNullOrEmpty(candidate.PublicRsaKey) && existing.PublicRsaKey == candidate.PublicRsaKey)
-        {
-            return true;
-        }
-        if (!string.IsNullOrEmpty(candidate.PublicEccKey) && existing.PublicEccKey == candidate.PublicEccKey)
-        {
-            return true;
-        }
-        return false;
+        KeyMaterialIdentity.StampFingerprints(publicKeySetData);
     }
 
     /// <summary>

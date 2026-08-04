@@ -48,14 +48,41 @@ public interface IProfileRepository
     PublicKeySetData RotatePublicKeySet(PublicKeySetData newKeySet, byte[] rotationSignature);
 
     /// <summary>
+    /// Revokes the active key set registered under a handle, gated on a break-glass admin proof
+    /// (<paramref name="adminProof"/> — a signature over the target-bound
+    /// <see cref="RevocationPayload"/>, verified against the configured admin public key).
+    /// Implementations MUST tombstone the row in place (<see cref="PublicKeySetData.RevokedUtc"/>):
+    /// the handle becomes free to re-register, but the revoked key material stays blocklisted.
+    /// See <see cref="IKeySetRevocation"/> and bam.protocol#11.
+    /// </summary>
+    /// <param name="keySetHandle">The handle whose active key set is being revoked.</param>
+    /// <param name="adminProof">The raw admin signature bytes authorizing the revocation.</param>
+    /// <returns>The tombstoned key set.</returns>
+    /// <exception cref="KeySetRevocationException">No active key set is registered for the handle.</exception>
+    /// <exception cref="UnauthorizedRevocationException">The admin proof does not authorize the revocation.</exception>
+    PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof);
+
+    /// <summary>
     /// Finds the authoritative key set registered for a handle.  Implementations MUST resolve
     /// deterministically: when duplicate rows exist (legacy data or direct store tampering),
     /// the earliest-created row wins, so a later-added row can never displace the first
-    /// registration.
+    /// registration.  A revoked key set is not authoritative and MUST NOT be returned.
     /// </summary>
     /// <param name="keySetHandle">The handle to resolve.</param>
     /// <returns>The authoritative key set, or null when none is registered.</returns>
     PublicKeySetData FindPublicKeySetByHandle(string keySetHandle);
+
+    /// <summary>
+    /// Finds the authoritative key set carrying the specified PEM-encoded public key material
+    /// (matched against both the RSA and ECC key fields).  Implementations MUST resolve
+    /// deterministically per <see cref="IPublicKeySetResolver"/>: when duplicate rows carry the
+    /// material, the earliest-created row wins, and material spanning more than one handle is
+    /// logged as a misattribution risk.  This is the preferred key-to-profile lookup — unlike a
+    /// digest-based match it can be served by an indexed store lookup.
+    /// </summary>
+    /// <param name="publicKeyPem">The PEM-encoded public key material to resolve.</param>
+    /// <returns>The authoritative key set carrying the material, or null when none does.</returns>
+    PublicKeySetData FindPublicKeySetByPublicKey(string publicKeyPem);
 
     IEnumerable<PublicKeySetData> GetAllPublicKeySets();
 

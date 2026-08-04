@@ -30,7 +30,7 @@ public class ProfileManagerShould : UnitTestMenuContainer
         IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
         IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
         IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
-        IObjectDataArchiver archiver = new ObjectDataArchiver();
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
         ObjectDataRepository repo = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
         return new EncryptedProfileRepository(repo);
     }
@@ -185,4 +185,129 @@ public class ProfileManagerShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void ResolvePublicKeyDigestDeterministicallyWhenDuplicateMaterialExists()
+    {
+        string testName = nameof(ResolvePublicKeyDigestDeterministicallyWhenDuplicateMaterialExists);
+        string rootPath = $"./.bam/tests/{testName}";
+        if (Directory.Exists(rootPath))
+        {
+            Directory.Delete(rootPath, true);
+        }
+        DateTime baseline = DateTime.UtcNow;
+        DuplicateFixture fixture = CreateDuplicateFixture(testName);
+
+        When.A<ProfileManager>("resolves a public key digest with planted cross-handle duplicates",
+            () => new ProfileManager(fixture.ProfileRepository),
+            (manager) =>
+            {
+                PlantProfile(fixture.ObjectDataRepository, "late-claimant", "Late Claimant");
+                PlantProfile(fixture.ObjectDataRepository, "original-owner", "Original Owner");
+                // the later-created claim is INSERTED first so enumeration order cannot decide
+                PlantKeySet(fixture.ObjectDataRepository, "late-claimant", "victim-material", baseline);
+                PlantKeySet(fixture.ObjectDataRepository, "original-owner", "victim-material", baseline.AddHours(-1));
+
+                string digest = "victim-material".Sha256();
+                IProfile firstCall = manager.FindProfileByPublicKey(digest);
+                IProfile secondCall = manager.FindProfileByPublicKey(digest);
+
+                return new DigestDeterminismOutcome(firstCall?.ProfileHandle, secondCall?.ProfileHandle);
+            })
+        .TheTest
+        .ShouldPass<DigestDeterminismOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the earliest-created registration wins", "original-owner".Equals(outcome.FirstHandle));
+            because.ItsTrue("resolution is stable across calls", string.Equals(outcome.FirstHandle, outcome.SecondHandle));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void FindProfileByPublicKeyPem()
+    {
+        string testName = nameof(FindProfileByPublicKeyPem);
+        string rootPath = $"./.bam/tests/{testName}";
+        if (Directory.Exists(rootPath))
+        {
+            Directory.Delete(rootPath, true);
+        }
+        DateTime baseline = DateTime.UtcNow;
+        DuplicateFixture fixture = CreateDuplicateFixture(testName);
+
+        When.A<ProfileManager>("resolves a profile from full PEM material",
+            () => new ProfileManager(fixture.ProfileRepository),
+            (manager) =>
+            {
+                PlantProfile(fixture.ObjectDataRepository, "pem-owner", "Pem Owner");
+                PlantKeySet(fixture.ObjectDataRepository, "pem-owner", "pem-material", baseline);
+
+                IProfile found = manager.FindProfileByPublicKeyPem("pem-material");
+                IProfile missing = manager.FindProfileByPublicKeyPem("no-such-material");
+
+                return new PemLookupOutcome(found?.ProfileHandle, missing == null);
+            })
+        .TheTest
+        .ShouldPass<PemLookupOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the key set's handle resolves its profile", "pem-owner".Equals(outcome.FoundHandle));
+            because.ItsTrue("unregistered material resolves to null", outcome.MissingIsNull);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record DuplicateFixture(ObjectDataRepository ObjectDataRepository, IProfileRepository ProfileRepository);
+
+    // Mirrors CreateRepository but keeps a handle on the underlying ObjectDataRepository so
+    // tests can plant rows directly (bypassing the registrar) — the legacy/tampered-store
+    // scenario the deterministic resolution exists for.
+    private static DuplicateFixture CreateDuplicateFixture(string testName)
+    {
+        string rootPath = $"./.bam/tests/{testName}";
+        AesKey aesKey = new AesKey();
+        ICompositeKeyCalculator compositeKeyCalculator = new CompositeKeyCalculator();
+        IObjectDataIdentityCalculator identityCalculator = new ObjectDataIdentityCalculator();
+        IObjectDataLocatorFactory locatorFactory = new ObjectDataLocatorFactory(identityCalculator);
+        IObjectEncoderDecoder encoderDecoder = new JsonObjectDataEncoder();
+        IObjectDataFactory factory = new ObjectDataFactory(locatorFactory, encoderDecoder);
+        IRootStorageHolder rootStorage = new RootStorageHolder(rootPath);
+        IObjectDataStorageManager storageManager = new EncryptedFsObjectDataStorageManager(rootStorage, factory, new AesEncryptor(aesKey), new AesDecryptor(aesKey));
+        IObjectDataWriter writer = new ObjectDataWriter(factory, storageManager);
+        IObjectDataReader reader = new ObjectDataReader(storageManager);
+        IObjectDataIndexer indexer = new ObjectDataIndexer(storageManager, compositeKeyCalculator);
+        IObjectDataSearchIndexer searchIndexer = new ObjectDataSearchIndexer(storageManager, indexer);
+        IObjectDataSearcher searcher = new ObjectDataSearcher(searchIndexer, reader, indexer);
+        IObjectDataDeleter deleter = new ObjectDataDeleter(factory, storageManager, compositeKeyCalculator);
+        IObjectDataArchiver archiver = new ObjectDataArchiver(factory, storageManager, compositeKeyCalculator);
+        ObjectDataRepository repo = new ObjectDataRepository(factory, writer, indexer, deleter, archiver, reader, searcher, searchIndexer, compositeKeyCalculator);
+        return new DuplicateFixture(repo, new EncryptedProfileRepository(repo));
+    }
+
+    private static void PlantProfile(ObjectDataRepository repository, string profileHandle, string name)
+    {
+        repository.Create(new ProfileData
+        {
+            ProfileHandle = profileHandle,
+            Name = name,
+            Uuid = Guid.NewGuid().ToString(),
+            Cuid = Bam.Cuid.Generate()
+        });
+    }
+
+    private static void PlantKeySet(ObjectDataRepository repository, string handle, string rsaPem, DateTime created)
+    {
+        repository.Create(new PublicKeySetData
+        {
+            KeySetHandle = handle,
+            PublicRsaKey = rsaPem,
+            Created = created,
+            Uuid = Guid.NewGuid().ToString(),
+            Cuid = Bam.Cuid.Generate()
+        });
+    }
+
+    private sealed record DigestDeterminismOutcome(string? FirstHandle, string? SecondHandle);
+
+    private sealed record PemLookupOutcome(string? FoundHandle, bool MissingIsNull);
 }
