@@ -50,17 +50,23 @@ public interface IProfileRepository
     /// <summary>
     /// Revokes the active key set registered under a handle, gated on a break-glass admin proof
     /// (<paramref name="adminProof"/> — a signature over the target-bound
-    /// <see cref="RevocationPayload"/>, verified against the configured admin public key).
-    /// Implementations MUST tombstone the row in place (<see cref="PublicKeySetData.RevokedUtc"/>):
-    /// the handle becomes free to re-register, but the revoked key material stays blocklisted.
-    /// See <see cref="IKeySetRevocation"/> and bam.protocol#11.
+    /// <see cref="RevocationPayload"/> bound to <paramref name="authorizedSuccessorFingerprint"/>,
+    /// verified against the configured admin public key).  Implementations MUST tombstone the row in
+    /// place (<see cref="PublicKeySetData.RevokedUtc"/>): the handle becomes free to re-register, but
+    /// the revoked key material stays blocklisted.  When a successor is bound, only that key may
+    /// re-register the freed handle (bam.protocol#21).  See <see cref="IKeySetRevocation"/> and
+    /// bam.protocol#11.
     /// </summary>
     /// <param name="keySetHandle">The handle whose active key set is being revoked.</param>
     /// <param name="adminProof">The raw admin signature bytes authorizing the revocation.</param>
+    /// <param name="authorizedSuccessorFingerprint">
+    /// The canonical fingerprint of the key authorized to re-register the freed handle, or null to
+    /// bind no successor (leaving the handle openly re-registrable).
+    /// </param>
     /// <returns>The tombstoned key set.</returns>
     /// <exception cref="KeySetRevocationException">No active key set is registered for the handle.</exception>
     /// <exception cref="UnauthorizedRevocationException">The admin proof does not authorize the revocation.</exception>
-    PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof);
+    PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof, string? authorizedSuccessorFingerprint);
 
     /// <summary>
     /// Finds the authoritative key set registered for a handle.  Implementations MUST resolve

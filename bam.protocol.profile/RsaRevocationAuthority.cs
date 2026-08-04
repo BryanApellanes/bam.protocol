@@ -40,7 +40,7 @@ public class RsaRevocationAuthority : IRevocationAuthority
     protected IAdminPublicKeySource AdminPublicKeySource { get; }
 
     /// <inheritdoc />
-    public ISignatureVerification Verify(PublicKeySetData target, byte[] adminProof)
+    public ISignatureVerification Verify(PublicKeySetData target, byte[] adminProof, string? authorizedSuccessorFingerprint)
     {
         string? adminPublicRsaKey = AdminPublicKeySource.AdminPublicRsaKey;
         if (string.IsNullOrEmpty(adminPublicRsaKey))
@@ -72,7 +72,7 @@ public class RsaRevocationAuthority : IRevocationAuthority
         Signature signature = new Signature
         {
             SignatureBytes = adminProof,
-            Data = RevocationPayload.Compose(target),
+            Data = RevocationPayload.Compose(target, authorizedSuccessorFingerprint),
             Algorithm = Algorithm
         };
         return SignatureProvider.VerifySignature(signature, adminPublicKey);

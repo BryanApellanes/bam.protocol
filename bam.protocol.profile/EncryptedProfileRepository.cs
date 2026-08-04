@@ -141,9 +141,9 @@ public class EncryptedProfileRepository : IProfileRepository
     }
 
     /// <inheritdoc />
-    public PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof)
+    public PublicKeySetData RevokePublicKeySet(string keySetHandle, byte[] adminProof, string? authorizedSuccessorFingerprint)
     {
-        return KeySetRevocation.Revoke(keySetHandle, adminProof);
+        return KeySetRevocation.Revoke(keySetHandle, adminProof, authorizedSuccessorFingerprint);
     }
 
     /// <inheritdoc />

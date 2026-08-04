@@ -1,7 +1,4 @@
-using Bam.Encryption;
 using Bam.Protocol.Data.Profile;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.X509;
 
 namespace Bam.Protocol.Profile;
 
@@ -16,34 +13,25 @@ namespace Bam.Protocol.Profile;
 /// never admits, but tampered or legacy rows may carry) falls back to the raw string as its
 /// identity — re-encoding attacks require parseable keys, so exact-bytes identity is sound for
 /// unparseable blobs.
+/// <para>
+/// The canonicalization itself is delegated to <see cref="PublicKeyFingerprint.Of"/> — the same
+/// public contract the break-glass admin uses to compute a successor fingerprint and the
+/// registrar's successor gate uses to check a candidate (bam.protocol#21).  Sharing one
+/// implementation guarantees material identity here and successor identity there can never drift
+/// apart.
+/// </para>
 /// </summary>
 internal static class KeyMaterialIdentity
 {
     /// <summary>
     /// Returns the SHA-256 of the parsed key's canonical DER <c>SubjectPublicKeyInfo</c>
-    /// encoding, or null when the PEM is empty or does not parse.
+    /// encoding, or null when the PEM is empty or does not parse.  Delegates to
+    /// <see cref="PublicKeyFingerprint.Of"/> so the canonical fingerprint has exactly one
+    /// definition across identity, admin binding, and the successor gate.
     /// </summary>
     internal static string? CanonicalKeyFingerprint(string? pem)
     {
-        if (string.IsNullOrEmpty(pem))
-        {
-            return null;
-        }
-
-        try
-        {
-            AsymmetricKeyParameter parsedKey = pem.PemToKey();
-            if (parsedKey == null)
-            {
-                return null;
-            }
-            byte[] canonicalDer = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(parsedKey).GetDerEncoded();
-            return canonicalDer.Sha256();
-        }
-        catch (Exception)
-        {
-            return null;
-        }
+        return PublicKeyFingerprint.Of(pem);
     }
 
     /// <summary>

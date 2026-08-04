@@ -135,6 +135,25 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 throw new PublicKeySetKeyMaterialConflictException(handle, materialClaim.KeySetHandle);
             }
 
+            // Successor gate (bam.protocol#21): runs AFTER the active-handle and material-blocklist
+            // checks (so revoked material can never pose as a "successor"). If the handle's governing
+            // revocation bound an authorized successor, the freed handle can only be re-registered with
+            // that exact key — otherwise the revoke→re-register window would let any first caller hijack
+            // the handle. An unbound tombstone (null fingerprint) leaves the handle openly
+            // re-registrable, unchanged. Compared over the candidate's RSA identity key via the shared
+            // PublicKeyFingerprint (recomputed from ground truth, never a stamped fingerprint) so the
+            // basis matches what the admin signed.
+            PublicKeySetData? governingTombstone = FindGoverningTombstone(handle, Snapshot);
+            if (governingTombstone?.AuthorizedSuccessorFingerprint != null)
+            {
+                string? candidateFingerprint = PublicKeyFingerprint.Of(publicKeySetData.PublicRsaKey);
+                if (candidateFingerprint == null || candidateFingerprint != governingTombstone.AuthorizedSuccessorFingerprint)
+                {
+                    Log.Warn("Rejected key-set registration for handle '{0}': presented key is not the successor authorized by the revocation that freed it.", handle);
+                    throw new UnauthorizedSuccessorException(handle);
+                }
+            }
+
             NormalizeServerControlledFields(publicKeySetData);
             return Repository.Create(publicKeySetData);
         }
@@ -297,6 +316,23 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     }
 
     /// <summary>
+    /// Selects the <i>governing</i> tombstone for a handle — the same-handle revoked row with the most
+    /// recent <see cref="PublicKeySetData.RevokedUtc"/> (<see cref="Bam.Data.Repositories.RepoData.Id"/>
+    /// as a deterministic tiebreak) — or null when the handle has no revoked rows.  Its
+    /// <see cref="PublicKeySetData.AuthorizedSuccessorFingerprint"/> is the binding a re-registration
+    /// must satisfy, so a later revocation always supersedes an earlier one (bam.protocol#21).  Read
+    /// from the shared admission snapshot (ground truth), consistent with the other admission checks.
+    /// </summary>
+    private static PublicKeySetData? FindGoverningTombstone(string handle, Func<List<PublicKeySetData>> snapshot)
+    {
+        return snapshot()
+            .Where(keySet => keySet.KeySetHandle == handle && keySet.RevokedUtc != null)
+            .OrderByDescending(keySet => keySet.RevokedUtc)
+            .ThenByDescending(keySet => keySet.Id)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
     /// Stamps the fields the registrar owns rather than the caller: the creation time, the
     /// composite-key identifiers (<see cref="Bam.Data.Repositories.RepoData.Uuid"/> /
     /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>), and the canonical key-material
@@ -311,6 +347,15 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
         publicKeySetData.Uuid = Guid.NewGuid().ToString();
         publicKeySetData.Cuid = Bam.Cuid.Generate();
         KeyMaterialIdentity.StampFingerprints(publicKeySetData);
+        // A fresh registration is definitionally active and never a tombstone: clear any
+        // caller-supplied revocation state so a caller cannot PLANT a governing tombstone
+        // (RevokedUtc + AuthorizedSuccessorFingerprint) that would then authorize re-registering the
+        // handle with an attacker's own key, or brick the handle outright (bam.protocol#25 review B1 —
+        // the security-auditor's caller-planted-tombstone finding; the #8 review C3 established the
+        // same server-owns-these-fields principle for Created/Uuid/Cuid).
+        publicKeySetData.RevokedUtc = null;
+        publicKeySetData.RevokedBy = null;
+        publicKeySetData.AuthorizedSuccessorFingerprint = null;
     }
 
     /// <summary>

@@ -42,4 +42,25 @@ public class PublicKeySetData : RepoData, IKeySet
     /// <see cref="PublicRsaKeyFingerprint"/> for semantics and ownership.
     /// </summary>
     public string? PublicEccKeyFingerprint { get; set; }
+
+    /// <summary>
+    /// The canonical fingerprint (<see cref="Bam.Protocol.Profile.PublicKeyFingerprint"/>) of the
+    /// key the break-glass admin authorized to re-register this handle after revocation, or null
+    /// when the revocation bound no successor (leaving the freed handle openly re-registrable, the
+    /// pre-successor-binding behavior).  When set on the governing tombstone, re-registration of the
+    /// handle is gated on the candidate's RSA identity key matching this fingerprint — closing the
+    /// revoke→re-register hijack window (bam.protocol#21).  The binding is covered by the same admin
+    /// proof that authorizes the revocation (a fourth field of the signed <see cref="RevocationPayload"/>).
+    /// Unlike <see cref="PublicRsaKeyFingerprint"/>/<see cref="PublicEccKeyFingerprint"/> (identity of
+    /// THIS row's own material), this is the identity of a DIFFERENT, future key; it is set only on a
+    /// revoked tombstone and is server-normalized so a fresh registration can never carry it (the
+    /// registrar clears caller-supplied revocation fields — bam.protocol#25 review B1).
+    /// <para>
+    /// The gate authenticates <b>presentation of the bound public key</b>, not proof of possession, and
+    /// binds only the RSA identity key: the successor's public key must stay unpublished until the handle
+    /// is claimed, and a claimant may attach their own ECC material (recover via rotation).  See the
+    /// key-set README's successor-binding section (bam.protocol#25 review SF1 / Condition 4).
+    /// </para>
+    /// </summary>
+    public string? AuthorizedSuccessorFingerprint { get; set; }
 }
