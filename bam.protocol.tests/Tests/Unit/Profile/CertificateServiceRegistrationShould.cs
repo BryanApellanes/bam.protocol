@@ -1,3 +1,4 @@
+using System.Reflection;
 using Bam.Data.Objects;
 using Bam.DependencyInjection;
 using Bam.Encryption;
@@ -111,6 +112,69 @@ public class CertificateServiceRegistrationShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RespectExistingSerialNumberProviderBinding()
+    {
+        IActor issuer = Substitute.For<IActor>();
+        issuer.Handle.Returns("serialIssuer");
+        issuer.Name.Returns("Serial Issuer");
+        ICertificateSerialNumberProvider existingProvider = Substitute.For<ICertificateSerialNumberProvider>();
+
+        After.Setup(reg =>
+        {
+            ServiceRegistry registry = new ServiceRegistry();
+            registry.For<IProfileRepository>().Use(Substitute.For<IProfileRepository>());
+            registry.For<IKeyManager>().Use(Substitute.For<IKeyManager>());
+            registry.For<ICompositeKeyCalculator>().Use(Substitute.For<ICompositeKeyCalculator>());
+            registry.For<ICertificateSerialNumberProvider>().Use(existingProvider);
+            reg.For<ServiceRegistry>().Use(registry.AddCertificateManager(issuer));
+        })
+        .When<ServiceRegistry>("resolves ICertificateSerialNumberProvider after composing", (registry) =>
+        {
+            return registry.Get<ICertificateSerialNumberProvider>();
+        })
+        .TheTest
+        .ShouldPass<ICertificateSerialNumberProvider>((because, provider) =>
+        {
+            because.ItsTrue("the pre-existing ICertificateSerialNumberProvider binding is respected", ReferenceEquals(provider, existingProvider));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void ResolveSameCertificateAuthorityComposedIntoTheManager()
+    {
+        IActor issuer = Substitute.For<IActor>();
+        issuer.Handle.Returns("authorityIssuer");
+        issuer.Name.Returns("Authority Issuer");
+
+        After.Setup(reg =>
+        {
+            reg.For<ServiceRegistry>().Use(ComposeRegistry(issuer));
+        })
+        .When<ServiceRegistry>("resolves the authority twice and the manager it is composed into", (registry) =>
+        {
+            CertificateAuthority first = registry.Get<CertificateAuthority>();
+            CertificateAuthority second = registry.Get<CertificateAuthority>();
+            CertificateManager manager = (CertificateManager)registry.Get<ICertificateManager>();
+            PropertyInfo authorityProperty = typeof(CertificateManager)
+                .GetProperty("CertificateAuthority", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            CertificateAuthority composedIntoManager = (CertificateAuthority)authorityProperty.GetValue(manager)!;
+            return new AuthoritySingletonOutcome(
+                ReferenceEquals(first, second),
+                ReferenceEquals(first, composedIntoManager));
+        })
+        .TheTest
+        .ShouldPass<AuthoritySingletonOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("both resolutions return the same CertificateAuthority instance", outcome.SameAuthorityAcrossResolutions);
+            because.ItsTrue("the resolved CertificateManager composes that same CertificateAuthority singleton", outcome.ManagerSharesAuthority);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
     private sealed record ResolutionOutcome(
         ICertificateManager CertificateManager,
         CertificateAuthority CertificateAuthority,
@@ -119,4 +183,6 @@ public class CertificateServiceRegistrationShould : UnitTestMenuContainer
         ICertificateSerialNumberProvider SerialNumberProvider);
 
     private sealed record SingletonOutcome(bool SameInstance);
+
+    private sealed record AuthoritySingletonOutcome(bool SameAuthorityAcrossResolutions, bool ManagerSharesAuthority);
 }

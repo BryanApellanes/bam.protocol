@@ -70,15 +70,33 @@ public class CertificateAuthority : CertificateIssuer
 
     /// <summary>
     /// Creates a certificate for the specified subject, issued and signed by this authority's
-    /// configured <see cref="Issuer"/> using its signing key from <see cref="KeyManager"/>.
+    /// configured <see cref="Issuer"/> using its signing key from <see cref="KeyManager"/>,
+    /// preserving historical defaults (a certificate-authority certificate — see
+    /// <see cref="CertificateIssuanceOptions.Default"/>).
     /// </summary>
     /// <param name="subject">The subject name the certificate is issued to.</param>
     /// <param name="subjectPublic">The subject's public key embedded in the certificate.</param>
     /// <returns>The generated certificate.</returns>
     public X509Certificate CreateCertificate(string subject, IPublicKey subjectPublic)
     {
+        return CreateCertificate(subject, subjectPublic, CertificateIssuanceOptions.Default());
+    }
+
+    /// <summary>
+    /// Creates a certificate for the specified subject, issued and signed by this authority's
+    /// configured <see cref="Issuer"/> using its signing key from <see cref="KeyManager"/>,
+    /// applying the supplied per-call issuance <paramref name="options"/> — for example
+    /// <see cref="CertificateIssuanceOptions.EndEntity"/> to issue a non-CA leaf certificate
+    /// rather than a certificate authority.
+    /// </summary>
+    /// <param name="subject">The subject name the certificate is issued to.</param>
+    /// <param name="subjectPublic">The subject's public key embedded in the certificate.</param>
+    /// <param name="options">The per-call issuance options controlling validity and CA status.</param>
+    /// <returns>The generated certificate.</returns>
+    public X509Certificate CreateCertificate(string subject, IPublicKey subjectPublic, CertificateIssuanceOptions options)
+    {
         X509Name issuerName = X509NameProvider.GetName(Issuer);
         X509Name subjectName = X509NameProvider.GetName(subject);
-        return base.CreateCertificate(issuerName, subjectName, KeyManager.GetSigningKey(Issuer).Value, subjectPublic.Value);
+        return base.CreateCertificate(issuerName, subjectName, KeyManager.GetSigningKey(Issuer).Value, subjectPublic.Value, options);
     }
 }

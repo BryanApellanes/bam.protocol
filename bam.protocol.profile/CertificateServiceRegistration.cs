@@ -26,9 +26,25 @@ public static class CertificateServiceRegistration
     /// <para>
     /// The issuer is bound as the registry's <see cref="IActor"/> singleton — it is the identity
     /// certificates are issued on behalf of, and passing it here intentionally replaces any prior
-    /// <see cref="IActor"/> binding.  The authority and manager are bound as singletons: the
-    /// authority carries the fixed issuer identity and the manager's persistence must observe a
-    /// single consistent store.
+    /// <see cref="IActor"/> binding.  This replacement is a deliberate, accepted trade-off: it is
+    /// safe because request-time actor identity is resolved through <c>IActorResolver.ResolveActor</c>,
+    /// not by reading the registry's <see cref="IActor"/> singleton, so a host that also relies on a
+    /// registry-bound <see cref="IActor"/> for another purpose must bind the certificate stack in its
+    /// own registry.  The authority and manager are bound as singletons: the authority carries the
+    /// fixed issuer identity and the manager's persistence must observe a single consistent store.
+    /// </para>
+    /// <para>
+    /// The default <see cref="ICertificateSerialNumberProvider"/> is bound as a singleton so a single
+    /// serial counter is shared across the authority; a transient binding would let a second
+    /// resolution start a parallel counter and re-issue serial numbers.
+    /// </para>
+    /// <para>
+    /// Registration is eager: the <see cref="CertificateAuthority"/> and <see cref="CertificateManager"/>
+    /// singletons are constructed immediately by this call, so a missing prerequisite binding
+    /// (<c>IProfileRepository</c>, <c>IKeyManager</c>, or <c>ICompositeKeyCalculator</c>) surfaces here
+    /// as a <c>TypedBindingNotFoundException</c> at the call site rather than on first resolution.
+    /// Because the singletons capture their collaborators at construction time, rebinding a
+    /// prerequisite after this call has no effect on the already-constructed authority or manager.
     /// </para>
     /// </summary>
     /// <param name="registry">The registry to add certificate-management bindings to.</param>
@@ -43,7 +59,7 @@ public static class CertificateServiceRegistration
 
         if (!registry.Contains<ICertificateSerialNumberProvider>())
         {
-            registry.For<ICertificateSerialNumberProvider>().Use<CertificateSerialNumberProvider>();
+            registry.For<ICertificateSerialNumberProvider>().UseSingleton<CertificateSerialNumberProvider>();
         }
 
         registry
