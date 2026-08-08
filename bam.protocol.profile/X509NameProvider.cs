@@ -1,56 +1,51 @@
-﻿
 using Bam.Protocol.Data;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using ZstdSharp.Unsafe;
 
 namespace Bam.Protocol.Profile;
 
 public class X509NameProvider : IX509NameProvider
 {
-    private List<string> _rdns = new List<string>();
+    private readonly List<Rdn> _rdns = new List<Rdn>();
 
     public X509NameProvider AddOU(string ou)
     {
-        string val = ou.StartsWith("OU=") ? ou.Substring("OU=".Length) : ou;
-        _rdns.Add($"OU={val}");
+        _rdns.Add(new Rdn(X509Name.OU, StripPrefix(ou, "OU=")));
         return this;
     }
 
     public X509NameProvider AddOu(string ou, int at)
     {
-        string val = ou.StartsWith("OU=") ? ou.Substring("OU=".Length) : ou;
-        _rdns.Insert(at, $"OU={val}");
-        return this; 
+        _rdns.Insert(at, new Rdn(X509Name.OU, StripPrefix(ou, "OU=")));
+        return this;
     }
-    
+
     public X509NameProvider AddOrg(string org)
     {
-        string val = org.StartsWith("O=") ? org.Substring("O=".Length) : org;
-        _rdns.Add($"O={val}");
+        _rdns.Add(new Rdn(X509Name.O, StripPrefix(org, "O=")));
         return this;
     }
 
     public X509NameProvider AddOrg(string org, int at)
     {
-        string val = org.StartsWith("OU=") ? org.Substring("OU=".Length) : org;
-        _rdns.Insert(at, $"OU={val}");
+        // This overload historically emits an OU RDN; the O-vs-OU discrepancy is a separate
+        // pre-existing defect tracked in bam.protocol#4 and is intentionally not changed here.
+        _rdns.Insert(at, new Rdn(X509Name.OU, StripPrefix(org, "OU=")));
         return this;
     }
-    
+
     public X509NameProvider AddCountry(string country)
     {
-        string val = country.StartsWith("C=") ? country.Substring("C=".Length) : country;
-        _rdns.Add($"C={val}");
+        _rdns.Add(new Rdn(X509Name.C, StripPrefix(country, "C=")));
         return this;
     }
 
     public X509NameProvider AddCountry(string country, int at)
     {
-        string val = country.StartsWith("C=") ? country.Substring("C=".Length) : country;
-        _rdns.Insert(at, $"C={val}");
+        _rdns.Insert(at, new Rdn(X509Name.C, StripPrefix(country, "C=")));
         return this;
     }
-    
+
     public X509Name GetName(IActor actor)
     {
         return GetName(actor.Name);
@@ -58,10 +53,27 @@ public class X509NameProvider : IX509NameProvider
 
     public X509Name GetName(string subjectName)
     {
-        List<string> segments = new List<string>();
-        segments.Add($"CN={subjectName}");
-        segments.AddRange(_rdns);
-        return new X509Name(string.Join(",", segments.ToArray()));
+        // Build the distinguished name structurally from an ordered OID/value pair list so
+        // BouncyCastle DER-encodes each value in its own RDN. A subject name containing DN
+        // metacharacters (e.g. "svc,OU=Admins") is carried as a single CN value rather than
+        // injecting additional RDNs, which a comma-joined string form would allow.
+        List<DerObjectIdentifier> oids = new List<DerObjectIdentifier>();
+        List<string> values = new List<string>();
+
+        oids.Add(X509Name.CN);
+        values.Add(subjectName);
+        foreach (Rdn rdn in _rdns)
+        {
+            oids.Add(rdn.Oid);
+            values.Add(rdn.Value);
+        }
+
+        return new X509Name(oids, values);
+    }
+
+    private static string StripPrefix(string value, string prefix)
+    {
+        return value.StartsWith(prefix) ? value.Substring(prefix.Length) : value;
     }
 
     static IX509NameProvider _x509NameProvider = null!;
@@ -77,4 +89,6 @@ public class X509NameProvider : IX509NameProvider
             _x509NameProvider = value;
         }
     }
+
+    private sealed record Rdn(DerObjectIdentifier Oid, string Value);
 }

@@ -13,11 +13,9 @@ public class CertificateAuthorityShould : UnitTestMenuContainer
 {
     private static CertificateAuthority CreateCertificateAuthority(IActor issuer, IKeyManager keyManager)
     {
-        ICertificateManager certManager = Substitute.For<ICertificateManager>();
         return new CertificateAuthority(
             issuer,
             keyManager,
-            certManager,
             new BamX509NameProvider(),
             new CompositeKeyCalculator(),
             new CertificateSerialNumberProvider()

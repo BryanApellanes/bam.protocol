@@ -43,7 +43,7 @@ public class CertificateManager : ICertificateManager
 
     public X509Certificate CreateSignedCertificate(IActor actor)
     {
-        X509Certificate certificate = CertificateAuthority.CreateCertificate(actor.Name, new RsaPublicKey(GetOrCreatePublicKey(actor)));
+        X509Certificate certificate = CertificateAuthority.CreateCertificate(actor.Name, new RsaPublicKey(GetOrCreatePublicKey(actor)), CertificateIssuanceOptions.EndEntity());
 
         return SaveCertificate(actor, certificate);
     }

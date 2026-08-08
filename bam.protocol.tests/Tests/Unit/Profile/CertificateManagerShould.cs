@@ -44,13 +44,11 @@ public class CertificateManagerShould : UnitTestMenuContainer
 
     private static CertificateAuthority CreateCertificateAuthority(
         IActor issuer,
-        IKeyManager keyManager,
-        ICertificateManager certificateManager)
+        IKeyManager keyManager)
     {
         return new CertificateAuthority(
             issuer,
             keyManager,
-            certificateManager,
             new BamX509NameProvider(),
             new CompositeKeyCalculator(),
             new CertificateSerialNumberProvider()
@@ -79,8 +77,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = issuerKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -121,8 +118,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = issuerKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -173,8 +169,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                     PublicRsaKey = subjectKeyPair.PublicPem,
                 });
 
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -189,6 +184,60 @@ public class CertificateManagerShould : UnitTestMenuContainer
                 .IsNotNull()
                 .As<X509Certificate>("subject contains signed actor name", cert => cert.SubjectDN.ToString().Contains("Signed Actor"))
                 .As<X509Certificate>("issuer contains signer actor name", cert => cert.IssuerDN.ToString().Contains("Signer Actor"));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void SignedCertificateIsEndEntityWhileRootIsCertificateAuthority()
+    {
+        RsaKeyPair issuerKeyPair = new RsaKeyPair();
+
+        IActor issuer = Substitute.For<IActor>();
+        issuer.Handle.Returns("leafVsCaIssuer");
+        issuer.Name.Returns("Leaf Vs Ca Issuer");
+
+        IActor subject = Substitute.For<IActor>();
+        subject.Handle.Returns("leafVsCaSubject");
+        subject.Name.Returns("Leaf Vs Ca Subject");
+
+        RsaKeyPair subjectKeyPair = new RsaKeyPair();
+
+        IKeyManager keyManager = Substitute.For<IKeyManager>();
+        keyManager.GetSigningKey(issuer).Returns(issuerKeyPair.PrivateKey);
+
+        When.A<CertificateManager>("issues a CA root and a leaf signed certificate",
+            () =>
+            {
+                IProfileRepository repo = CreateRepository(nameof(SignedCertificateIsEndEntityWhileRootIsCertificateAuthority));
+                repo.SavePublicKeySet(new PublicKeySetData
+                {
+                    KeySetHandle = "leafVsCaIssuer",
+                    PublicRsaKey = issuerKeyPair.PublicPem,
+                });
+                repo.SavePublicKeySet(new PublicKeySetData
+                {
+                    KeySetHandle = "leafVsCaSubject",
+                    PublicRsaKey = subjectKeyPair.PublicPem,
+                });
+
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
+                return new CertificateManager(repo, ca);
+            },
+            (certManager) =>
+            {
+                X509Certificate root = certManager.CreateRootCACertificate(issuer);
+                X509Certificate signed = certManager.CreateSignedCertificate(subject);
+                // GetBasicConstraints(): >= 0 (int.MaxValue when no path length) for a cA=true
+                // certificate, -1 when the certificate is not a certificate authority.
+                return new LeafVsCaOutcome(root.GetBasicConstraints(), signed.GetBasicConstraints());
+            })
+        .TheTest
+        .ShouldPass<LeafVsCaOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the root CA certificate is a certificate authority", outcome.RootBasicConstraints != -1);
+            because.ItsTrue("the signed certificate is an end-entity (not a certificate authority)", outcome.SignedBasicConstraints == -1);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -232,8 +281,7 @@ public class CertificateManagerShould : UnitTestMenuContainer
                 issuer.Name.Returns("No Key Issuer");
 
                 IKeyManager keyManager = Substitute.For<IKeyManager>();
-                CertificateManager certManager = new CertificateManager(repo, null!);
-                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager, certManager);
+                CertificateAuthority ca = CreateCertificateAuthority(issuer, keyManager);
                 return new CertificateManager(repo, ca);
             },
             (certManager) =>
@@ -258,4 +306,6 @@ public class CertificateManagerShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    private sealed record LeafVsCaOutcome(int RootBasicConstraints, int SignedBasicConstraints);
 }
