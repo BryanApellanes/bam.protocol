@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Bam.Protocol.AspNetCore</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- ASP.NET Core adapter for the Bam actor-auth pipeline (design: threeheadz-tracker#30).
+             The framework reference is contained to this project, mirroring how bam.ai.hosting
+             isolates the Microsoft.Extensions dependency. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
+        <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />
+        <ProjectReference Include="..\..\bam.useraccounts\bam.useraccounts\bam.useraccounts.csproj" />
+        <ProjectReference Include="..\bam.protocol\bam.protocol.csproj" />
+        <ProjectReference Include="..\bam.protocol.data\bam.protocol.data.csproj" />
+        <ProjectReference Include="..\bam.protocol.profile\bam.protocol.profile.csproj" />
+        <ProjectReference Include="..\bam.protocol.server\bam.protocol.server.csproj" />
+    </ItemGroup>
+
+</Project>

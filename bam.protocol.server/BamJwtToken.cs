@@ -11,6 +11,13 @@ namespace Bam.Protocol.Server;
 public class BamJwtToken
 {
     /// <summary>
+    /// The claim name carrying <see cref="KeyFingerprint"/>: the canonical fingerprint of the actor's
+    /// registered ECC public key a server-issued token is bound to (design threeheadz-tracker#30).
+    /// Optional and absent by default, so tokens without a binding decode exactly as before.
+    /// </summary>
+    public const string KeyFingerprintClaim = "kfp";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BamJwtToken"/> class.
     /// </summary>
     /// <param name="sessionId">The session identifier.</param>
@@ -52,21 +59,40 @@ public class BamJwtToken
     public DateTimeOffset Expiry { get; set; }
 
     /// <summary>
+    /// Gets or sets the canonical fingerprint of the registered ECC public key this token is bound
+    /// to (the <c>kfp</c> claim), or null for a token with no key binding. Set by server-side
+    /// issuance; verifiers compare it against the subject's ACTIVE key set so rotation or revocation
+    /// invalidates the token.
+    /// </summary>
+    public string? KeyFingerprint { get; set; }
+
+    /// <summary>
     /// Encodes this token as a signed JWT string using the specified private key.
     /// </summary>
     /// <param name="privateKey">The ECDSA private key to sign the token with.</param>
     /// <returns>The encoded JWT string.</returns>
     public string Encode(AsymmetricKeyParameter privateKey)
     {
-        string header = Base64UrlEncode(JsonSerializer.Serialize(new { alg = "ES256", typ = "JWT" }));
-        string payload = Base64UrlEncode(JsonSerializer.Serialize(new
+        string header = Base64UrlEncode(JsonSerializer.Serialize(new Dictionary<string, object>
         {
-            sub = ActorHandle,
-            sid = SessionId,
-            iss = Issuer,
-            iat = IssuedAt.ToUnixTimeSeconds(),
-            exp = Expiry.ToUnixTimeSeconds()
+            ["alg"] = "ES256",
+            ["typ"] = "JWT",
         }));
+
+        Dictionary<string, object> claims = new Dictionary<string, object>
+        {
+            ["sub"] = ActorHandle,
+            ["sid"] = SessionId,
+            ["iss"] = Issuer,
+            ["iat"] = IssuedAt.ToUnixTimeSeconds(),
+            ["exp"] = Expiry.ToUnixTimeSeconds(),
+        };
+        if (!string.IsNullOrEmpty(KeyFingerprint))
+        {
+            claims[KeyFingerprintClaim] = KeyFingerprint;
+        }
+
+        string payload = Base64UrlEncode(JsonSerializer.Serialize(claims));
 
         string signingInput = $"{header}.{payload}";
         byte[] inputBytes = Encoding.UTF8.GetBytes(signingInput);
@@ -102,11 +128,15 @@ public class BamJwtToken
         string iss = root.GetProperty("iss").GetString() ?? string.Empty;
         long iat = root.GetProperty("iat").GetInt64();
         long exp = root.GetProperty("exp").GetInt64();
+        string? keyFingerprint = root.TryGetProperty(KeyFingerprintClaim, out JsonElement fingerprintElement)
+            ? fingerprintElement.GetString()
+            : null;
 
         return new BamJwtToken(sid, sub, iss)
         {
             IssuedAt = DateTimeOffset.FromUnixTimeSeconds(iat),
-            Expiry = DateTimeOffset.FromUnixTimeSeconds(exp)
+            Expiry = DateTimeOffset.FromUnixTimeSeconds(exp),
+            KeyFingerprint = keyFingerprint,
         };
     }
 
