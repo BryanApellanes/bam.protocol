@@ -129,8 +129,8 @@ public static class ActorAuthenticationRegistration
     /// Marks a route as a protected endpoint: records <see cref="RequiredAccessAttribute"/> metadata and
     /// attaches the request-proof and access filters (proof first, then access). It also records an
     /// endpoint-level <c>AnonymousAccessAttribute(false)</c>, so an anonymous route group cannot make the
-    /// endpoint anonymous. Endpoints mapped without this call get authentication only: the middleware
-    /// verifies the bearer token, but no access check and no body signature apply.
+    /// endpoint anonymous. Endpoints mapped without this call get authentication and admission only: the
+    /// middleware verifies the bearer token and admission, but no access-level check and no body signature apply.
     /// </summary>
     /// <param name="builder">The route handler.</param>
     /// <param name="access">The access the endpoint requires.</param>

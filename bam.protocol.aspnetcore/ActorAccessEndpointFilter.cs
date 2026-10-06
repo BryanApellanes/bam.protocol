@@ -1,3 +1,4 @@
+using Bam.Protocol.Profile;
 using Microsoft.AspNetCore.Http;
 
 namespace Bam.Protocol.AspNetCore;
@@ -8,7 +9,7 @@ namespace Bam.Protocol.AspNetCore;
 /// the actor's access from <see cref="IActorAccessPolicy"/> must be at or above the required level.
 /// An endpoint that carries this filter (through <c>RequireActorAccess</c>) but no
 /// <see cref="RequiredAccessAttribute"/> requires <see cref="BamAccess.Execute"/>. Endpoints mapped
-/// without the filter get no access check at all, only the middleware's authentication.
+/// without the filter get no access check at all, only the middleware's authentication and admission.
 /// </summary>
 public sealed class ActorAccessEndpointFilter : IEndpointFilter
 {
@@ -54,7 +55,7 @@ public sealed class ActorAccessEndpointFilter : IEndpointFilter
         }
 
         BamAccess required = RequiredAccessOf(endpoint);
-        BamAccess held = _policy.GetAccess(actor);
+        BamAccess held = _policy.GetAccess(actor, PublicKeyFingerprint.Of(context.HttpContext.GetActorEccPublicKeyPem()));
         if (held >= required)
         {
             return await next(context).ConfigureAwait(false);

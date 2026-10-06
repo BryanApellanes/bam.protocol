@@ -9,6 +9,10 @@ public interface IActorAccessPolicy
 {
     /// <summary>Gets the access level the actor holds.</summary>
     /// <param name="actor">The actor resolved by authentication (possibly the anonymous sentinel).</param>
+    /// <param name="keyFingerprint">
+    /// The <see cref="Bam.Protocol.Profile.PublicKeyFingerprint"/> of the key the actor authenticated with, or
+    /// null when unknown, so a policy can honour key-bound admission.
+    /// </param>
     /// <returns>The actor's access level.</returns>
-    BamAccess GetAccess(IActor actor);
+    BamAccess GetAccess(IActor actor, string? keyFingerprint);
 }

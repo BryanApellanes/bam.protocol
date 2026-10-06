@@ -26,7 +26,7 @@ public sealed class ConfiguredActorAccessPolicy : IActorAccessPolicy
     }
 
     /// <inheritdoc />
-    public BamAccess GetAccess(IActor actor)
+    public BamAccess GetAccess(IActor actor, string? keyFingerprint)
     {
         ArgumentNullException.ThrowIfNull(actor);
         if (string.Equals(actor.Handle, AnonymousActorProvider.AnonymousHandle, StringComparison.Ordinal))
@@ -34,6 +34,6 @@ public sealed class ConfiguredActorAccessPolicy : IActorAccessPolicy
             return BamAccess.Denied;
         }
 
-        return _admission.IsAdmitted(actor) ? _options.EnrolledActorAccess : BamAccess.Denied;
+        return _admission.IsAdmitted(actor, keyFingerprint) ? _options.EnrolledActorAccess : BamAccess.Denied;
     }
 }

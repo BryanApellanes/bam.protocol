@@ -1,5 +1,6 @@
 using Bam.Encryption;
 using Bam.Protocol.Data.Common;
+using Bam.Protocol.Profile;
 using Bam.Protocol.Server;
 using Bam.Test;
 
@@ -54,7 +55,11 @@ public class BodySignatureProofVerifierShould : UnitTestMenuContainer
                 proof.Verify(body, signature, "NONEwithECDSA", pair.PublicPem),
                 proof.Verify(body, signature, "SHA1WITHECDSA", pair.PublicPem),
                 proof.Verify(body, signature, "NOT-AN-ALGORITHM", pair.PublicPem),
-                new BodySignatureProofVerifier(new ActorAuthenticationOptions { AllowedBodySignatureAlgorithms = Array.Empty<string>() }).Verify(body, signature, null, pair.PublicPem)))
+                ConstructionRefusal(Array.Empty<string>()),
+                ConstructionRefusal(new[] { "NONEwithECDSA" }),
+                ConstructionRefusal(new[] { BodySignatureProofVerifier.DefaultAlgorithm, "sha1withecdsa" }),
+                ConstructionRefusal(new[] { "MD5withRSA" }),
+                ConstructionRefusal(new[] { "SHA384WITHECDSA" })))
             .TheTest
             .ShouldPass<AlgorithmOutcome>((because, outcome) =>
             {
@@ -63,7 +68,11 @@ public class BodySignatureProofVerifierShould : UnitTestMenuContainer
                 because.ItsTrue("NONEwithECDSA is refused", !outcome.None);
                 because.ItsTrue("SHA1WITHECDSA is refused", !outcome.Sha1);
                 because.ItsTrue("an unknown name is refused", !outcome.Unknown);
-                because.ItsTrue("an empty allow-list refuses everything", !outcome.EmptyList);
+                because.ItsTrue("an empty allow-list refuses construction", outcome.EmptyList is not null);
+                because.ItsTrue("a NONEwith* entry refuses construction", outcome.NoneEntry?.Contains("NONEwithECDSA", StringComparison.Ordinal) == true);
+                because.ItsTrue("a SHA1 entry refuses construction, whatever its case", outcome.Sha1Entry?.Contains("sha1withecdsa", StringComparison.Ordinal) == true);
+                because.ItsTrue("an MD5 entry refuses construction", outcome.Md5Entry is not null);
+                because.ItsTrue("a SHA-2 entry is accepted", outcome.Sha384Entry is null);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -71,7 +80,20 @@ public class BodySignatureProofVerifierShould : UnitTestMenuContainer
 
     private sealed record ProofOutcome(bool Genuine, bool GenuineExplicit, bool Tampered, bool WrongKey, bool Malformed, bool BadPem);
 
-    private sealed record AlgorithmOutcome(bool Default, bool ExplicitAllowed, bool None, bool Sha1, bool Unknown, bool EmptyList);
+    private static string? ConstructionRefusal(IReadOnlyList<string> allowed)
+    {
+        try
+        {
+            new BodySignatureProofVerifier(new ActorAuthenticationOptions { AllowedBodySignatureAlgorithms = allowed });
+            return null;
+        }
+        catch (InvalidOperationException exception)
+        {
+            return exception.Message;
+        }
+    }
+
+    private sealed record AlgorithmOutcome(bool Default, bool ExplicitAllowed, bool None, bool Sha1, bool Unknown, string? EmptyList, string? NoneEntry, string? Sha1Entry, string? Md5Entry, string? Sha384Entry);
 }
 
 [UnitTestMenu("ConfiguredActorAccessPolicy Should", Selector = "caap")]
@@ -85,8 +107,8 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
         When.A<ConfiguredActorAccessPolicy>("maps enrolled and anonymous actors",
             () => new ConfiguredActorAccessPolicy(options, new ConfiguredActorAdmission(options)),
             (policy) => new PolicyOutcome(
-                policy.GetAccess(new ActorData { Handle = "alice", Name = "alice" }),
-                policy.GetAccess(new AnonymousActorProvider().GetAnonymousActor())))
+                policy.GetAccess(new ActorData { Handle = "alice", Name = "alice" }, null),
+                policy.GetAccess(new AnonymousActorProvider().GetAnonymousActor(), null)))
             .TheTest
             .ShouldPass<PolicyOutcome>((because, outcome) =>
             {
@@ -110,11 +132,11 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
                 ActorAuthenticationOptions listed = new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice" } };
                 ActorAuthenticationOptions open = new ActorAuthenticationOptions { OpenEnrollment = true };
                 return new AdmissionOutcome(
-                    new ConfiguredActorAccessPolicy(closed, new ConfiguredActorAdmission(closed)).GetAccess(alice),
-                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(alice),
-                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(bob),
-                    new ConfiguredActorAdmission(listed).IsAdmitted(new ActorData { Handle = "ALICE", Name = "ALICE" }),
-                    new ConfiguredActorAccessPolicy(open, new ConfiguredActorAdmission(open)).GetAccess(bob));
+                    new ConfiguredActorAccessPolicy(closed, new ConfiguredActorAdmission(closed)).GetAccess(alice, null),
+                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(alice, null),
+                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(bob, null),
+                    new ConfiguredActorAdmission(listed).IsAdmitted(new ActorData { Handle = "ALICE", Name = "ALICE" }, null),
+                    new ConfiguredActorAccessPolicy(open, new ConfiguredActorAdmission(open)).GetAccess(bob, null));
             })
             .TheTest
             .ShouldPass<AdmissionOutcome>((because, outcome) =>
@@ -128,6 +150,45 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void BindAPinnedEntryToTheKeyItNames()
+    {
+        ActorData alice = new ActorData { Handle = "alice", Name = "alice" };
+        string pinned = PublicKeyFingerprint.Of(TestKeys.NewEcc().PublicPem)!;
+        string other = PublicKeyFingerprint.Of(TestKeys.NewEcc().PublicPem)!;
+
+        When.A<ActorAuthenticationOptions>("admits a pinned handle only with its pinned key",
+            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice@" + pinned, "bob" } },
+            (options) =>
+            {
+                ConfiguredActorAdmission admission = new ConfiguredActorAdmission(options);
+                ConfiguredActorAccessPolicy policy = new ConfiguredActorAccessPolicy(options, admission);
+                ActorAuthenticationOptions open = new ActorAuthenticationOptions { OpenEnrollment = true };
+                return new PinOutcome(
+                    admission.IsAdmitted(alice, pinned),
+                    admission.IsAdmitted(alice, other),
+                    admission.IsAdmitted(alice, null),
+                    admission.IsAdmitted(new ActorData { Handle = "bob", Name = "bob" }, other),
+                    admission.IsAdmitted(new ActorData { Handle = "bob", Name = "bob" }, null),
+                    policy.GetAccess(alice, other),
+                    new ConfiguredActorAdmission(open).IsAdmitted(new ActorData { Handle = "anyone", Name = "anyone" }, null));
+            })
+            .TheTest
+            .ShouldPass<PinOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a pinned handle is admitted with its pinned key", outcome.PinnedKey);
+                because.ItsTrue("the same handle with another key is refused", !outcome.OtherKey);
+                because.ItsTrue("a pinned handle with no known key is refused", !outcome.NoKey);
+                because.ItsTrue("an unpinned handle is admitted with any key", outcome.UnpinnedAnyKey && outcome.UnpinnedNoKey);
+                because.ItsTrue("the access policy honours the pin", outcome.PolicyOtherKey == BamAccess.Denied);
+                because.ItsTrue("open enrollment admits everyone", outcome.Open);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record PinOutcome(bool PinnedKey, bool OtherKey, bool NoKey, bool UnpinnedAnyKey, bool UnpinnedNoKey, BamAccess PolicyOtherKey, bool Open);
 
     private sealed record PolicyOutcome(BamAccess Enrolled, BamAccess Anonymous);
 

@@ -27,10 +27,25 @@ public sealed class BodySignatureProofVerifier : IRequestProof
 
     /// <summary>Creates a verifier that accepts the algorithms the options allow.</summary>
     /// <param name="options">Carries <see cref="ActorAuthenticationOptions.AllowedBodySignatureAlgorithms"/>.</param>
+    /// <exception cref="InvalidOperationException">The allow-list is empty or names a scheme with no digest or a broken one (NONEwith*, SHA1*, MD5*).</exception>
     public BodySignatureProofVerifier(ActorAuthenticationOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        _allowedAlgorithms = options.AllowedBodySignatureAlgorithms ?? Array.Empty<string>();
+        IReadOnlyList<string> allowed = options.AllowedBodySignatureAlgorithms ?? Array.Empty<string>();
+        if (allowed.Count == 0)
+        {
+            throw new InvalidOperationException("ActorAuth:AllowedBodySignatureAlgorithms is empty; at least one body-signature algorithm must be allowed.");
+        }
+
+        foreach (string algorithm in allowed)
+        {
+            if (string.IsNullOrWhiteSpace(algorithm) || IsWeak(algorithm))
+            {
+                throw new InvalidOperationException($"ActorAuth:AllowedBodySignatureAlgorithms names '{algorithm}', which doesn't hash the body with a sound digest. Allow {DefaultAlgorithm} or another SHA-2 ECDSA scheme.");
+            }
+        }
+
+        _allowedAlgorithms = allowed;
     }
 
     /// <summary>Whether an algorithm name is on the allow-list (a missing name means <see cref="DefaultAlgorithm"/>).</summary>
@@ -79,5 +94,13 @@ public sealed class BodySignatureProofVerifier : IRequestProof
         {
             return false;
         }
+    }
+
+    private static bool IsWeak(string algorithm)
+    {
+        string trimmed = algorithm.Trim();
+        return trimmed.StartsWith("NONEWITH", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("SHA1", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("MD5", StringComparison.OrdinalIgnoreCase);
     }
 }

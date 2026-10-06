@@ -63,8 +63,12 @@ public sealed record ActorAuthenticationOptions
     public bool OpenEnrollment { get; init; }
 
     /// <summary>
-    /// Key-set handles <see cref="ConfiguredActorAdmission"/> admits when <see cref="OpenEnrollment"/> is off,
-    /// matched exactly (ordinal). Empty by default, which admits nobody.
+    /// The actors <see cref="ConfiguredActorAdmission"/> admits when <see cref="OpenEnrollment"/> is off. Each
+    /// entry is <c>handle</c> (any registered key) or <c>handle@fingerprint</c> (only the key whose
+    /// <see cref="Bam.Protocol.Profile.PublicKeyFingerprint"/> matches, as returned in
+    /// <c>ActorTokenResponse.KeyFingerprint</c>), matched exactly (ordinal). Empty by default, which admits
+    /// nobody. An unpinned entry is satisfied by whoever registers that handle first; a rotated or revoked
+    /// pinned key needs its entry updated to the successor's fingerprint.
     /// </summary>
     public IReadOnlyList<string> AdmittedHandles { get; init; } = Array.Empty<string>();
 

@@ -2,6 +2,7 @@ using System.Text;
 using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Protocol.Data;
+using Bam.Protocol.Profile;
 using Bam.Protocol.Server;
 using Bam.Test;
 using Bam.UserAccounts;
@@ -17,6 +18,8 @@ namespace Bam.Protocol.AspNetCore.Tests;
 public class ActorEndpointsShould : UnitTestMenuContainer
 {
     private static readonly ActorAuthenticationOptions Options = new ActorAuthenticationOptions();
+
+    private static readonly IActorAdmission Everyone = new ConfiguredActorAdmission(new ActorAuthenticationOptions { OpenEnrollment = true });
 
     private static int? StatusOf(IResult result)
     {
@@ -38,8 +41,8 @@ public class ActorEndpointsShould : UnitTestMenuContainer
             () => Options,
             (_) =>
             {
-                IResult ok = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(clientPair, "alice") }, proof, issuer);
-                IResult refused = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer);
+                IResult ok = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(clientPair, "alice") }, proof, issuer, Everyone);
+                IResult refused = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer, Everyone);
                 ActorTokenResponse? response = (ok as Ok<ActorTokenResponse>)?.Value;
                 bool serverVerifies = response is not null && new ServerIssuedTokenVerifier(resolver, storage, Options).Verify(response.Token).Success;
                 return new IssueEndpointOutcome(StatusOf(ok), serverVerifies, StatusOf(refused));
@@ -113,15 +116,47 @@ public class ActorEndpointsShould : UnitTestMenuContainer
         When.A<ActorAuthenticationOptions>("answers an unknown handle and a bad signature the same way",
             () => Options,
             (_) => new GenericFailureOutcome(
-                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(clientPair, "nobody") }, proof, issuer)),
-                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer)),
-                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = "garbage" }, proof, issuer))))
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(clientPair, "nobody") }, proof, issuer, Everyone)),
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer, Everyone)),
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = "garbage" }, proof, issuer, Everyone))))
             .TheTest
             .ShouldPass<GenericFailureOutcome>((because, outcome) =>
             {
                 because.ItsTrue($"an unknown handle gets the generic 401 ({outcome.UnknownHandle})", outcome.UnknownHandle == "401:" + ActorAuthenticationMiddleware.FailureMessage);
                 because.ItsTrue("a bad signature gets the identical response", outcome.BadSignature == outcome.UnknownHandle);
                 because.ItsTrue("a malformed token gets the identical response", outcome.Malformed == outcome.UnknownHandle);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void IssueNoServerTokenToAnUnadmittedActor()
+    {
+        EccKeyPair alicePair = TestKeys.NewEcc();
+        EccKeyPair bobPair = TestKeys.NewEcc();
+        InMemoryNamedKeyStorage storage = new InMemoryNamedKeyStorage();
+        storage.SaveNamedKey(Options.ServerKeyName, TestKeys.PairPem(TestKeys.NewEcc()));
+        FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", alicePair)).Add(TestKeys.KeySet("bob", bobPair));
+        SignedActorTokenVerifier proof = new SignedActorTokenVerifier(resolver, Options);
+        ServerActorTokenIssuer issuer = new ServerActorTokenIssuer(storage, Options);
+
+        When.A<ActorAuthenticationOptions>("issues only to an admitted actor with its pinned key",
+            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice@" + PublicKeyFingerprint.Of(alicePair.PublicPem) } },
+            (options) =>
+            {
+                ConfiguredActorAdmission admission = new ConfiguredActorAdmission(options);
+                IResult admitted = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(alicePair, "alice") }, proof, issuer, admission);
+                IResult unadmitted = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(bobPair, "bob") }, proof, issuer, admission);
+                IResult forged = ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer, admission);
+                return new AdmissionIssueOutcome(StatusOf(admitted), Describe(unadmitted), Describe(forged));
+            })
+            .TheTest
+            .ShouldPass<AdmissionIssueOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("an admitted actor gets a token", outcome.AdmittedStatus == 200);
+                because.ItsTrue($"an unadmitted actor gets the generic 401 ({outcome.Unadmitted})", outcome.Unadmitted == "401:" + ActorAuthenticationMiddleware.FailureMessage);
+                because.ItsTrue("which is identical to a failed proof", outcome.Unadmitted == outcome.Forged);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -154,6 +189,8 @@ public class ActorEndpointsShould : UnitTestMenuContainer
         IReadOnlyList<string> messages = (result as JsonHttpResult<ActorAuthFailure>)?.Value?.Messages ?? Array.Empty<string>();
         return StatusOf(result) + ":" + string.Join("|", messages);
     }
+
+    private sealed record AdmissionIssueOutcome(int? AdmittedStatus, string Unadmitted, string Forged);
 
     private sealed record GenericFailureOutcome(string UnknownHandle, string BadSignature, string Malformed);
 
@@ -206,7 +243,7 @@ public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
                 because.ItsTrue("the configured policy is bound", outcome.Policy is ConfiguredActorAccessPolicy);
                 because.ItsTrue("an anonymous actor provider is supplied when the host has none", outcome.Anonymous is AnonymousActorProvider);
                 because.ItsTrue("the closed-by-default admission is bound", outcome.Admission is ConfiguredActorAdmission);
-                because.ItsTrue("the bound policy denies a freshly enrolled actor", outcome.Policy.GetAccess(new Bam.Protocol.Data.Common.ActorData { Handle = "fresh", Name = "fresh" }) == BamAccess.Denied);
+                because.ItsTrue("the bound policy denies a freshly enrolled actor", outcome.Policy.GetAccess(new Bam.Protocol.Data.Common.ActorData { Handle = "fresh", Name = "fresh" }, null) == BamAccess.Denied);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -397,7 +434,7 @@ public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
 
     private sealed class AdmitEveryone : IActorAdmission
     {
-        public bool IsAdmitted(IActor actor)
+        public bool IsAdmitted(IActor actor, string? keyFingerprint)
         {
             return true;
         }

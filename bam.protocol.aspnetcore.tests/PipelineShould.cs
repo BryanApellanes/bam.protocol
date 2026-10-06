@@ -1,5 +1,6 @@
 using Bam.Encryption;
 using Bam.Protocol.Data.Common;
+using Bam.Protocol.Profile;
 using Bam.Protocol.Server;
 using Bam.Test;
 using Bam.Web;
@@ -13,7 +14,9 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
 {
     private static readonly ActorAuthenticationOptions Options = new ActorAuthenticationOptions();
 
-    private static async Task<MiddlewareOutcome> RunAsync(DefaultHttpContext context, IActorTokenVerifier verifier)
+    private static readonly IActorAdmission Everyone = new ConfiguredActorAdmission(new ActorAuthenticationOptions { OpenEnrollment = true });
+
+    private static async Task<MiddlewareOutcome> RunAsync(DefaultHttpContext context, IActorTokenVerifier verifier, IActorAdmission? admission = null)
     {
         bool nextCalled = false;
         ActorAuthenticationMiddleware middleware = new ActorAuthenticationMiddleware(_ =>
@@ -21,7 +24,7 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
             nextCalled = true;
             return Task.CompletedTask;
         });
-        await middleware.InvokeAsync(context, verifier, new AnonymousActorProvider());
+        await middleware.InvokeAsync(context, verifier, new AnonymousActorProvider(), admission ?? Everyone);
         return new MiddlewareOutcome(nextCalled, context.Response.StatusCode, context.GetActor()?.Handle, context.GetActorEccPublicKeyPem());
     }
 
@@ -81,11 +84,11 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
-    private static async Task<string> BodyOfRejectionAsync(DefaultHttpContext context, IActorTokenVerifier verifier)
+    private static async Task<string> BodyOfRejectionAsync(DefaultHttpContext context, IActorTokenVerifier verifier, IActorAdmission? admission = null)
     {
         MemoryStream body = new MemoryStream();
         context.Response.Body = body;
-        await RunAsync(context, verifier);
+        await RunAsync(context, verifier, admission);
         return context.Response.StatusCode + ":" + Encoding.UTF8.GetString(body.ToArray());
     }
 
@@ -127,13 +130,13 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
         EccKeyPair pair = TestKeys.NewEcc();
         FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", pair));
 
-        When.A<ActorAuthenticationOptions>("lets a valid token through an unmarked endpoint with no body signature",
-            () => Options,
+        When.A<ActorAuthenticationOptions>("lets an admitted actor's valid token through an unmarked endpoint with no body signature",
+            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice" } },
             (options) =>
             {
                 DefaultHttpContext unmarked = Requests.WithEndpoint().WithBody("{\"unsigned\":true}");
                 unmarked.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(pair, "alice");
-                return RunAsync(unmarked, new SignedActorTokenVerifier(resolver, options)).GetAwaiter().GetResult();
+                return RunAsync(unmarked, new SignedActorTokenVerifier(resolver, options), new ConfiguredActorAdmission(options)).GetAwaiter().GetResult();
             })
             .TheTest
             .ShouldPass<MiddlewareOutcome>((because, outcome) =>
@@ -144,6 +147,49 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void RefuseAnUnadmittedActorOnEveryNonAnonymousEndpoint()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        EccKeyPair carolPair = TestKeys.NewEcc();
+        EccKeyPair bobPair = TestKeys.NewEcc();
+        FakeKeySetResolver resolver = new FakeKeySetResolver()
+            .Add(TestKeys.KeySet("alice", pair))
+            .Add(TestKeys.KeySet("bob", bobPair))
+            .Add(TestKeys.KeySet("carol", carolPair));
+        string alicePin = PublicKeyFingerprint.Of(pair.PublicPem)!;
+        string wrongPin = PublicKeyFingerprint.Of(TestKeys.NewEcc().PublicPem)!;
+
+        When.A<ActorAuthenticationOptions>("checks admission, with any key pin, before continuing",
+            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice@" + alicePin, "carol@" + wrongPin } },
+            (options) =>
+            {
+                SignedActorTokenVerifier verifier = new SignedActorTokenVerifier(resolver, options);
+                ConfiguredActorAdmission admission = new ConfiguredActorAdmission(options);
+                DefaultHttpContext unadmitted = Requests.WithEndpoint();
+                unadmitted.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(bobPair, "bob");
+                DefaultHttpContext pinnedElsewhere = Requests.WithEndpoint();
+                pinnedElsewhere.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(carolPair, "carol");
+                DefaultHttpContext admitted = Requests.WithEndpoint();
+                admitted.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(pair, "alice");
+                return new UnadmittedOutcome(
+                    BodyOfRejectionAsync(unadmitted, verifier, admission).GetAwaiter().GetResult(),
+                    BodyOfRejectionAsync(pinnedElsewhere, verifier, admission).GetAwaiter().GetResult(),
+                    RunAsync(admitted, verifier, admission).GetAwaiter().GetResult());
+            })
+            .TheTest
+            .ShouldPass<UnadmittedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"an unadmitted actor gets the generic 401 on an unmarked endpoint ({outcome.Unadmitted})", outcome.Unadmitted == "401:" + ActorAuthenticationMiddleware.FailureMessage);
+                because.ItsTrue("an actor whose key doesn't match its pin gets the same 401", outcome.PinnedToAnotherKey == outcome.Unadmitted);
+                because.ItsTrue("an admitted actor with its pinned key continues", outcome.Admitted.NextCalled && outcome.Admitted.ActorHandle == "alice");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record UnadmittedOutcome(string Unadmitted, string PinnedToAnotherKey, MiddlewareOutcome Admitted);
 
     private sealed record SameBodyOutcome(string UnknownHandle, string BadSignature, string Missing);
 

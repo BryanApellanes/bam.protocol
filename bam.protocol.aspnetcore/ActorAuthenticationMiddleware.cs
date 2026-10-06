@@ -1,3 +1,4 @@
+using Bam.Protocol.Profile;
 using Bam.Protocol.Server;
 using Bam.Web;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,10 @@ namespace Bam.Protocol.AspNetCore;
 /// an unknown handle from a bad signature. On success the actor and its registered ECC key PEM are
 /// recorded on the context (<see cref="ActorHttpContext"/>) for the endpoint filters. Request-body
 /// buffering is enabled so <see cref="RequestProofEndpointFilter"/> can re-read the raw body after model
-/// binding. The middleware authenticates only: access checks and the body signature apply to endpoints
-/// mapped with <c>RequireActorAccess</c>; any other non-anonymous endpoint (including MVC controllers)
-/// gets authentication alone.
+/// binding. After verification the actor must be admitted (<see cref="IActorAdmission"/>, given the
+/// fingerprint of the key it presented); an unadmitted actor gets the same 401. Access-level checks and the
+/// body signature apply to endpoints mapped with <c>RequireActorAccess</c>; any other non-anonymous endpoint
+/// (including MVC controllers) gets authentication and admission only.
 /// </summary>
 public sealed class ActorAuthenticationMiddleware
 {
@@ -41,12 +43,14 @@ public sealed class ActorAuthenticationMiddleware
     /// <param name="context">The request context.</param>
     /// <param name="verifier">The token verifier bound for the host's mode.</param>
     /// <param name="anonymousActors">Supplies the anonymous sentinel.</param>
+    /// <param name="admission">Decides whether an authenticated actor, with the key it presented, is admitted.</param>
     /// <returns>A task that completes when the pipeline has run.</returns>
-    public async Task InvokeAsync(HttpContext context, IActorTokenVerifier verifier, IAnonymousActorProvider anonymousActors)
+    public async Task InvokeAsync(HttpContext context, IActorTokenVerifier verifier, IAnonymousActorProvider anonymousActors, IActorAdmission admission)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(verifier);
         ArgumentNullException.ThrowIfNull(anonymousActors);
+        ArgumentNullException.ThrowIfNull(admission);
 
         context.Request.EnableBuffering();
 
@@ -75,6 +79,14 @@ public sealed class ActorAuthenticationMiddleware
         if (!verification.Success || verification.Actor is null)
         {
             await RejectAsync(context, string.Join(" ", verification.Messages)).ConfigureAwait(false);
+            return;
+        }
+
+        // Enrollment is self-service, so a verified token only proves key possession. Admission decides whether
+        // the actor gets in at all, on every non-anonymous endpoint, whether or not it carries RequireActorAccess.
+        if (!admission.IsAdmitted(verification.Actor, PublicKeyFingerprint.Of(verification.EccPublicKeyPem)))
+        {
+            await RejectAsync(context, $"Actor '{verification.Actor.Handle}' is not admitted.").ConfigureAwait(false);
             return;
         }
 

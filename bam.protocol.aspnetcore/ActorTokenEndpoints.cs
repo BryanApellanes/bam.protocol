@@ -1,3 +1,4 @@
+using Bam.Protocol.Profile;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -33,8 +34,8 @@ public static class ActorTokenEndpoints
         }
 
         return routes
-            .MapPost(pattern, (ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, ILoggerFactory loggers) =>
-                Issue(request, proof, issuer, loggers.CreateLogger(typeof(ActorTokenEndpoints))))
+            .MapPost(pattern, (ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, IActorAdmission admission, ILoggerFactory loggers) =>
+                Issue(request, proof, issuer, admission, loggers.CreateLogger(typeof(ActorTokenEndpoints))))
             .WithMetadata(new AnonymousAccessAttribute());
     }
 
@@ -44,13 +45,15 @@ public static class ActorTokenEndpoints
     /// <param name="request">The client-signed token.</param>
     /// <param name="proof">Verifies the client-signed token against the registered key set.</param>
     /// <param name="issuer">Mints the server token.</param>
+    /// <param name="admission">Refuses a server token to an actor that isn't admitted with the key it proved.</param>
     /// <param name="logger">Receives the verifier's reason on failure; optional.</param>
     /// <returns>200 with the token, or 401 with the fixed <see cref="ActorAuthenticationMiddleware.FailureMessage"/>.</returns>
-    public static IResult Issue(ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, ILogger? logger = null)
+    public static IResult Issue(ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, IActorAdmission admission, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(proof);
         ArgumentNullException.ThrowIfNull(issuer);
+        ArgumentNullException.ThrowIfNull(admission);
 
         ActorTokenVerification verification = proof.Verify(request.ClientToken);
         if (!verification.Success || verification.Actor is null || verification.EccPublicKeyPem is null)
@@ -58,6 +61,12 @@ public static class ActorTokenEndpoints
             // The reason (unknown handle, bad signature, expiry) is logged, never returned: telling them
             // apart would let a caller enumerate registered handles.
             logger?.LogInformation("Actor token issuance refused: {Reasons}", string.Join(" ", verification.Messages));
+            return Results.Json(new ActorAuthFailure { Messages = [ActorAuthenticationMiddleware.FailureMessage] }, statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        if (!admission.IsAdmitted(verification.Actor, PublicKeyFingerprint.Of(verification.EccPublicKeyPem)))
+        {
+            logger?.LogInformation("Actor token issuance refused: actor '{Handle}' is not admitted.", verification.Actor.Handle);
             return Results.Json(new ActorAuthFailure { Messages = [ActorAuthenticationMiddleware.FailureMessage] }, statusCode: StatusCodes.Status401Unauthorized);
         }
 

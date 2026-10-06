@@ -44,9 +44,9 @@ the body signature; `[RequireRequestProof(false)]` waives it, `[RequireRequestPr
 well-known anonymous actor. `RequireActorAccess` also marks its endpoint non-anonymous, so mapping it
 inside an anonymous route group doesn't make it anonymous.
 
-**Endpoints mapped without `RequireActorAccess` get authentication only.** The middleware verifies the
-bearer token on every non-anonymous endpoint, but the access check and the body signature run only where
-`RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
+**Endpoints mapped without `RequireActorAccess` get authentication and admission only.** The middleware
+verifies the bearer token and checks admission on every non-anonymous endpoint, but the access-level check
+and the body signature run only where `RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
 and `RequestProofRule.EvaluateAsync`, and the access level with `IActorAccessPolicy`.
 
@@ -54,11 +54,24 @@ and `RequestProofRule.EvaluateAsync`, and the access level with `IActorAccessPol
 
 The enrollment endpoints are anonymous and self-service, so enrolling proves only that a caller holds the
 keys it registered. `/actor/confirm` proves possession of the RSA key; it does not by itself gate access.
-Access comes from admission (`IActorAdmission`): `ConfiguredActorAccessPolicy` gives `EnrolledActorAccess`
-only to actors that are admitted, and `Denied` to everyone else. The default `ConfiguredActorAdmission`
-admits nobody. A host opts in with `ActorAuth:OpenEnrollment = true` (anyone who can reach
-`/actor/register` gets `EnrolledActorAccess`), or lists handles in `ActorAuth:AdmittedHandles`, or
+Access comes from admission (`IActorAdmission`), which is checked wherever an actor gains standing:
+
+- the middleware answers the generic 401 to an unadmitted actor on every non-anonymous endpoint, whether or
+  not it is mapped with `RequireActorAccess` (MVC controllers included);
+- `/actor/token` issues no server token to an unadmitted actor (the same generic 401);
+- `ConfiguredActorAccessPolicy` gives `EnrolledActorAccess` only to admitted actors and `Denied` to everyone
+  else, for hosts that use the policy without the middleware.
+
+The default `ConfiguredActorAdmission` admits nobody. A host opts in with `ActorAuth:OpenEnrollment = true`
+(anyone who can reach `/actor/register` gets in), or lists entries in `ActorAuth:AdmittedHandles`, or
 registers its own `IActorAdmission` (an approval store, a directory) before `AddActorAuthentication`.
+
+Each `AdmittedHandles` entry is either `handle` or `handle@fingerprint`. The fingerprint is
+`PublicKeyFingerprint.Of` the actor's ECC public key, the same value a server token carries as `kfp` and
+`/actor/token` returns as `KeyFingerprint`. An unpinned `handle` entry admits that handle with any key, so
+it is satisfied by whoever registers the handle first; pin the key to rule that out. A pinned entry admits
+the handle only with that key, so rotating or revoking the key needs the entry updated to the successor
+key's fingerprint.
 
 Every authentication failure, from the middleware and from `/actor/token`, answers 401 with the same body,
 `Authentication failed.`; the verifier's reason is logged. Every refused registration answers the same 400.
@@ -77,7 +90,7 @@ Every authentication failure, from the middleware and from `/actor/token`, answe
 | `ProofRequiredAtOrAbove` | `Execute` | Access ladder threshold for body signatures |
 | `EnrolledActorAccess` | `Execute` | Access an admitted enrolled actor holds (phase-1 policy) |
 | `OpenEnrollment` | `false` | Admit every enrolled actor |
-| `AdmittedHandles` | empty | Handles admitted when `OpenEnrollment` is off (exact match) |
+| `AdmittedHandles` | empty | `handle` or `handle@fingerprint` entries admitted when `OpenEnrollment` is off (exact match) |
 | `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the body signature may name |
 
 `UseActorAuthentication` fails fast, naming what is missing, when a prerequisite contract is not
