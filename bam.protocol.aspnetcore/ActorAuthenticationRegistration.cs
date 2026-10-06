@@ -5,6 +5,7 @@ using Bam.Protocol.Server;
 using Bam.UserAccounts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -44,7 +45,12 @@ public static class ActorAuthenticationRegistration
             registry.For<IActorTokenVerifier>().UseSingleton<SignedActorTokenVerifier>();
         }
 
-        registry.For<IRequestProof>().UseSingleton<BodySignatureProofVerifier>();
+        registry.For<IRequestProof>().UseSingleton<IRequestProof>(new BodySignatureProofVerifier(effective));
+        if (!registry.Contains<IActorAdmission>())
+        {
+            registry.For<IActorAdmission>().UseSingleton<IActorAdmission>(new ConfiguredActorAdmission(effective));
+        }
+
         registry.For<IActorAccessPolicy>().UseSingleton<ConfiguredActorAccessPolicy>();
         if (!registry.Contains<IAnonymousActorProvider>())
         {
@@ -90,7 +96,8 @@ public static class ActorAuthenticationRegistration
         services.AddSingleton<IActorTokenVerifier>(provider => options.Mode == ActorAuthenticationMode.Hybrid
             ? provider.GetRequiredService<ServerIssuedTokenVerifier>()
             : provider.GetRequiredService<SignedActorTokenVerifier>());
-        services.AddSingleton<IRequestProof, BodySignatureProofVerifier>();
+        services.AddSingleton<IRequestProof>(new BodySignatureProofVerifier(options));
+        services.TryAddSingleton<IActorAdmission>(new ConfiguredActorAdmission(options));
         services.AddSingleton<IActorAccessPolicy, ConfiguredActorAccessPolicy>();
         services.TryAddSingleton<IAnonymousActorProvider, AnonymousActorProvider>();
         return services;
@@ -120,7 +127,10 @@ public static class ActorAuthenticationRegistration
 
     /// <summary>
     /// Marks a route as a protected endpoint: records <see cref="RequiredAccessAttribute"/> metadata and
-    /// attaches the request-proof and access filters (proof first, then access).
+    /// attaches the request-proof and access filters (proof first, then access). It also records an
+    /// endpoint-level <c>AnonymousAccessAttribute(false)</c>, so an anonymous route group cannot make the
+    /// endpoint anonymous. Endpoints mapped without this call get authentication only: the middleware
+    /// verifies the bearer token, but no access check and no body signature apply.
     /// </summary>
     /// <param name="builder">The route handler.</param>
     /// <param name="access">The access the endpoint requires.</param>
@@ -129,6 +139,7 @@ public static class ActorAuthenticationRegistration
     {
         ArgumentNullException.ThrowIfNull(builder);
         return builder
+            .WithMetadata(new AnonymousAccessAttribute(false))
             .WithMetadata(new RequiredAccessAttribute(access))
             .AddEndpointFilter<RequestProofEndpointFilter>()
             .AddEndpointFilter<ActorAccessEndpointFilter>();

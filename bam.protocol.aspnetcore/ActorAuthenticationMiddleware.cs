@@ -1,20 +1,29 @@
 using Bam.Protocol.Server;
 using Bam.Web;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Bam.Protocol.AspNetCore;
 
 /// <summary>
 /// Gates every request: endpoints marked <see cref="AnonymousAccessAttribute"/> pass through carrying
 /// the anonymous sentinel; every other endpoint requires a bearer token that
-/// <see cref="IActorTokenVerifier"/> accepts, otherwise the request ends with 401 and the failure
-/// reasons. On success the actor and its registered ECC key PEM are recorded on the context
-/// (<see cref="ActorHttpContext"/>) for the endpoint filters. Request-body buffering is enabled so
-/// <see cref="RequestProofEndpointFilter"/> can re-read the raw body after model binding.
+/// <see cref="IActorTokenVerifier"/> accepts, otherwise the request ends with 401 and the fixed body
+/// <see cref="FailureMessage"/>. The verifier's reason is logged, never returned, so a caller cannot tell
+/// an unknown handle from a bad signature. On success the actor and its registered ECC key PEM are
+/// recorded on the context (<see cref="ActorHttpContext"/>) for the endpoint filters. Request-body
+/// buffering is enabled so <see cref="RequestProofEndpointFilter"/> can re-read the raw body after model
+/// binding. The middleware authenticates only: access checks and the body signature apply to endpoints
+/// mapped with <c>RequireActorAccess</c>; any other non-anonymous endpoint (including MVC controllers)
+/// gets authentication alone.
 /// </summary>
 public sealed class ActorAuthenticationMiddleware
 {
     private const string BearerScheme = "Bearer ";
+
+    /// <summary>The body of every authentication failure, whatever the reason.</summary>
+    public const string FailureMessage = "Authentication failed.";
 
     private readonly RequestDelegate _next;
 
@@ -75,8 +84,10 @@ public sealed class ActorAuthenticationMiddleware
 
     private static async Task RejectAsync(HttpContext context, string reason)
     {
+        ILoggerFactory? loggers = context.RequestServices?.GetService<ILoggerFactory>();
+        loggers?.CreateLogger<ActorAuthenticationMiddleware>().LogInformation("Actor authentication failed: {Reason}", reason);
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         context.Response.ContentType = "text/plain";
-        await context.Response.WriteAsync(reason).ConfigureAwait(false);
+        await context.Response.WriteAsync(FailureMessage).ConfigureAwait(false);
     }
 }

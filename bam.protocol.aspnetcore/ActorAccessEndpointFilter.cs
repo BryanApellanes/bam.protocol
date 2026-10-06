@@ -6,11 +6,13 @@ namespace Bam.Protocol.AspNetCore;
 /// Enforces <see cref="RequiredAccessAttribute"/> endpoint metadata with the same semantics as the
 /// Bam-native <c>AuthorizationCalculator</c>: an anonymous-marked endpoint is always allowed, otherwise
 /// the actor's access from <see cref="IActorAccessPolicy"/> must be at or above the required level.
-/// Endpoints with no <see cref="RequiredAccessAttribute"/> default to <see cref="BamAccess.Execute"/>.
+/// An endpoint that carries this filter (through <c>RequireActorAccess</c>) but no
+/// <see cref="RequiredAccessAttribute"/> requires <see cref="BamAccess.Execute"/>. Endpoints mapped
+/// without the filter get no access check at all, only the middleware's authentication.
 /// </summary>
 public sealed class ActorAccessEndpointFilter : IEndpointFilter
 {
-    /// <summary>The access assumed for a protected endpoint that declares no <see cref="RequiredAccessAttribute"/>.</summary>
+    /// <summary>The access assumed for an endpoint that carries this filter but declares no <see cref="RequiredAccessAttribute"/>.</summary>
     public const BamAccess DefaultRequiredAccess = BamAccess.Execute;
 
     private readonly IActorAccessPolicy _policy;

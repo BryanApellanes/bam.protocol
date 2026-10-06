@@ -12,7 +12,8 @@ namespace Bam.Protocol.AspNetCore;
 /// confirmation challenge, and confirm it by signature (<see cref="IAccountConfirmation"/> — the
 /// existing device-key confirmation flow). All three are anonymous by necessity. Failure responses are
 /// deliberately generic (anti-probing, matching the confirmation flow's own stance); handler logic is
-/// exposed for direct testing.
+/// exposed for direct testing. Enrolling grants no access by itself: confirmation proves possession of the
+/// registered keys, and <see cref="IActorAdmission"/> decides whether the actor holds any access.
 /// </summary>
 public static class ActorEnrollmentEndpoints
 {
@@ -38,7 +39,7 @@ public static class ActorEnrollmentEndpoints
     /// <summary>Registers a key set for a handle.</summary>
     /// <param name="request">The handle and PEM material.</param>
     /// <param name="registrar">Admits key sets under the store's uniqueness and blocklist policy.</param>
-    /// <returns>200 with the registered handle, or 400 when admission is refused.</returns>
+    /// <returns>200 with the registered handle, or the same generic 400 for every refusal (a taken handle, invalid key material, a revoked key).</returns>
     public static IResult Register(ActorRegistrationRequest request, IPublicKeySetRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -53,7 +54,7 @@ public static class ActorEnrollmentEndpoints
             });
             return Results.Ok(new ActorRegistrationResponse { KeySetHandle = registered.KeySetHandle });
         }
-        catch (Exception exception) when (exception is InvalidOperationException || exception is ArgumentException)
+        catch (Exception exception) when (exception is KeySetRegistrationException || exception is InvalidOperationException || exception is ArgumentException)
         {
             return Results.Json(new ActorAuthFailure { Messages = ["Registration was not accepted."] }, statusCode: StatusCodes.Status400BadRequest);
         }

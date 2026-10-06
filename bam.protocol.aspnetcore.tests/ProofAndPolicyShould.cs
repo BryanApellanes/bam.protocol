@@ -39,7 +39,39 @@ public class BodySignatureProofVerifierShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RefuseAnyAlgorithmTheOptionsDontAllow()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        string body = "{\"goal\":\"say hello\"}";
+        string signature = TestKeys.BodySignature(pair, body);
+
+        When.A<BodySignatureProofVerifier>("verifies only with an allowed algorithm",
+            () => new BodySignatureProofVerifier(new ActorAuthenticationOptions()),
+            (proof) => new AlgorithmOutcome(
+                proof.Verify(body, signature, null, pair.PublicPem),
+                proof.Verify(body, signature, "sha256withecdsa", pair.PublicPem),
+                proof.Verify(body, signature, "NONEwithECDSA", pair.PublicPem),
+                proof.Verify(body, signature, "SHA1WITHECDSA", pair.PublicPem),
+                proof.Verify(body, signature, "NOT-AN-ALGORITHM", pair.PublicPem),
+                new BodySignatureProofVerifier(new ActorAuthenticationOptions { AllowedBodySignatureAlgorithms = Array.Empty<string>() }).Verify(body, signature, null, pair.PublicPem)))
+            .TheTest
+            .ShouldPass<AlgorithmOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a missing header uses the default algorithm", outcome.Default);
+                because.ItsTrue("the allowed algorithm matches without regard to case", outcome.ExplicitAllowed);
+                because.ItsTrue("NONEwithECDSA is refused", !outcome.None);
+                because.ItsTrue("SHA1WITHECDSA is refused", !outcome.Sha1);
+                because.ItsTrue("an unknown name is refused", !outcome.Unknown);
+                because.ItsTrue("an empty allow-list refuses everything", !outcome.EmptyList);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
     private sealed record ProofOutcome(bool Genuine, bool GenuineExplicit, bool Tampered, bool WrongKey, bool Malformed, bool BadPem);
+
+    private sealed record AlgorithmOutcome(bool Default, bool ExplicitAllowed, bool None, bool Sha1, bool Unknown, bool EmptyList);
 }
 
 [UnitTestMenu("ConfiguredActorAccessPolicy Should", Selector = "caap")]
@@ -48,10 +80,10 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
     [UnitTest]
     public void GrantEnrolledActorsTheConfiguredLevelAndDenyTheAnonymousSentinel()
     {
-        ActorAuthenticationOptions options = new ActorAuthenticationOptions { EnrolledActorAccess = BamAccess.Write };
+        ActorAuthenticationOptions options = new ActorAuthenticationOptions { EnrolledActorAccess = BamAccess.Write, OpenEnrollment = true };
 
         When.A<ConfiguredActorAccessPolicy>("maps enrolled and anonymous actors",
-            () => new ConfiguredActorAccessPolicy(options),
+            () => new ConfiguredActorAccessPolicy(options, new ConfiguredActorAdmission(options)),
             (policy) => new PolicyOutcome(
                 policy.GetAccess(new ActorData { Handle = "alice", Name = "alice" }),
                 policy.GetAccess(new AnonymousActorProvider().GetAnonymousActor())))
@@ -65,7 +97,41 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void GrantNothingToEnrolledActorsUnlessAdmitted()
+    {
+        ActorData alice = new ActorData { Handle = "alice", Name = "alice" };
+        ActorData bob = new ActorData { Handle = "bob", Name = "bob" };
+
+        When.A<ActorAuthenticationOptions>("admits by switch or allow-list only",
+            () => new ActorAuthenticationOptions(),
+            (closed) =>
+            {
+                ActorAuthenticationOptions listed = new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice" } };
+                ActorAuthenticationOptions open = new ActorAuthenticationOptions { OpenEnrollment = true };
+                return new AdmissionOutcome(
+                    new ConfiguredActorAccessPolicy(closed, new ConfiguredActorAdmission(closed)).GetAccess(alice),
+                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(alice),
+                    new ConfiguredActorAccessPolicy(listed, new ConfiguredActorAdmission(listed)).GetAccess(bob),
+                    new ConfiguredActorAdmission(listed).IsAdmitted(new ActorData { Handle = "ALICE", Name = "ALICE" }),
+                    new ConfiguredActorAccessPolicy(open, new ConfiguredActorAdmission(open)).GetAccess(bob));
+            })
+            .TheTest
+            .ShouldPass<AdmissionOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("by default an enrolled actor is denied", outcome.ClosedByDefault == BamAccess.Denied);
+                because.ItsTrue("a listed handle holds the enrolled level", outcome.Listed == BamAccess.Execute);
+                because.ItsTrue("an unlisted handle is denied", outcome.Unlisted == BamAccess.Denied);
+                because.ItsTrue("the allow-list matches exactly", !outcome.DifferentCaseAdmitted);
+                because.ItsTrue("open enrollment admits everyone", outcome.Open == BamAccess.Execute);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
     private sealed record PolicyOutcome(BamAccess Enrolled, BamAccess Anonymous);
+
+    private sealed record AdmissionOutcome(BamAccess ClosedByDefault, BamAccess Listed, BamAccess Unlisted, bool DifferentCaseAdmitted, BamAccess Open);
 }
 
 [UnitTestMenu("BamJwtToken kfp Should", Selector = "kfp")]

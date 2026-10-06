@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Bam.Protocol.AspNetCore;
 
@@ -20,11 +22,19 @@ public static class ActorTokenEndpoints
     /// <param name="routes">The host's route builder.</param>
     /// <param name="pattern">The route pattern; defaults to <see cref="DefaultPattern"/>.</param>
     /// <returns>The route handler builder, for further configuration.</returns>
+    /// <exception cref="InvalidOperationException">The registered options select <see cref="ActorAuthenticationMode.ClientSignedOnly"/>, which has no server key to issue with.</exception>
     public static RouteHandlerBuilder MapActorToken(this IEndpointRouteBuilder routes, string pattern = DefaultPattern)
     {
         ArgumentNullException.ThrowIfNull(routes);
+        ActorAuthenticationOptions? options = routes.ServiceProvider.GetService<ActorAuthenticationOptions>();
+        if (options is not null && options.Mode == ActorAuthenticationMode.ClientSignedOnly)
+        {
+            throw new InvalidOperationException("MapActorToken issues server tokens, which ActorAuthenticationMode.ClientSignedOnly does not use. Select Hybrid mode or don't map the token endpoint.");
+        }
+
         return routes
-            .MapPost(pattern, (ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer) => Issue(request, proof, issuer))
+            .MapPost(pattern, (ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, ILoggerFactory loggers) =>
+                Issue(request, proof, issuer, loggers.CreateLogger(typeof(ActorTokenEndpoints))))
             .WithMetadata(new AnonymousAccessAttribute());
     }
 
@@ -34,8 +44,9 @@ public static class ActorTokenEndpoints
     /// <param name="request">The client-signed token.</param>
     /// <param name="proof">Verifies the client-signed token against the registered key set.</param>
     /// <param name="issuer">Mints the server token.</param>
-    /// <returns>200 with the token, or 401 with the failure reasons.</returns>
-    public static IResult Issue(ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer)
+    /// <param name="logger">Receives the verifier's reason on failure; optional.</param>
+    /// <returns>200 with the token, or 401 with the fixed <see cref="ActorAuthenticationMiddleware.FailureMessage"/>.</returns>
+    public static IResult Issue(ActorTokenRequest request, SignedActorTokenVerifier proof, ServerActorTokenIssuer issuer, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(proof);
@@ -44,7 +55,10 @@ public static class ActorTokenEndpoints
         ActorTokenVerification verification = proof.Verify(request.ClientToken);
         if (!verification.Success || verification.Actor is null || verification.EccPublicKeyPem is null)
         {
-            return Results.Json(new ActorAuthFailure { Messages = verification.Messages }, statusCode: StatusCodes.Status401Unauthorized);
+            // The reason (unknown handle, bad signature, expiry) is logged, never returned: telling them
+            // apart would let a caller enumerate registered handles.
+            logger?.LogInformation("Actor token issuance refused: {Reasons}", string.Join(" ", verification.Messages));
+            return Results.Json(new ActorAuthFailure { Messages = [ActorAuthenticationMiddleware.FailureMessage] }, statusCode: StatusCodes.Status401Unauthorized);
         }
 
         IssuedActorToken issued = issuer.Issue(verification.Actor, verification.EccPublicKeyPem);

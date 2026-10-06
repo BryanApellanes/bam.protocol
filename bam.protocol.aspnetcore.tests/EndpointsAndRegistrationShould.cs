@@ -5,8 +5,10 @@ using Bam.Protocol.Data;
 using Bam.Protocol.Server;
 using Bam.Test;
 using Bam.UserAccounts;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Bam.Protocol.AspNetCore.Tests;
@@ -98,6 +100,65 @@ public class ActorEndpointsShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RefuseTokenIssuanceWithOneGenericBody()
+    {
+        EccKeyPair clientPair = TestKeys.NewEcc();
+        InMemoryNamedKeyStorage storage = new InMemoryNamedKeyStorage();
+        storage.SaveNamedKey(Options.ServerKeyName, TestKeys.PairPem(TestKeys.NewEcc()));
+        FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", clientPair));
+        SignedActorTokenVerifier proof = new SignedActorTokenVerifier(resolver, Options);
+        ServerActorTokenIssuer issuer = new ServerActorTokenIssuer(storage, Options);
+
+        When.A<ActorAuthenticationOptions>("answers an unknown handle and a bad signature the same way",
+            () => Options,
+            (_) => new GenericFailureOutcome(
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(clientPair, "nobody") }, proof, issuer)),
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = TestKeys.ClientToken(TestKeys.NewEcc(), "alice") }, proof, issuer)),
+                Describe(ActorTokenEndpoints.Issue(new ActorTokenRequest { ClientToken = "garbage" }, proof, issuer))))
+            .TheTest
+            .ShouldPass<GenericFailureOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"an unknown handle gets the generic 401 ({outcome.UnknownHandle})", outcome.UnknownHandle == "401:" + ActorAuthenticationMiddleware.FailureMessage);
+                because.ItsTrue("a bad signature gets the identical response", outcome.BadSignature == outcome.UnknownHandle);
+                because.ItsTrue("a malformed token gets the identical response", outcome.Malformed == outcome.UnknownHandle);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void AnswerEveryRegistrationRefusalWithTheGeneric400()
+    {
+        ActorRegistrationRequest registration = new ActorRegistrationRequest { KeySetHandle = "alice", PublicRsaKeyPem = "rsa-pem", PublicEccKeyPem = "ecc-pem" };
+
+        When.A<ActorRegistrationRequest>("maps key-set registration refusals to 400",
+            () => registration,
+            (request) => new RegistrationRefusalOutcome(
+                Describe(ActorEnrollmentEndpoints.Register(request, new FakeKeySetRegistrar { RefuseWith = new PublicKeySetConflictException("alice") })),
+                Describe(ActorEnrollmentEndpoints.Register(request, new FakeKeySetRegistrar { RefuseWith = new InvalidPublicKeySetException("alice", "unparseable key", null) })),
+                Describe(ActorEnrollmentEndpoints.Register(request, new FakeKeySetRegistrar { Refuse = true }))))
+            .TheTest
+            .ShouldPass<RegistrationRefusalOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"a taken handle gets 400, not 500 ({outcome.TakenHandle})", outcome.TakenHandle.StartsWith("400:", StringComparison.Ordinal));
+                because.ItsTrue("an unparseable key gets the identical 400", outcome.BadKey == outcome.TakenHandle);
+                because.ItsTrue("every refusal looks the same", outcome.OtherRefusal == outcome.TakenHandle);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static string Describe(IResult result)
+    {
+        IReadOnlyList<string> messages = (result as JsonHttpResult<ActorAuthFailure>)?.Value?.Messages ?? Array.Empty<string>();
+        return StatusOf(result) + ":" + string.Join("|", messages);
+    }
+
+    private sealed record GenericFailureOutcome(string UnknownHandle, string BadSignature, string Malformed);
+
+    private sealed record RegistrationRefusalOutcome(string TakenHandle, string BadKey, string OtherRefusal);
+
     private sealed record IssueEndpointOutcome(int? OkStatus, bool IssuedVerifies, int? RefusedStatus);
 
     private sealed record EnrollmentOutcome(int? RegisteredStatus, bool RegistrarGotEcc, int? RefusedStatus, bool ChallengeMatches, int? ConfirmedStatus, int? DeniedStatus, int? GarbageStatus);
@@ -133,7 +194,8 @@ public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
                     client.GetRequiredService<IActorTokenVerifier>(),
                     hybrid.GetRequiredService<IRequestProof>(),
                     hybrid.GetRequiredService<IActorAccessPolicy>(),
-                    hybrid.GetRequiredService<IAnonymousActorProvider>());
+                    hybrid.GetRequiredService<IAnonymousActorProvider>(),
+                    hybrid.GetRequiredService<IActorAdmission>());
             })
             .TheTest
             .ShouldPass<BindingOutcome>((because, outcome) =>
@@ -143,6 +205,8 @@ public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
                 because.ItsTrue("the body-signature proof is bound", outcome.Proof is BodySignatureProofVerifier);
                 because.ItsTrue("the configured policy is bound", outcome.Policy is ConfiguredActorAccessPolicy);
                 because.ItsTrue("an anonymous actor provider is supplied when the host has none", outcome.Anonymous is AnonymousActorProvider);
+                because.ItsTrue("the closed-by-default admission is bound", outcome.Admission is ConfiguredActorAdmission);
+                because.ItsTrue("the bound policy denies a freshly enrolled actor", outcome.Policy.GetAccess(new Bam.Protocol.Data.Common.ActorData { Handle = "fresh", Name = "fresh" }) == BamAccess.Denied);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -249,7 +313,101 @@ public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
         }
     }
 
-    private sealed record BindingOutcome(IActorTokenVerifier Hybrid, IActorTokenVerifier Client, IRequestProof Proof, IActorAccessPolicy Policy, IAnonymousActorProvider Anonymous);
+    [UnitTest]
+    public void KeepAHostsOwnAdmissionAndPinTheAlgorithmInBothContainers()
+    {
+        FakeKeySetResolver resolver = new FakeKeySetResolver();
+        InMemoryNamedKeyStorage storage = new InMemoryNamedKeyStorage();
+        EccKeyPair pair = TestKeys.NewEcc();
+        string body = "{}";
+        string signature = TestKeys.BodySignature(pair, body);
+
+        When.A<ActorAuthenticationOptions>("leaves a host-registered admission in place and binds the options' allow-list",
+            () => new ActorAuthenticationOptions { AllowedBodySignatureAlgorithms = new[] { "SHA384WITHECDSA" } },
+            (options) =>
+            {
+                IServiceCollection services = HostServices(resolver, storage);
+                AdmitEveryone custom = new AdmitEveryone();
+                services.AddSingleton<IActorAdmission>(custom);
+                ServiceProvider provider = services.AddActorAuthentication(options).BuildServiceProvider();
+                ServiceRegistry registry = ServiceRegistry.Create();
+                registry.For<IPublicKeySetResolver>().UseSingleton<IPublicKeySetResolver>(resolver);
+                registry.For<INamedKeyStorage>().UseSingleton<INamedKeyStorage>(storage);
+                registry.AddActorAuthentication(options);
+                return new ContainerOutcome(
+                    ReferenceEquals(provider.GetRequiredService<IActorAdmission>(), custom),
+                    provider.GetRequiredService<IRequestProof>().Verify(body, signature, null, pair.PublicPem),
+                    registry.Get<IRequestProof>().Verify(body, signature, null, pair.PublicPem),
+                    registry.Get<IActorAdmission>() is ConfiguredActorAdmission);
+            })
+            .TheTest
+            .ShouldPass<ContainerOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a host's own admission is kept", outcome.CustomAdmissionKept);
+                because.ItsTrue("the service collection's verifier uses the options' allow-list (default algorithm not allowed)", !outcome.CollectionVerifiesDefault);
+                because.ItsTrue("the ServiceRegistry's verifier uses it too", !outcome.RegistryVerifiesDefault);
+                because.ItsTrue("the ServiceRegistry gets the default admission", outcome.RegistryAdmission);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void KeepRequireActorAccessEndpointsOutOfAnAnonymousGroupAndRefuseTokensInClientSignedMode()
+    {
+        When.A<ActorAuthenticationOptions>("maps a protected route inside an anonymous group",
+            () => new ActorAuthenticationOptions { Mode = ActorAuthenticationMode.ClientSignedOnly },
+            (clientSigned) =>
+            {
+                WebApplicationBuilder builder = WebApplication.CreateBuilder();
+                builder.Services.AddActorAuthentication(new ActorAuthenticationOptions());
+                WebApplication app = builder.Build();
+                RouteGroupBuilder group = app.MapGroup("/open").WithMetadata(new AnonymousAccessAttribute());
+                group.MapPost("/work", () => "ok").RequireActorAccess(BamAccess.Execute);
+                group.MapGet("/public", () => "ok");
+                IReadOnlyList<Endpoint> endpoints = ((IEndpointRouteBuilder)app).DataSources.SelectMany(source => source.Endpoints).ToList();
+                AnonymousAccessAttribute? work = endpoints.Single(endpoint => endpoint.DisplayName!.Contains("/open/work", StringComparison.Ordinal)).Metadata.GetMetadata<AnonymousAccessAttribute>();
+                AnonymousAccessAttribute? open = endpoints.Single(endpoint => endpoint.DisplayName!.Contains("/open/public", StringComparison.Ordinal)).Metadata.GetMetadata<AnonymousAccessAttribute>();
+
+                WebApplicationBuilder clientBuilder = WebApplication.CreateBuilder();
+                clientBuilder.Services.AddActorAuthentication(clientSigned);
+                WebApplication clientApp = clientBuilder.Build();
+                string? refusal = null;
+                try
+                {
+                    clientApp.MapActorToken();
+                }
+                catch (InvalidOperationException failure)
+                {
+                    refusal = failure.Message;
+                }
+
+                return new GroupOutcome(work?.AllowAnonymous, open?.AllowAnonymous, refusal);
+            })
+            .TheTest
+            .ShouldPass<GroupOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the RequireActorAccess endpoint is not anonymous, whatever its group says", outcome.ProtectedAllowsAnonymous == false);
+                because.ItsTrue("a plain endpoint in the group stays anonymous", outcome.PlainAllowsAnonymous == true);
+                because.ItsTrue("MapActorToken refuses ClientSignedOnly mode", outcome.TokenRefusal?.Contains("ClientSignedOnly", StringComparison.Ordinal) == true);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed class AdmitEveryone : IActorAdmission
+    {
+        public bool IsAdmitted(IActor actor)
+        {
+            return true;
+        }
+    }
+
+    private sealed record ContainerOutcome(bool CustomAdmissionKept, bool CollectionVerifiesDefault, bool RegistryVerifiesDefault, bool RegistryAdmission);
+
+    private sealed record GroupOutcome(bool? ProtectedAllowsAnonymous, bool? PlainAllowsAnonymous, string? TokenRefusal);
+
+    private sealed record BindingOutcome(IActorTokenVerifier Hybrid, IActorTokenVerifier Client, IRequestProof Proof, IActorAccessPolicy Policy, IAnonymousActorProvider Anonymous, IActorAdmission Admission);
 
     private sealed record PrerequisiteOutcome(string? Missing, string? NoKey, string? Ok);
 

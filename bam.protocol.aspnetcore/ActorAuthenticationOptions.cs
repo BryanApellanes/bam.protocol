@@ -48,6 +48,31 @@ public sealed record ActorAuthenticationOptions
     /// </summary>
     public BamAccess ProofRequiredAtOrAbove { get; init; } = BamAccess.Execute;
 
-    /// <summary>The access level <see cref="ConfiguredActorAccessPolicy"/> grants every enrolled (non-anonymous) actor.</summary>
+    /// <summary>
+    /// The access level <see cref="ConfiguredActorAccessPolicy"/> grants an enrolled actor that
+    /// <see cref="IActorAdmission"/> admits. Enrollment alone grants nothing: see <see cref="OpenEnrollment"/>
+    /// and <see cref="AdmittedHandles"/>.
+    /// </summary>
     public BamAccess EnrolledActorAccess { get; init; } = BamAccess.Execute;
+
+    /// <summary>
+    /// When true, every enrolled actor is admitted, so anyone who can reach the anonymous enrollment
+    /// endpoints holds <see cref="EnrolledActorAccess"/>. Off by default: enrollment is closed unless the
+    /// host opts in here or lists handles in <see cref="AdmittedHandles"/>.
+    /// </summary>
+    public bool OpenEnrollment { get; init; }
+
+    /// <summary>
+    /// Key-set handles <see cref="ConfiguredActorAdmission"/> admits when <see cref="OpenEnrollment"/> is off,
+    /// matched exactly (ordinal). Empty by default, which admits nobody.
+    /// </summary>
+    public IReadOnlyList<string> AdmittedHandles { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// The <c>X-Bam-Body-Signature-Algorithm</c> values <see cref="BodySignatureProofVerifier"/> accepts,
+    /// compared without regard to case. A request naming any other algorithm fails verification before any
+    /// cryptography runs, so the caller cannot choose a scheme that doesn't hash the body. Defaults to
+    /// <see cref="BodySignatureProofVerifier.DefaultAlgorithm"/> only.
+    /// </summary>
+    public IReadOnlyList<string> AllowedBodySignatureAlgorithms { get; init; } = new[] { BodySignatureProofVerifier.DefaultAlgorithm };
 }

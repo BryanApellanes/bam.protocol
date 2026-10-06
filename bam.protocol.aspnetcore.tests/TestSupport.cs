@@ -136,8 +136,15 @@ internal sealed class FakeKeySetRegistrar : IPublicKeySetRegistrar
 
     internal bool Refuse { get; set; }
 
+    internal Exception? RefuseWith { get; set; }
+
     public PublicKeySetData Register(PublicKeySetData publicKeySetData)
     {
+        if (RefuseWith is not null)
+        {
+            throw RefuseWith;
+        }
+
         if (Refuse)
         {
             throw new InvalidOperationException("scripted refusal");

@@ -4,6 +4,7 @@ using Bam.Protocol.Server;
 using Bam.Test;
 using Bam.Web;
 using Microsoft.AspNetCore.Http;
+using System.Text;
 
 namespace Bam.Protocol.AspNetCore.Tests;
 
@@ -79,6 +80,72 @@ public class ActorAuthenticationMiddlewareShould : UnitTestMenuContainer
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    private static async Task<string> BodyOfRejectionAsync(DefaultHttpContext context, IActorTokenVerifier verifier)
+    {
+        MemoryStream body = new MemoryStream();
+        context.Response.Body = body;
+        await RunAsync(context, verifier);
+        return context.Response.StatusCode + ":" + Encoding.UTF8.GetString(body.ToArray());
+    }
+
+    [UnitTest]
+    public void AnswerEveryTokenFailureWithTheSameBody()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", pair));
+        SignedActorTokenVerifier verifier = new SignedActorTokenVerifier(resolver, Options);
+
+        When.A<SignedActorTokenVerifier>("rejects an unknown handle and a bad signature identically",
+            () => verifier,
+            (subject) =>
+            {
+                DefaultHttpContext unknown = Requests.WithEndpoint();
+                unknown.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(pair, "nobody");
+                DefaultHttpContext forged = Requests.WithEndpoint();
+                forged.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(TestKeys.NewEcc(), "alice");
+                DefaultHttpContext missing = Requests.WithEndpoint();
+                return new SameBodyOutcome(
+                    BodyOfRejectionAsync(unknown, subject).GetAwaiter().GetResult(),
+                    BodyOfRejectionAsync(forged, subject).GetAwaiter().GetResult(),
+                    BodyOfRejectionAsync(missing, subject).GetAwaiter().GetResult());
+            })
+            .TheTest
+            .ShouldPass<SameBodyOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"an unknown handle gets the generic 401 ({outcome.UnknownHandle})", outcome.UnknownHandle == "401:" + ActorAuthenticationMiddleware.FailureMessage);
+                because.ItsTrue("a bad signature gets a byte-identical response", outcome.BadSignature == outcome.UnknownHandle);
+                because.ItsTrue("a missing header gets the same response", outcome.Missing == outcome.UnknownHandle);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void AuthenticateOnlyOnEndpointsMappedWithoutRequireActorAccess()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", pair));
+
+        When.A<ActorAuthenticationOptions>("lets a valid token through an unmarked endpoint with no body signature",
+            () => Options,
+            (options) =>
+            {
+                DefaultHttpContext unmarked = Requests.WithEndpoint().WithBody("{\"unsigned\":true}");
+                unmarked.Request.Headers[Headers.Authorization] = "Bearer " + TestKeys.ClientToken(pair, "alice");
+                return RunAsync(unmarked, new SignedActorTokenVerifier(resolver, options)).GetAwaiter().GetResult();
+            })
+            .TheTest
+            .ShouldPass<MiddlewareOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the documented behaviour: the middleware authenticates and continues", outcome.NextCalled);
+                because.ItsTrue("the actor is recorded for any later check", outcome.ActorHandle == "alice");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record SameBodyOutcome(string UnknownHandle, string BadSignature, string Missing);
 
     private sealed record MiddlewareOutcome(bool NextCalled, int StatusCode, string? ActorHandle, string? EccPem);
 
@@ -175,11 +242,11 @@ public class EndpointFiltersShould : UnitTestMenuContainer
     [UnitTest]
     public void EnforceRequiredAccessWithCalculatorSemantics()
     {
-        ActorAuthenticationOptions writeOptions = new ActorAuthenticationOptions { EnrolledActorAccess = BamAccess.Execute };
+        ActorAuthenticationOptions writeOptions = new ActorAuthenticationOptions { EnrolledActorAccess = BamAccess.Execute, OpenEnrollment = true };
         ActorData actor = new ActorData { Handle = "alice", Name = "alice" };
 
         When.A<ActorAccessEndpointFilter>("compares held access against required access",
-            () => new ActorAccessEndpointFilter(new ConfiguredActorAccessPolicy(writeOptions)),
+            () => new ActorAccessEndpointFilter(new ConfiguredActorAccessPolicy(writeOptions, new ConfiguredActorAdmission(writeOptions))),
             (filter) =>
             {
                 DefaultHttpContext allowed = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute));
@@ -206,6 +273,92 @@ public class EndpointFiltersShould : UnitTestMenuContainer
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void RefuseAnUnadmittedActorAtTheAccessFilter()
+    {
+        ActorData fresh = new ActorData { Handle = "fresh", Name = "fresh" };
+
+        When.A<ActorAuthenticationOptions>("forbids a freshly enrolled actor until it is admitted",
+            () => new ActorAuthenticationOptions(),
+            (closed) =>
+            {
+                ActorAuthenticationOptions listed = new ActorAuthenticationOptions { AdmittedHandles = new[] { "fresh" } };
+                ActorAuthenticationOptions open = new ActorAuthenticationOptions { OpenEnrollment = true };
+                return new AdmissionFilterOutcome(
+                    StatusOf(RunAsync(Filter(closed), Execute(fresh)).GetAwaiter().GetResult()),
+                    RunAsync(Filter(listed), Execute(fresh)).GetAwaiter().GetResult(),
+                    RunAsync(Filter(open), Execute(fresh)).GetAwaiter().GetResult());
+            })
+            .TheTest
+            .ShouldPass<AdmissionFilterOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("an unadmitted actor gets 403 on an Execute endpoint", outcome.ClosedStatus == 403);
+                because.ItsTrue("an allow-listed actor reaches the handler", Equals(outcome.Listed, "handled"));
+                because.ItsTrue("open enrollment lets it through", Equals(outcome.Open, "handled"));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void EvaluateTheProofRuleOutsideTheFilter()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        string body = "{\"goal\":\"proxy hello\"}";
+        BodySignatureProofVerifier proof = new BodySignatureProofVerifier();
+
+        When.A<BodySignatureProofVerifier>("evaluates a request directly, as a proxy host would",
+            () => proof,
+            (subject) =>
+            {
+                DefaultHttpContext valid = Requests.WithEndpoint().WithBody(body);
+                valid.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(pair, body);
+                DefaultHttpContext missing = Requests.WithEndpoint().WithBody(body);
+                DefaultHttpContext forged = Requests.WithEndpoint().WithBody(body);
+                forged.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(TestKeys.NewEcc(), body);
+                DefaultHttpContext algorithm = Requests.WithEndpoint().WithBody(body);
+                algorithm.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(pair, body);
+                algorithm.Request.Headers[Headers.BodySignatureAlgorithm] = "NONEwithECDSA";
+                RequestProofResult validResult = RequestProofRule.EvaluateAsync(valid.Request, subject, pair.PublicPem).GetAwaiter().GetResult();
+                string afterRead = new StreamReader(valid.Request.Body).ReadToEnd();
+                return new EvaluateOutcome(
+                    validResult.Success,
+                    afterRead == body,
+                    RequestProofRule.EvaluateAsync(missing.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    RequestProofRule.EvaluateAsync(forged.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    RequestProofRule.EvaluateAsync(algorithm.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    RequestProofRule.EvaluateAsync(valid.Request, subject, null).GetAwaiter().GetResult().Success);
+            })
+            .TheTest
+            .ShouldPass<EvaluateOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a valid signature verifies", outcome.Valid);
+                because.ItsTrue("the body is rewound for the handler", outcome.BodyRewound);
+                because.ItsTrue("a missing signature fails", !outcome.Missing);
+                because.ItsTrue("another key's signature fails", !outcome.Forged);
+                because.ItsTrue("a disallowed algorithm fails", !outcome.DisallowedAlgorithm);
+                because.ItsTrue("no registered key fails", !outcome.NoKey);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static ActorAccessEndpointFilter Filter(ActorAuthenticationOptions options)
+    {
+        return new ActorAccessEndpointFilter(new ConfiguredActorAccessPolicy(options, new ConfiguredActorAdmission(options)));
+    }
+
+    private static DefaultHttpContext Execute(ActorData actor)
+    {
+        DefaultHttpContext context = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute));
+        context.SetActor(actor, null);
+        return context;
+    }
+
+    private sealed record AdmissionFilterOutcome(int? ClosedStatus, object? Listed, object? Open);
+
+    private sealed record EvaluateOutcome(bool Valid, bool BodyRewound, bool Missing, bool Forged, bool DisallowedAlgorithm, bool NoKey);
 
     private sealed record ProofRuleOutcome(bool Anonymous, bool Read, bool Execute, bool Write, bool ForcedRead, bool WaivedWrite, bool NoMetadata);
 
