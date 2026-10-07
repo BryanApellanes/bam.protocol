@@ -1,0 +1,105 @@
+using Bam.Protocol.Profile;
+using Bam.Protocol.Server;
+using Bam.Web;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace Bam.Protocol.AspNetCore;
+
+/// <summary>
+/// Gates every request: endpoints marked <see cref="AnonymousAccessAttribute"/> pass through carrying
+/// the anonymous sentinel; every other endpoint requires a bearer token that
+/// <see cref="IActorTokenVerifier"/> accepts, otherwise the request ends with 401 and the fixed body
+/// <see cref="FailureMessage"/>. The verifier's reason is logged, never returned, so a caller cannot tell
+/// an unknown handle from a bad signature. On success the actor and its registered ECC key PEM are
+/// recorded on the context (<see cref="ActorHttpContext"/>) for the endpoint filters. Request-body
+/// buffering is enabled so <see cref="RequestProofEndpointFilter"/> can re-read the raw body after model
+/// binding. After verification the actor must be admitted (<see cref="IActorAdmission"/>, given the
+/// fingerprint of the key it presented); an unadmitted actor gets the same 401. Access-level checks and the
+/// body signature apply to endpoints mapped with <c>RequireActorAccess</c>; any other non-anonymous endpoint
+/// (including MVC controllers) gets authentication and admission only.
+/// </summary>
+public sealed class ActorAuthenticationMiddleware
+{
+    private const string BearerScheme = "Bearer ";
+
+    /// <summary>The body of every authentication failure, whatever the reason.</summary>
+    public const string FailureMessage = "Authentication failed.";
+
+    private readonly RequestDelegate _next;
+
+    /// <summary>Creates the middleware.</summary>
+    /// <param name="next">The next delegate in the pipeline.</param>
+    public ActorAuthenticationMiddleware(RequestDelegate next)
+    {
+        ArgumentNullException.ThrowIfNull(next);
+        _next = next;
+    }
+
+    /// <summary>
+    /// Authenticates the request, then continues the pipeline or ends it with 401.
+    /// </summary>
+    /// <param name="context">The request context.</param>
+    /// <param name="verifier">The token verifier bound for the host's mode.</param>
+    /// <param name="anonymousActors">Supplies the anonymous sentinel.</param>
+    /// <param name="admission">Decides whether an authenticated actor, with the key it presented, is admitted.</param>
+    /// <returns>A task that completes when the pipeline has run.</returns>
+    public async Task InvokeAsync(HttpContext context, IActorTokenVerifier verifier, IAnonymousActorProvider anonymousActors, IActorAdmission admission)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(verifier);
+        ArgumentNullException.ThrowIfNull(anonymousActors);
+        ArgumentNullException.ThrowIfNull(admission);
+
+        context.Request.EnableBuffering();
+
+        AnonymousAccessAttribute? anonymous = context.GetEndpoint()?.Metadata.GetMetadata<AnonymousAccessAttribute>();
+        if (anonymous is not null && anonymous.AllowAnonymous)
+        {
+            context.SetActor(anonymousActors.GetAnonymousActor(), null);
+            await _next(context).ConfigureAwait(false);
+            return;
+        }
+
+        string? authorization = context.Request.Headers[Headers.Authorization].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(authorization))
+        {
+            await RejectAsync(context, "Authorization header missing.").ConfigureAwait(false);
+            return;
+        }
+
+        if (!authorization.StartsWith(BearerScheme, StringComparison.OrdinalIgnoreCase))
+        {
+            await RejectAsync(context, "Authorization header must use the Bearer scheme.").ConfigureAwait(false);
+            return;
+        }
+
+        ActorTokenVerification verification = verifier.Verify(authorization.Substring(BearerScheme.Length).Trim());
+        if (!verification.Success || verification.Actor is null)
+        {
+            await RejectAsync(context, string.Join(" ", verification.Messages)).ConfigureAwait(false);
+            return;
+        }
+
+        // Enrollment is self-service, so a verified token only proves key possession. Admission decides whether
+        // the actor gets in at all, on every non-anonymous endpoint, whether or not it carries RequireActorAccess.
+        if (!admission.IsAdmitted(verification.Actor, PublicKeyFingerprint.Of(verification.EccPublicKeyPem)))
+        {
+            await RejectAsync(context, $"Actor '{verification.Actor.Handle}' is not admitted.").ConfigureAwait(false);
+            return;
+        }
+
+        context.SetActor(verification.Actor, verification.EccPublicKeyPem);
+        await _next(context).ConfigureAwait(false);
+    }
+
+    private static async Task RejectAsync(HttpContext context, string reason)
+    {
+        ILoggerFactory? loggers = context.RequestServices?.GetService<ILoggerFactory>();
+        loggers?.CreateLogger<ActorAuthenticationMiddleware>().LogInformation("Actor authentication failed: {Reason}", reason);
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        context.Response.ContentType = "text/plain";
+        await context.Response.WriteAsync(FailureMessage).ConfigureAwait(false);
+    }
+}
