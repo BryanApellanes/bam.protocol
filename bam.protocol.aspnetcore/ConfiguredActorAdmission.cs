@@ -36,15 +36,17 @@ public sealed class ConfiguredActorAdmission : IActorAdmission
                 continue;
             }
 
+            // Handles may themselves contain '@' (e.g. svc.bot@acme), so the text after the last '@' is a pin only
+            // when it has the shape of a key fingerprint: 64 hex characters (SHA-256 of the canonical public key).
             int separator = entry.LastIndexOf(PinSeparator);
-            if (separator <= 0 || separator == entry.Length - 1)
+            if (separator <= 0 || !IsFingerprint(entry.Substring(separator + 1)))
             {
                 _anyKey.Add(entry);
                 continue;
             }
 
             string handle = entry.Substring(0, separator);
-            string fingerprint = entry.Substring(separator + 1);
+            string fingerprint = entry.Substring(separator + 1).ToLowerInvariant();
             if (!_pinned.TryGetValue(handle, out HashSet<string>? fingerprints))
             {
                 fingerprints = new HashSet<string>(StringComparer.Ordinal);
@@ -66,6 +68,27 @@ public sealed class ConfiguredActorAdmission : IActorAdmission
 
         return keyFingerprint is not null
             && _pinned.TryGetValue(actor.Handle, out HashSet<string>? fingerprints)
-            && fingerprints.Contains(keyFingerprint);
+            && fingerprints.Contains(keyFingerprint.ToLowerInvariant());
+    }
+
+    /// <summary>Whether text has the shape of a key fingerprint: 64 hexadecimal characters.</summary>
+    /// <param name="text">The candidate pin.</param>
+    /// <returns>True for a SHA-256 hex fingerprint.</returns>
+    public static bool IsFingerprint(string text)
+    {
+        if (text is null || text.Length != 64)
+        {
+            return false;
+        }
+
+        foreach (char character in text)
+        {
+            if (!Uri.IsHexDigit(character))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -67,8 +67,8 @@ The default `ConfiguredActorAdmission` admits nobody. A host opts in with `Actor
 registers its own `IActorAdmission` (an approval store, a directory) before `AddActorAuthentication`.
 
 Each `AdmittedHandles` entry is either `handle` or `handle@fingerprint`. The fingerprint is
-`PublicKeyFingerprint.Of` the actor's ECC public key, the same value a server token carries as `kfp` and
-`/actor/token` returns as `KeyFingerprint`. An unpinned `handle` entry admits that handle with any key, so
+`PublicKeyFingerprint.Of` the actor's ECC public key (64 hex characters, compared without regard to case), the same value a server token carries as `kfp` and
+`/actor/token` returns as `KeyFingerprint`. Text after the last `@` counts as a pin only when it has that shape, so a handle that itself contains `@` (for example `svc.bot@acme`) is an unpinned entry. An unpinned `handle` entry admits that handle with any key, so
 it is satisfied by whoever registers the handle first; pin the key to rule that out. A pinned entry admits
 the handle only with that key, so rotating or revoking the key needs the entry updated to the successor
 key's fingerprint.

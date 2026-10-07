@@ -159,7 +159,7 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
         string other = PublicKeyFingerprint.Of(TestKeys.NewEcc().PublicPem)!;
 
         When.A<ActorAuthenticationOptions>("admits a pinned handle only with its pinned key",
-            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice@" + pinned, "bob" } },
+            () => new ActorAuthenticationOptions { AdmittedHandles = new[] { "alice@" + pinned.ToUpperInvariant(), "bob", "svc.bot@acme" } },
             (options) =>
             {
                 ConfiguredActorAdmission admission = new ConfiguredActorAdmission(options);
@@ -172,7 +172,8 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
                     admission.IsAdmitted(new ActorData { Handle = "bob", Name = "bob" }, other),
                     admission.IsAdmitted(new ActorData { Handle = "bob", Name = "bob" }, null),
                     policy.GetAccess(alice, other),
-                    new ConfiguredActorAdmission(open).IsAdmitted(new ActorData { Handle = "anyone", Name = "anyone" }, null));
+                    new ConfiguredActorAdmission(open).IsAdmitted(new ActorData { Handle = "anyone", Name = "anyone" }, null),
+                    admission.IsAdmitted(new ActorData { Handle = "svc.bot@acme", Name = "svc.bot@acme" }, other));
             })
             .TheTest
             .ShouldPass<PinOutcome>((because, outcome) =>
@@ -183,12 +184,13 @@ public class ConfiguredActorAccessPolicyShould : UnitTestMenuContainer
                 because.ItsTrue("an unpinned handle is admitted with any key", outcome.UnpinnedAnyKey && outcome.UnpinnedNoKey);
                 because.ItsTrue("the access policy honours the pin", outcome.PolicyOtherKey == BamAccess.Denied);
                 because.ItsTrue("open enrollment admits everyone", outcome.Open);
+                because.ItsTrue("a handle containing '@' without a fingerprint after it is an unpinned entry", outcome.HandleWithAt);
             })
             .SoBeHappy()
             .UnlessItFailed();
     }
 
-    private sealed record PinOutcome(bool PinnedKey, bool OtherKey, bool NoKey, bool UnpinnedAnyKey, bool UnpinnedNoKey, BamAccess PolicyOtherKey, bool Open);
+    private sealed record PinOutcome(bool PinnedKey, bool OtherKey, bool NoKey, bool UnpinnedAnyKey, bool UnpinnedNoKey, BamAccess PolicyOtherKey, bool Open, bool HandleWithAt);
 
     private sealed record PolicyOutcome(BamAccess Enrolled, BamAccess Anonymous);
 
