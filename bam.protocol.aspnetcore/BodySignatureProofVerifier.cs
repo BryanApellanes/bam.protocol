@@ -3,10 +3,9 @@ using Bam.Encryption;
 namespace Bam.Protocol.AspNetCore;
 
 /// <summary>
-/// The ASP.NET binding of the existing body-signature convention: the signature is
-/// <c>SHA256WITHECDSA</c> over the UTF-8 request body, base64 in <c>X-Bam-Body-Signature</c>, made with
-/// the actor's ECC private key and verified here with the registered ECC public key through
-/// <see cref="EccSignatureProvider"/>. No new cryptography. The algorithm is pinned: an
+/// Verifies the request-proof signature: <c>SHA256WITHECDSA</c> over the UTF-8 <see cref="CanonicalRequest"/>,
+/// base64 in <c>X-Bam-Body-Signature</c>, made with the actor's ECC private key and verified here with the
+/// registered ECC public key through <see cref="EccSignatureProvider"/>. No new cryptography. The algorithm is pinned: an
 /// <c>X-Bam-Body-Signature-Algorithm</c> outside <see cref="ActorAuthenticationOptions.AllowedBodySignatureAlgorithms"/>
 /// fails verification, because a verifier that lets the signer pick the scheme can be handed one that
 /// doesn't hash the input.

@@ -79,4 +79,26 @@ public sealed record ActorAuthenticationOptions
     /// <see cref="BodySignatureProofVerifier.DefaultAlgorithm"/> only.
     /// </summary>
     public IReadOnlyList<string> AllowedBodySignatureAlgorithms { get; init; } = new[] { BodySignatureProofVerifier.DefaultAlgorithm };
+
+    /// <summary>
+    /// How far a request proof's <c>X-Bam-Timestamp</c> may be from the host's clock, in either direction.
+    /// A captured proof stops working once its timestamp leaves this window, and its nonce is remembered
+    /// only that long. Defaults to five minutes.
+    /// </summary>
+    public TimeSpan RequestProofMaxAge { get; init; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// The most request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds at once. When it is full
+    /// of unexpired nonces, new proofs are refused (401) rather than an unexpired nonce evicted. Defaults to
+    /// 100,000.
+    /// </summary>
+    public int RequestProofNonceCapacity { get; init; } = 100_000;
+
+    /// <summary>
+    /// The audience this host requires in client-signed tokens (the <c>aud</c> claim), for example its public
+    /// origin. When set, a client-signed token whose <c>aud</c> is missing or different is rejected, so a token
+    /// made for, or seen by, one host cannot be used at another. Null by default, which checks no audience;
+    /// set it on every host that verifies client-signed tokens or issues server tokens from them.
+    /// </summary>
+    public string? ClientTokenAudience { get; init; }
 }

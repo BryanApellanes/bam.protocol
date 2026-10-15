@@ -67,6 +67,13 @@ public class BamJwtToken
     public string? KeyFingerprint { get; set; }
 
     /// <summary>
+    /// Gets or sets the audience the token is meant for (the <c>aud</c> claim), or null for none. A host that
+    /// sets <c>ActorAuthenticationOptions.ClientTokenAudience</c> accepts a client-signed token only when this
+    /// equals it.
+    /// </summary>
+    public string? Audience { get; set; }
+
+    /// <summary>
     /// Encodes this token as a signed JWT string using the specified private key.
     /// </summary>
     /// <param name="privateKey">The ECDSA private key to sign the token with.</param>
@@ -90,6 +97,11 @@ public class BamJwtToken
         if (!string.IsNullOrEmpty(KeyFingerprint))
         {
             claims[KeyFingerprintClaim] = KeyFingerprint;
+        }
+
+        if (!string.IsNullOrEmpty(Audience))
+        {
+            claims["aud"] = Audience;
         }
 
         string payload = Base64UrlEncode(JsonSerializer.Serialize(claims));
@@ -132,11 +144,16 @@ public class BamJwtToken
             ? fingerprintElement.GetString()
             : null;
 
+        string? audience = root.TryGetProperty("aud", out JsonElement audienceElement) && audienceElement.ValueKind == JsonValueKind.String
+            ? audienceElement.GetString()
+            : null;
+
         return new BamJwtToken(sid, sub, iss)
         {
             IssuedAt = DateTimeOffset.FromUnixTimeSeconds(iat),
             Expiry = DateTimeOffset.FromUnixTimeSeconds(exp),
             KeyFingerprint = keyFingerprint,
+            Audience = audience,
         };
     }
 

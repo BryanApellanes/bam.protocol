@@ -13,15 +13,48 @@ filters, and minimal-API endpoints.
 then obtains a server-issued token by POSTing a short-lived token it signed itself to
 `/actor/token`. The server token (ES256, signed with the host's ECC key from `INamedKeyStorage`)
 carries `kfp` — the canonical fingerprint of the caller's registered ECC key. Every request presents
-that token as `Authorization: Bearer ...`; protected endpoints additionally require
-`X-Bam-Body-Signature` (SHA256WITHECDSA over the raw body, base64) made with the same key. The algorithm
-is pinned: an `X-Bam-Body-Signature-Algorithm` outside `ActorAuth:AllowedBodySignatureAlgorithms` (default
-`SHA256WITHECDSA` only) fails verification. Verification
+that token as `Authorization: Bearer ...`; protected endpoints additionally require a request proof
+made with the same key (see "Request proof" below). Verification
 resolves the caller's ACTIVE key set on every request and requires its fingerprint to equal `kfp`, so
 rotating or revoking the set invalidates outstanding tokens with no denylist.
 
 **ClientSignedOnly mode.** For hosts without a server key: the bearer token is the caller's own
 signed token (max 5 minutes), verified against the registered key set. No `/actor/token` needed.
+
+**Client token audience.** A client-signed token (the bearer token in `ClientSignedOnly` mode, and the
+proof posted to `/actor/token`) may carry `aud`. A host that sets `ActorAuth:ClientTokenAudience`, for example
+to its public origin, rejects a client-signed token whose `aud` is missing or different, so a token one host
+has seen cannot be replayed at another. Set it on every host; it is unset by default only so existing
+clients keep working while they add `aud`.
+
+## Request proof
+
+The proof binds a signature to one request, once, for a few minutes (bam.protocol#46). The client signs this
+text, one field per line, with its ECC key (`CanonicalRequest.Compose` builds it on both sides):
+
+```
+BAM-REQUEST-PROOF-1
+<METHOD>
+<escaped path>
+<query string as sent, with its leading ?, or an empty line>
+<X-Bam-Timestamp: Unix seconds>
+<X-Bam-Nonce: 16-128 characters of A-Z a-z 0-9 - _>
+<lowercase hex SHA-256 of the raw body bytes>
+```
+
+and sends `X-Bam-Body-Signature` (base64), `X-Bam-Body-Signature-Algorithm`, `X-Bam-Timestamp` and
+`X-Bam-Nonce`. `RequestProofSigner.Sign` does all of this for a .NET client. The host rebuilds the text from
+the request it received, so a proof made for one method, path, query or body fails on any other; the body is
+hashed as raw bytes, never decoded. The timestamp must be within `ActorAuth:RequestProofMaxAge` (default five
+minutes) of the host's clock, and a nonce is accepted once per key while its proof could still be accepted.
+The nonce is recorded only after the signature verifies. The algorithm is pinned: an
+`X-Bam-Body-Signature-Algorithm` outside `ActorAuth:AllowedBodySignatureAlgorithms` (default
+`SHA256WITHECDSA` only) fails verification.
+
+Used nonces live in `IRequestProofNonceStore`. The default, `MemoryRequestProofNonceStore`, holds up to
+`ActorAuth:RequestProofNonceCapacity` nonces in one process and refuses new proofs when full rather than
+forget an unexpired nonce. A host running more than one instance registers a shared store before
+`AddActorAuthentication`, or a proof accepted by one instance can be replayed once at each of the others.
 
 ## Host wiring
 
@@ -48,7 +81,7 @@ inside an anonymous route group doesn't make it anonymous.
 verifies the bearer token and checks admission on every non-anonymous endpoint, but the access-level check
 and the body signature run only where `RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
-and `RequestProofRule.EvaluateAsync`, and the access level with `IActorAccessPolicy`.
+and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
 ## Admission: enrolling grants nothing by default
 
@@ -92,6 +125,9 @@ Every authentication failure, from the middleware and from `/actor/token`, answe
 | `OpenEnrollment` | `false` | Admit every enrolled actor |
 | `AdmittedHandles` | empty | `handle` or `handle@fingerprint` entries admitted when `OpenEnrollment` is off (exact match) |
 | `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the body signature may name |
+| `RequestProofMaxAge` | `00:05:00` | How far a proof's timestamp may be from the host's clock |
+| `RequestProofNonceCapacity` | `100000` | Nonces `MemoryRequestProofNonceStore` holds before refusing new proofs |
+| `ClientTokenAudience` | none | `aud` required in client-signed tokens; unset checks none |
 
 `UseActorAuthentication` fails fast, naming what is missing, when a prerequisite contract is not
 registered or (hybrid) the server key is absent. Provisioning the server key is the host's job.
@@ -103,10 +139,10 @@ registered or (hybrid) the server key is absent. Provisioning the server key is 
 2. Optionally `POST /actor/challenge`, sign the base64 text of the challenge with the RSA key
    (SHA512WITHRSA), and `POST /actor/confirm` to prove possession of the RSA key. Confirmation does not
    grant access; the host's admission does (see above).
-3. Mint a `BamJwtToken` (sub = handle, 2-minute expiry) signed with the ECC key; `POST /actor/token`
-   → server token (45 min).
-4. Call protected endpoints with `Authorization: Bearer <server token>` and
-   `X-Bam-Body-Signature: <base64 SHA256WITHECDSA over the exact body>`.
+3. Mint a `BamJwtToken` (sub = handle, `aud` = the host's `ClientTokenAudience`, 2-minute expiry) signed
+   with the ECC key; `POST /actor/token` → server token (45 min).
+4. Call protected endpoints with `Authorization: Bearer <server token>` and a fresh request proof for each
+   request (`RequestProofSigner.Sign(...).ApplyTo(request)`, or the four headers described under "Request proof").
 5. On 401 "key binding does not match", your key set was rotated or revoked — re-issue.
 
-Deferred by design: nonce single-use custody (`X-Bam-Nonce`), encrypted bodies. See the design doc.
+Deferred by design: encrypted bodies. See the design doc.

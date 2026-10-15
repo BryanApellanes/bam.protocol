@@ -45,7 +45,14 @@ public static class ActorAuthenticationRegistration
             registry.For<IActorTokenVerifier>().UseSingleton<SignedActorTokenVerifier>();
         }
 
-        registry.For<IRequestProof>().UseSingleton<IRequestProof>(new BodySignatureProofVerifier(effective));
+        BodySignatureProofVerifier proof = new BodySignatureProofVerifier(effective);
+        registry.For<IRequestProof>().UseSingleton<IRequestProof>(proof);
+        if (!registry.Contains<IRequestProofNonceStore>())
+        {
+            registry.For<IRequestProofNonceStore>().UseSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(effective));
+        }
+
+        registry.For<RequestProofEvaluator>().UseSingleton(new RequestProofEvaluator(proof, registry.Get<IRequestProofNonceStore>(), effective));
         if (!registry.Contains<IActorAdmission>())
         {
             registry.For<IActorAdmission>().UseSingleton<IActorAdmission>(new ConfiguredActorAdmission(effective));
@@ -97,6 +104,13 @@ public static class ActorAuthenticationRegistration
             ? provider.GetRequiredService<ServerIssuedTokenVerifier>()
             : provider.GetRequiredService<SignedActorTokenVerifier>());
         services.AddSingleton<IRequestProof>(new BodySignatureProofVerifier(options));
+        services.TryAddSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(options));
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton(provider => new RequestProofEvaluator(
+            provider.GetRequiredService<IRequestProof>(),
+            provider.GetRequiredService<IRequestProofNonceStore>(),
+            options,
+            provider.GetRequiredService<TimeProvider>()));
         services.TryAddSingleton<IActorAdmission>(new ConfiguredActorAdmission(options));
         services.AddSingleton<IActorAccessPolicy, ConfiguredActorAccessPolicy>();
         services.TryAddSingleton<IAnonymousActorProvider, AnonymousActorProvider>();
