@@ -350,5 +350,55 @@ public class PublicKeySetResolverShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void FindEcMaterialStampedBeforeCanonicalisationOnTheIndexedPath()
+    {
+        // bam.protocol#47: a row registered before EC canonicalisation carries the fingerprint of the
+        // encoding it was registered in. Until a repair pass restamps it, the indexed lookup must still
+        // find it when the same key arrives in the other encoding, or revoked or duplicate material
+        // would slip past the blocklist and the one-handle-one-material check.
+        (ObjectDataRepository repository, IObjectDataSearchIndexer searchIndexer) = CreateRepositoryWithIndexer(nameof(FindEcMaterialStampedBeforeCanonicalisationOnTheIndexedPath));
+        DateTime baseline = DateTime.UtcNow;
+
+        When.A<PublicKeySetResolver>("looks up named-curve material whose row was stamped in explicit form",
+            () => new PublicKeySetResolver(repository, searchIndexer),
+            (resolver) =>
+            {
+                PublicKeySetData legacy = new PublicKeySetData
+                {
+                    KeySetHandle = "legacy-ecc-owner",
+                    PublicRsaKey = "legacy-rsa-material",
+                    PublicEccKey = EcKeyEncodingFixtures.ExplicitParametersPem,
+                    PublicEccKeyFingerprint = EcKeyEncodingFixtures.PreCanonicalFingerprint(EcKeyEncodingFixtures.ExplicitParametersPem),
+                    Created = baseline,
+                    Uuid = Guid.NewGuid().ToString(),
+                    Cuid = Bam.Cuid.Generate()
+                };
+                repository.Create(legacy);
+
+                PublicKeySetData candidate = new PublicKeySetData
+                {
+                    KeySetHandle = "newcomer",
+                    PublicRsaKey = "newcomer-rsa-material",
+                    PublicEccKey = EcKeyEncodingFixtures.NamedCurvePem
+                };
+                List<PublicKeySetData> claims = resolver.FindKeyMaterialClaims(candidate).ToList();
+                return new LegacyStampOutcome(
+                    searchIndexer.HasIndex(typeof(PublicKeySetData), nameof(PublicKeySetData.PublicEccKeyFingerprint)),
+                    claims.Select(claim => claim.KeySetHandle).ToList());
+            })
+        .TheTest
+        .ShouldPass<LegacyStampOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the lookup runs on the indexed path", outcome.EccFingerprintIndexed);
+            because.ItsTrue("the explicit-stamped row is found as a claim on the named-curve key",
+                outcome.ClaimHandles.Count == 1 && outcome.ClaimHandles[0] == "legacy-ecc-owner");
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record LegacyStampOutcome(bool EccFingerprintIndexed, List<string> ClaimHandles);
+
     private sealed record RsaOnlyOutcome(bool EccColumnUnindexed, bool RsaColumnIndexed, string? ResolvedHandle, bool MissingIsNull);
 }

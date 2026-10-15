@@ -203,6 +203,48 @@ public class PublicKeySetAuditShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RestampFingerprintsComputedBeforeEcCanonicalisation()
+    {
+        // bam.protocol#47 migration: a row stamped with the explicit-parameter fingerprint is
+        // restamped with the canonical one, so indexed lookups no longer depend on the legacy query.
+        AuditFixture fixture = CreateFixture(nameof(RestampFingerprintsComputedBeforeEcCanonicalisation));
+        string legacyStamp = EcKeyEncodingFixtures.PreCanonicalFingerprint(EcKeyEncodingFixtures.ExplicitParametersPem);
+
+        When.A<PublicKeySetAudit>("repairs a store holding a pre-canonicalisation EC stamp",
+            () => fixture.Audit,
+            (audit) =>
+            {
+                PublicKeySetData legacy = fixture.Repository.Create(new PublicKeySetData
+                {
+                    KeySetHandle = "legacy-ecc-owner",
+                    PublicRsaKey = "legacy-rsa-material",
+                    PublicEccKey = EcKeyEncodingFixtures.ExplicitParametersPem,
+                    PublicEccKeyFingerprint = legacyStamp,
+                    Created = DateTime.UtcNow,
+                    Uuid = Guid.NewGuid().ToString(),
+                    Cuid = Bam.Cuid.Generate()
+                });
+
+                PublicKeySetRepairResult result = audit.Repair(audit.FindDuplicates());
+                PublicKeySetData? reloaded = fixture.Repository.RetrieveAll<PublicKeySetData>().FirstOrDefault(row => row.Uuid == legacy.Uuid);
+                PublicKeySetRepairResult second = audit.Repair(audit.FindDuplicates());
+                return new RestampOutcome(legacyStamp, reloaded?.PublicEccKeyFingerprint, result.FingerprintsStamped, second.FingerprintsStamped);
+            })
+        .TheTest
+        .ShouldPass<RestampOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the legacy stamp differs from the canonical fingerprint", outcome.LegacyStamp != EcKeyEncodingFixtures.OpensslFingerprint);
+            because.ItsTrue("the row now carries the canonical fingerprint", EcKeyEncodingFixtures.OpensslFingerprint == outcome.Restamped);
+            because.ItsTrue("the pass counts the restamped row", outcome.StampedFirstPass == 1);
+            because.ItsTrue("a second pass finds nothing to restamp", outcome.StampedSecondPass == 0);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record RestampOutcome(string LegacyStamp, string? Restamped, int StampedFirstPass, int StampedSecondPass);
+
     private sealed record CleanStoreOutcome(bool HasDuplicates, int HandleGroupCount, int MaterialGroupCount);
 
     private sealed record ReportOutcome(
