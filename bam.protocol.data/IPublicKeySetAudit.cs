@@ -34,7 +34,7 @@ public interface IPublicKeySetAudit
     /// that has become its handle's sole survivor is never archived, regardless of what the
     /// report said.  Every archive is verified post-hoc (the row must no longer retrieve);
     /// unverifiable archives are reported as failures, logged at Error, and left for a re-run.
-    /// The pass also stamps missing canonical key fingerprints on legacy rows (the
+    /// The pass also stamps missing or stale canonical key fingerprints on legacy rows (the
     /// index-migration step) and finally rebuilds the key-set search index so no index entry
     /// references an archived row.  Callers obtain the report from
     /// <see cref="FindDuplicates"/>, review it, and pass it here — the split keeps "what would

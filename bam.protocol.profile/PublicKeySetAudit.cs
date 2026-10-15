@@ -95,23 +95,22 @@ public class PublicKeySetAudit : IPublicKeySetAudit
         }
 
         // Phase 3: stamp missing canonical fingerprints on surviving legacy rows so indexed
-        // canonical lookups cover them (the index-migration step; bam.protocol#24 review B1).
+        // canonical lookups cover them (the index-migration step; bam.protocol#24 review B1), and
+        // restamp stale ones: a stamp that no longer equals the canonical fingerprint of its
+        // material, such as an EC key stamped in explicit-parameter form before bam.protocol#47.
         int fingerprintsStamped = 0;
         foreach (PublicKeySetData survivor in Repository.RetrieveAll<PublicKeySetData>())
         {
-            bool needsRsa = !string.IsNullOrEmpty(survivor.PublicRsaKey) && survivor.PublicRsaKeyFingerprint == null;
-            bool needsEcc = !string.IsNullOrEmpty(survivor.PublicEccKey) && survivor.PublicEccKeyFingerprint == null;
+            bool needsRsa = KeyMaterialIdentity.IsStampStale(survivor.PublicRsaKey, survivor.PublicRsaKeyFingerprint);
+            bool needsEcc = KeyMaterialIdentity.IsStampStale(survivor.PublicEccKey, survivor.PublicEccKeyFingerprint);
             if (!needsRsa && !needsEcc)
             {
                 continue;
             }
 
             KeyMaterialIdentity.StampFingerprints(survivor);
-            if (survivor.PublicRsaKeyFingerprint != null || survivor.PublicEccKeyFingerprint != null)
-            {
-                Repository.Update(survivor);
-                fingerprintsStamped++;
-            }
+            Repository.Update(survivor);
+            fingerprintsStamped++;
         }
 
         SearchIndexer.RebuildAsync<PublicKeySetData>().GetAwaiter().GetResult();

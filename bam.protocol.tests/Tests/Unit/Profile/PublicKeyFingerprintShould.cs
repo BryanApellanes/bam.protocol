@@ -1,6 +1,10 @@
+using Bam;
 using Bam.Encryption;
 using Bam.Protocol.Profile;
 using Bam.Test;
+using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.OpenSsl;
 
 namespace Bam.Protocol.Tests.Unit.Profile;
 
@@ -94,6 +98,71 @@ public class PublicKeyFingerprintShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void ProduceOneFingerprintForTheNamedCurveAndExplicitParameterEncodingsOfOneEcKey()
+    {
+        // bam.protocol#47: Bam's EccKeyPair writes P-256 keys with explicit curve parameters, while
+        // openssl and .NET write the named-curve OID. Both must fingerprint identically, or the
+        // revocation blocklist and admission pins depend on how the actor happened to encode its key.
+        EccPublicPrivateKeyPair bamKeyPair = new EccPublicPrivateKeyPair();
+        string bamExplicitPem = bamKeyPair.PublicKeyPem;
+
+        When.A<string>("fingerprints a Bam-written explicit-parameter key and its named-curve encoding",
+            () => "pkfp",
+            (_) =>
+            {
+                ECPublicKeyParameters parsed = (ECPublicKeyParameters)bamExplicitPem.PemToKey();
+                ECPublicKeyParameters named = new ECPublicKeyParameters("EC", parsed.Q, SecObjectIdentifiers.SecP256r1);
+                string namedPem = ToPem(named);
+                return new EncodingOutcome(
+                    namedPem != bamExplicitPem,
+                    PublicKeyFingerprint.Of(bamExplicitPem),
+                    PublicKeyFingerprint.Of(namedPem));
+            })
+        .TheTest
+        .ShouldPass<EncodingOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the two PEMs really are different encodings", outcome.EncodingsDiffer);
+            because.ItsTrue("the explicit-parameter key fingerprints", outcome.ExplicitFingerprint != null);
+            because.ItsTrue("both encodings produce the same fingerprint", outcome.ExplicitFingerprint == outcome.NamedFingerprint);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void MatchTheDocumentedOpensslCommandForBothEncodings()
+    {
+        // Operators compute pins with `openssl ec -pubin -param_enc named_curve -outform DER | sha256sum`;
+        // the fixture's expected value is that command's output for this key.
+        When.A<string>("fingerprints one openssl-written key in both curve encodings",
+            () => "pkfp",
+            (_) => new OpensslOutcome(
+                PublicKeyFingerprint.Of(EcKeyEncodingFixtures.NamedCurvePem),
+                PublicKeyFingerprint.Of(EcKeyEncodingFixtures.ExplicitParametersPem)))
+        .TheTest
+        .ShouldPass<OpensslOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the named-curve PEM matches openssl", EcKeyEncodingFixtures.OpensslFingerprint == outcome.Named);
+            because.ItsTrue("the explicit-parameter PEM matches openssl", EcKeyEncodingFixtures.OpensslFingerprint == outcome.Explicit);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private static string ToPem(ECPublicKeyParameters key)
+    {
+        using StringWriter writer = new StringWriter();
+        PemWriter pemWriter = new PemWriter(writer);
+        pemWriter.WriteObject(key);
+        pemWriter.Writer.Flush();
+        return writer.ToString();
+    }
+
+    private sealed record EncodingOutcome(bool EncodingsDiffer, string? ExplicitFingerprint, string? NamedFingerprint);
+
+    private sealed record OpensslOutcome(string? Named, string? Explicit);
 
     private sealed record FingerprintEqualityOutcome(string Canonical, bool EqualsAppendedNewline, bool EqualsCrlf, bool EqualsTrailingSpaces);
 
