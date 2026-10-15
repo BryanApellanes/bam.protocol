@@ -201,6 +201,15 @@ repo.RevokePublicKeySet(actorHandle, boundProof, successorFingerprint);
 > tracked as BryanApellanes/bam.protocol#23; until it lands, do not bind an irreplaceable handle to a
 > successor key you cannot guarantee will be available to claim it.
 >
+> **Upgrading past bam.protocol#47 (EC fingerprint canonicalisation).** `PublicKeyFingerprint.Of` now
+> converts an EC key with explicit curve parameters to its named-curve form before hashing, so the stamped
+> `PublicEccKeyFingerprint` of a row registered with an explicit-parameter key (every key Bam's
+> `EccKeyPair` generated) is stale after the upgrade. Identity decisions recompute fingerprints from the
+> material and are correct immediately; indexed lookups also query the old explicit-form fingerprint, so
+> the blocklist and the one-handle-one-material check hold before any migration. Run
+> `IPublicKeySetAudit.Repair` once after upgrading to restamp the stale rows (`FingerprintsStamped`
+> counts them); after that the extra query finds nothing new.
+>
 > **Relational/DAO path carries no revocation state** (bam.protocol#25 auditor Condition 5): the
 > key-set policy (registration, rotation, revocation, successor binding) runs entirely over the
 > object-data (JSON) store — `RevokedUtc`/`RevokedBy`/`AuthorizedSuccessorFingerprint` and the stamped

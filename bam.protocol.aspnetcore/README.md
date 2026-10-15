@@ -73,6 +73,24 @@ it is satisfied by whoever registers the handle first; pin the key to rule that 
 the handle only with that key, so rotating or revoking the key needs the entry updated to the successor
 key's fingerprint.
 
+The fingerprint does not depend on how the key is encoded. An EC key written with explicit curve
+parameters (as Bam's `EccKeyPair` writes it) and the same key written with its named-curve OID (as openssl
+and .NET write it) give one fingerprint, so an operator can compute a pin from the actor's public key PEM
+with:
+
+```
+openssl ec -pubin -in ecc-public.pem -param_enc named_curve -conv_form uncompressed -outform DER | sha256sum
+```
+
+**Upgrading past bam.protocol#47.** Before it, an EC key registered with explicit curve parameters
+fingerprinted differently. For such a key, which includes every key Bam's `EccKeyPair` generated, the
+fingerprint changes on upgrade. A handle pinned to the old value is refused (401 from `/actor/token` and on
+every request) until its `AdmittedHandles` entry is replaced, so compute the new pin from the actor's
+registered public key with the openssl command above; `/actor/token`'s `KeyFingerprint` shows the new value
+only for a handle admitted without a pin. Expect tokens issued before the upgrade to fail verification until
+the actor requests a new one. Keys registered in named-curve form
+keep their fingerprint.
+
 Every authentication failure, from the middleware and from `/actor/token`, answers 401 with the same body,
 `Authentication failed.`; the verifier's reason is logged. Every refused registration answers the same 400.
 

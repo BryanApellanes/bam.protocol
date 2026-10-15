@@ -189,6 +189,13 @@ public class PublicKeySetResolver : IPublicKeySetResolver
                 QueryIndexedColumn(hits, nameof(PublicKeySetData.PublicRsaKeyFingerprint), fingerprint);
                 QueryIndexedColumn(hits, nameof(PublicKeySetData.PublicEccKeyFingerprint), fingerprint);
             }
+            // Rows stamped before bam.protocol#47 carry the explicit-parameter fingerprint of an EC
+            // key registered in that form; query it too until a repair pass restamps them. Hits are
+            // re-verified against the material below, so an extra query can only add true carriers.
+            foreach (string legacyFingerprint in KeyMaterialIdentity.LegacyEccFingerprints(pem))
+            {
+                QueryIndexedColumn(hits, nameof(PublicKeySetData.PublicEccKeyFingerprint), legacyFingerprint);
+            }
             QueryIndexedColumn(hits, nameof(PublicKeySetData.PublicRsaKey), pem);
             QueryIndexedColumn(hits, nameof(PublicKeySetData.PublicEccKey), pem);
         }

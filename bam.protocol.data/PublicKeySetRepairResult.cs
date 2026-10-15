@@ -11,7 +11,7 @@ namespace Bam.Protocol.Data;
 /// </summary>
 /// <param name="Archived">Rows removed from live storage (bytes preserved under the store's archive area), verified post-archive.</param>
 /// <param name="Failed">Rows the repair could NOT remove from live storage (archive error, or archive reported success while the row still retrieves); these remain live and resolvable — re-run the audit after addressing the cause.</param>
-/// <param name="FingerprintsStamped">The number of legacy rows whose missing canonical key fingerprints were stamped during this pass (the index-migration step).</param>
+/// <param name="FingerprintsStamped">The number of rows whose missing or stale canonical key fingerprints were stamped during this pass (the index-migration step, including the bam.protocol#47 restamp of EC keys stamped in explicit-parameter form).</param>
 public sealed record PublicKeySetRepairResult(
     IReadOnlyList<PublicKeySetData> Archived,
     IReadOnlyList<PublicKeySetData> Failed,

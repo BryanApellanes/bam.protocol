@@ -35,6 +35,30 @@ internal static class KeyMaterialIdentity
     }
 
     /// <summary>
+    /// Returns the explicit-parameter fingerprints an EC key could be stamped with before
+    /// bam.protocol#47, for indexed lookups over rows a repair pass has not restamped yet.
+    /// Delegates to <see cref="PublicKeyFingerprint.LegacyExplicitFormsOf"/>.
+    /// </summary>
+    internal static IReadOnlyList<string> LegacyEccFingerprints(string? pem)
+    {
+        return PublicKeyFingerprint.LegacyExplicitFormsOf(pem);
+    }
+
+    /// <summary>
+    /// True when a stamped fingerprint property is missing or no longer equals the canonical
+    /// fingerprint of its material (a stamp written before bam.protocol#47, or a drifted one).
+    /// </summary>
+    internal static bool IsStampStale(string? pem, string? stamp)
+    {
+        if (string.IsNullOrEmpty(pem))
+        {
+            return false;
+        }
+        string? canonical = CanonicalKeyFingerprint(pem);
+        return canonical != null && stamp != canonical;
+    }
+
+    /// <summary>
     /// Stamps the server-owned canonical fingerprint properties from the key set's PEM fields
     /// (null when a field is empty or unparseable).  Called at registration and on every
     /// rotation update so the store's search index can serve canonical-identity lookups.
