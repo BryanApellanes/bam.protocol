@@ -69,7 +69,8 @@ public class BamJwtToken
     /// <summary>
     /// Gets or sets the audience the token is meant for (the <c>aud</c> claim), or null for none. A host that
     /// sets <c>ActorAuthenticationOptions.ClientTokenAudience</c> accepts a client-signed token only when this
-    /// equals it.
+    /// equals it. Only the single-string form of <c>aud</c> is read; RFC 7519's array form decodes as null, so a host
+    /// that requires an audience refuses it (fail closed).
     /// </summary>
     public string? Audience { get; set; }
 

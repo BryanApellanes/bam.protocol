@@ -13,7 +13,7 @@ namespace Bam.Protocol.AspNetCore;
 public sealed class BodySignatureProofVerifier : IRequestProof
 {
     /// <summary>The algorithm assumed when <c>X-Bam-Body-Signature-Algorithm</c> is absent.</summary>
-    public const string DefaultAlgorithm = "SHA256WITHECDSA";
+    public const string DefaultAlgorithm = CanonicalRequest.DefaultAlgorithm;
 
     private readonly EccSignatureProvider _signatures = new EccSignatureProvider();
     private readonly IReadOnlyList<string> _allowedAlgorithms;
@@ -65,9 +65,9 @@ public sealed class BodySignatureProofVerifier : IRequestProof
     }
 
     /// <inheritdoc />
-    public bool Verify(string body, string signatureBase64, string? algorithm, string eccPublicKeyPem)
+    public bool Verify(string signedText, string signatureBase64, string? algorithm, string eccPublicKeyPem)
     {
-        if (body is null || string.IsNullOrWhiteSpace(signatureBase64) || string.IsNullOrWhiteSpace(eccPublicKeyPem))
+        if (signedText is null || string.IsNullOrWhiteSpace(signatureBase64) || string.IsNullOrWhiteSpace(eccPublicKeyPem))
         {
             return false;
         }
@@ -83,7 +83,7 @@ public sealed class BodySignatureProofVerifier : IRequestProof
             Signature signature = new Signature
             {
                 SignatureBytes = Convert.FromBase64String(signatureBase64),
-                Data = body,
+                Data = signedText,
                 Algorithm = allowedAlgorithm,
             };
             EccPublicKey publicKey = new EccPublicKey(eccPublicKeyPem);

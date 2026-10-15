@@ -53,6 +53,7 @@ public static class ActorAuthenticationRegistration
         }
 
         registry.For<RequestProofEvaluator>().UseSingleton(new RequestProofEvaluator(proof, registry.Get<IRequestProofNonceStore>(), effective));
+        // The evaluator above logs nothing: a ServiceRegistry host has no ILoggerFactory to hand it.
         if (!registry.Contains<IActorAdmission>())
         {
             registry.For<IActorAdmission>().UseSingleton<IActorAdmission>(new ConfiguredActorAdmission(effective));
@@ -110,7 +111,8 @@ public static class ActorAuthenticationRegistration
             provider.GetRequiredService<IRequestProof>(),
             provider.GetRequiredService<IRequestProofNonceStore>(),
             options,
-            provider.GetRequiredService<TimeProvider>()));
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetService<Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator>>()));
         services.TryAddSingleton<IActorAdmission>(new ConfiguredActorAdmission(options));
         services.AddSingleton<IActorAccessPolicy, ConfiguredActorAccessPolicy>();
         services.TryAddSingleton<IAnonymousActorProvider, AnonymousActorProvider>();
@@ -220,6 +222,12 @@ public static class ActorAuthenticationRegistration
         if (options.Mode == ActorAuthenticationMode.Hybrid && keys is null)
         {
             missing.Add(nameof(INamedKeyStorage));
+        }
+
+        if (options.Enabled && string.IsNullOrWhiteSpace(options.ClientTokenAudience) && !options.AllowMissingClientTokenAudience)
+        {
+            throw new InvalidOperationException(
+                "Actor authentication requires ActorAuth:ClientTokenAudience (this host's audience, for example its public origin), so client-signed tokens made for another host are refused. Set ActorAuth:AllowMissingClientTokenAudience=true only for a single-host test setup.");
         }
 
         if (missing.Count > 0)

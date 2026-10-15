@@ -83,22 +83,38 @@ public sealed record ActorAuthenticationOptions
     /// <summary>
     /// How far a request proof's <c>X-Bam-Timestamp</c> may be from the host's clock, in either direction.
     /// A captured proof stops working once its timestamp leaves this window, and its nonce is remembered
-    /// only that long. Defaults to five minutes.
+    /// only that long. Defaults to five minutes; at most one day. It is separate from
+    /// <see cref="ClockSkewAllowance"/>, which only pads token <c>iat</c>/<c>exp</c> checks: this one is the whole
+    /// lifetime of a proof.
     /// </summary>
     public TimeSpan RequestProofMaxAge { get; init; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// The most request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds at once. When it is full
-    /// of unexpired nonces, new proofs are refused (401) rather than an unexpired nonce evicted. Defaults to
-    /// 100,000.
+    /// The most unexpired request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds in all. When it is
+    /// full, new proofs are refused (401) rather than an unexpired nonce evicted. Defaults to 200,000.
     /// </summary>
-    public int RequestProofNonceCapacity { get; init; } = 100_000;
+    public int RequestProofNonceCapacity { get; init; } = 200_000;
+
+    /// <summary>
+    /// The most unexpired request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds for one signing key.
+    /// A key at this limit has its new proofs refused until its nonces expire; other keys are unaffected, so one
+    /// actor cannot lock everyone else out. Defaults to 10,000, about 33 signed requests a second sustained over the
+    /// default window; at most <see cref="RequestProofNonceCapacity"/>.
+    /// </summary>
+    public int RequestProofNoncesPerKey { get; init; } = 10_000;
 
     /// <summary>
     /// The audience this host requires in client-signed tokens (the <c>aud</c> claim), for example its public
-    /// origin. When set, a client-signed token whose <c>aud</c> is missing or different is rejected, so a token
-    /// made for, or seen by, one host cannot be used at another. Null by default, which checks no audience;
-    /// set it on every host that verifies client-signed tokens or issues server tokens from them.
+    /// origin. A client-signed token whose <c>aud</c> is missing or different is rejected, so a token made for, or
+    /// seen by, one host cannot be used at another. Required when <see cref="Enabled"/> is true:
+    /// <see cref="ActorAuthenticationRegistration.VerifyPrerequisites"/> refuses to start without it unless
+    /// <see cref="AllowMissingClientTokenAudience"/> is set. A blank value counts as unset.
     /// </summary>
     public string? ClientTokenAudience { get; init; }
+
+    /// <summary>
+    /// An explicit opt-out that lets an enabled host start without <see cref="ClientTokenAudience"/>, accepting
+    /// client-signed tokens made for any host. Off by default; meant only for a single-host test setup.
+    /// </summary>
+    public bool AllowMissingClientTokenAudience { get; init; }
 }

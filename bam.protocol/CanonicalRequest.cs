@@ -1,14 +1,14 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Http;
 
-namespace Bam.Protocol.AspNetCore;
+namespace Bam.Protocol;
 
 /// <summary>
-/// The text a request proof signs. It binds the signature to one request: the method, the path and query
-/// as sent, a timestamp, a single-use nonce, and the SHA-256 of the raw body bytes, one per line after a
-/// version line. Both sides build it here, the client through <see cref="RequestProofSigner"/> and the host
-/// through <see cref="RequestProofEvaluator"/>, so they cannot drift (bam.protocol#46).
+/// The text a request proof signs. It binds the signature to one request: the method, the path and query exactly
+/// as they appear on the request line, a timestamp, a single-use nonce, and the SHA-256 of the raw body bytes, one
+/// per line after a version line. Clients build it through <see cref="RequestProofSigner"/> and hosts rebuild it
+/// from the request they received, so both sides use this one definition (bam.protocol#46).
 /// <code>
 /// BAM-REQUEST-PROOF-1
 /// POST
@@ -18,6 +18,8 @@ namespace Bam.Protocol.AspNetCore;
 /// 3f1c9d0a6b2e4f7a8c1d5e9b0a2f4c6d
 /// 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 /// </code>
+/// The path and query are the request target's bytes as sent, split at the first <c>?</c>, with no decoding or
+/// re-escaping, so a client in any language signs exactly what it puts on the request line.
 /// </summary>
 public static class CanonicalRequest
 {
@@ -27,6 +29,15 @@ public static class CanonicalRequest
     /// <summary>The request header carrying the proof's timestamp, in Unix seconds.</summary>
     public const string TimestampHeader = "X-Bam-Timestamp";
 
+    /// <summary>
+    /// The request header carrying the proof's single-use nonce. It is not <c>X-Bam-Nonce</c>, which the native
+    /// transport uses for its session nonce.
+    /// </summary>
+    public const string NonceHeader = "X-Bam-Proof-Nonce";
+
+    /// <summary>The signature algorithm a client uses unless the host allows another.</summary>
+    public const string DefaultAlgorithm = "SHA256WITHECDSA";
+
     /// <summary>The shortest nonce accepted.</summary>
     public const int MinimumNonceLength = 16;
 
@@ -35,8 +46,8 @@ public static class CanonicalRequest
 
     /// <summary>Builds the canonical request text.</summary>
     /// <param name="method">The HTTP method; compared upper-case.</param>
-    /// <param name="path">The escaped path, as <see cref="CanonicalPath"/> returns it.</param>
-    /// <param name="query">The query string as sent, including its leading <c>?</c>, or empty.</param>
+    /// <param name="path">The path as on the request line.</param>
+    /// <param name="query">The query as on the request line, including its leading <c>?</c>, or empty.</param>
     /// <param name="timestamp">The proof's timestamp, in Unix seconds.</param>
     /// <param name="nonce">The proof's nonce; must satisfy <see cref="IsWellFormedNonce"/>.</param>
     /// <param name="bodySha256Hex">The lowercase hex SHA-256 of the raw body bytes.</param>
@@ -63,19 +74,33 @@ public static class CanonicalRequest
         canonical.Append(method.ToUpperInvariant()).Append('\n');
         canonical.Append(path).Append('\n');
         canonical.Append(query).Append('\n');
-        canonical.Append(timestamp.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('\n');
+        canonical.Append(timestamp.ToString(CultureInfo.InvariantCulture)).Append('\n');
         canonical.Append(nonce).Append('\n');
         canonical.Append(bodySha256Hex);
         return canonical.ToString();
     }
 
-    /// <summary>The escaped form of a path, the same on both sides whatever escaping the client used.</summary>
-    /// <param name="pathBase">The host's path base, or empty.</param>
-    /// <param name="path">The request path.</param>
-    /// <returns>The escaped path.</returns>
-    public static string CanonicalPath(PathString pathBase, PathString path)
+    /// <summary>
+    /// Splits a request target into the path and query a proof signs. An absolute-form target
+    /// (<c>http://host/path?q</c>) is reduced to its path and query first.
+    /// </summary>
+    /// <param name="requestTarget">The request target as on the request line.</param>
+    /// <returns>The path (at least <c>/</c>) and the query with its leading <c>?</c>, or empty.</returns>
+    public static KeyValuePair<string, string> SplitTarget(string requestTarget)
     {
-        return pathBase.Add(path).ToUriComponent();
+        ArgumentNullException.ThrowIfNull(requestTarget);
+        string target = requestTarget;
+        int scheme = target.IndexOf("://", StringComparison.Ordinal);
+        if (scheme > 0 && target.IndexOf('/', StringComparison.Ordinal) > scheme)
+        {
+            int pathStart = target.IndexOf('/', scheme + 3);
+            target = pathStart < 0 ? "/" : target.Substring(pathStart);
+        }
+
+        int question = target.IndexOf('?', StringComparison.Ordinal);
+        string path = question < 0 ? target : target.Substring(0, question);
+        string query = question < 0 ? string.Empty : target.Substring(question);
+        return new KeyValuePair<string, string>(path.Length == 0 ? "/" : path, query);
     }
 
     /// <summary>The lowercase hex SHA-256 of a byte sequence.</summary>
