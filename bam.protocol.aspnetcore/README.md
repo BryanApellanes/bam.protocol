@@ -79,14 +79,16 @@ and .NET write it) give one fingerprint, so an operator can compute a pin from t
 with:
 
 ```
-openssl ec -pubin -in ecc-public.pem -param_enc named_curve -outform DER | sha256sum
+openssl ec -pubin -in ecc-public.pem -param_enc named_curve -conv_form uncompressed -outform DER | sha256sum
 ```
 
 **Upgrading past bam.protocol#47.** Before it, an EC key registered with explicit curve parameters
 fingerprinted differently. For such a key, which includes every key Bam's `EccKeyPair` generated, the
-fingerprint changes on upgrade: replace its `AdmittedHandles` pin with the new value (what `/actor/token`
-now returns as `KeyFingerprint`, or the openssl command above), and expect tokens issued before the
-upgrade to fail verification until the actor requests a new one. Keys registered in named-curve form
+fingerprint changes on upgrade. A handle pinned to the old value is refused (401 from `/actor/token` and on
+every request) until its `AdmittedHandles` entry is replaced, so compute the new pin from the actor's
+registered public key with the openssl command above; `/actor/token`'s `KeyFingerprint` shows the new value
+only for a handle admitted without a pin. Expect tokens issued before the upgrade to fail verification until
+the actor requests a new one. Keys registered in named-curve form
 keep their fingerprint.
 
 Every authentication failure, from the middleware and from `/actor/token`, answers 401 with the same body,

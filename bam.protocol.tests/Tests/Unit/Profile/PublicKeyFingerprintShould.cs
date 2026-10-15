@@ -2,8 +2,12 @@ using Bam;
 using Bam.Encryption;
 using Bam.Protocol.Profile;
 using Bam.Test;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Sec;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Math;
 using Org.BouncyCastle.OpenSsl;
 
 namespace Bam.Protocol.Tests.Unit.Profile;
@@ -150,6 +154,137 @@ public class PublicKeyFingerprintShould : UnitTestMenuContainer
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void MatchOpensslForACompressedPoint()
+    {
+        When.A<string>("fingerprints the fixture key written with a compressed point",
+            () => "pkfp",
+            (_) => PublicKeyFingerprint.Of(EcKeyEncodingFixtures.CompressedPointPem))
+        .TheTest
+        .ShouldPass<string?>((because, fingerprint) =>
+        {
+            because.ItsTrue("the compressed point gives the openssl fingerprint", EcKeyEncodingFixtures.OpensslFingerprint == fingerprint);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void CanonicaliseAnExplicitEncodingWithoutTheOptionalCofactor()
+    {
+        // X9.62 makes the cofactor optional; BouncyCastle parses a 5-element ECParameters with H null.
+        // Without canonicalisation this is a third fingerprint for one key (#49 challenger blocker 1).
+        When.A<string>("fingerprints the fixture key with explicit parameters and no cofactor",
+            () => "pkfp",
+            (_) =>
+            {
+                string withoutCofactor = ExplicitPemWithoutCofactor(EcKeyEncodingFixtures.NamedCurvePem);
+                ECPublicKeyParameters parsed = (ECPublicKeyParameters)withoutCofactor.PemToKey();
+                return new CofactorOutcome(parsed.Parameters.H == null, PublicKeyFingerprint.Of(withoutCofactor));
+            })
+        .TheTest
+        .ShouldPass<CofactorOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the encoding really carries no cofactor", outcome.CofactorAbsent);
+            because.ItsTrue("it fingerprints like the named-curve form", EcKeyEncodingFixtures.OpensslFingerprint == outcome.Fingerprint);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void GiveOneFingerprintAcrossAliasedCurveOids()
+    {
+        // GostR3410-2001-CryptoPro-A and -XchA name identical parameters (#49 challenger should-fix 2).
+        X9ECParameters curve = ECNamedCurveTable.GetByName("GostR3410-2001-CryptoPro-A");
+        DerObjectIdentifier oidA = ECNamedCurveTable.GetOid("GostR3410-2001-CryptoPro-A");
+        DerObjectIdentifier oidXchA = ECNamedCurveTable.GetOid("GostR3410-2001-CryptoPro-XchA");
+        Org.BouncyCastle.Math.EC.ECPoint q = curve.G.Multiply(BigInteger.ValueOf(123456789)).Normalize();
+
+        When.A<string>("fingerprints one point under two aliased OIDs and in explicit form",
+            () => "pkfp",
+            (_) =>
+            {
+                string underA = ToPem(new ECPublicKeyParameters("EC", q, oidA));
+                string underXchA = ToPem(new ECPublicKeyParameters("EC", q, oidXchA));
+                string explicitForm = ToPem(new ECPublicKeyParameters("EC", q, new ECDomainParameters(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed())));
+                return new AliasOutcome(
+                    underA != underXchA,
+                    PublicKeyFingerprint.Of(underA),
+                    PublicKeyFingerprint.Of(underXchA),
+                    PublicKeyFingerprint.Of(explicitForm));
+            })
+        .TheTest
+        .ShouldPass<AliasOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the two named PEMs differ", outcome.PemsDiffer);
+            because.ItsTrue("the aliased OIDs give one fingerprint", outcome.UnderA != null && outcome.UnderA == outcome.UnderXchA);
+            because.ItsTrue("the explicit form gives the same one", outcome.UnderA == outcome.Explicit);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void ListEveryPreCanonicalFingerprintOfAnEcKey()
+    {
+        // The legacy set must contain the pre-#47 stamp of every encoding a stored row could carry.
+        EccPublicPrivateKeyPair bamKeyPair = new EccPublicPrivateKeyPair();
+        ECPublicKeyParameters parsed = (ECPublicKeyParameters)bamKeyPair.PublicKeyPem.PemToKey();
+        X9ECParameters p256 = ECNamedCurveTable.GetByName("prime256v1");
+        string unseeded = ToPem(new ECPublicKeyParameters("EC", parsed.Q, new ECDomainParameters(p256.Curve, p256.G, p256.N, p256.H)));
+        string noCofactor = ExplicitPemWithoutCofactor(ToPem(new ECPublicKeyParameters("EC", parsed.Q, SecObjectIdentifiers.SecP256r1)));
+
+        When.A<string>("lists the legacy fingerprints",
+            () => "pkfp",
+            (_) =>
+            {
+                IReadOnlyList<string> legacy = PublicKeyFingerprint.LegacyExplicitFormsOf(bamKeyPair.PublicKeyPem);
+                return new LegacyOutcome(
+                    legacy.Contains(EcKeyEncodingFixtures.PreCanonicalFingerprint(bamKeyPair.PublicKeyPem)),
+                    legacy.Contains(EcKeyEncodingFixtures.PreCanonicalFingerprint(unseeded)),
+                    legacy.Contains(EcKeyEncodingFixtures.PreCanonicalFingerprint(noCofactor)),
+                    legacy.Contains(PublicKeyFingerprint.Of(bamKeyPair.PublicKeyPem)!),
+                    PublicKeyFingerprint.LegacyExplicitFormsOf(new RsaPublicPrivateKeyPair().PublicKeyPem).Count,
+                    PublicKeyFingerprint.LegacyExplicitFormsOf("not a pem").Count);
+            })
+        .TheTest
+        .ShouldPass<LegacyOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the seeded explicit stamp Bam wrote is listed", outcome.Seeded);
+            because.ItsTrue("the unseeded explicit stamp is listed", outcome.Unseeded);
+            because.ItsTrue("the cofactor-less explicit stamp is listed", outcome.NoCofactor);
+            because.ItsTrue("the canonical fingerprint itself is not", !outcome.ContainsCanonical);
+            because.ItsTrue("an RSA key has none", outcome.RsaCount == 0);
+            because.ItsTrue("unparseable input has none", outcome.GarbageCount == 0);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private static string ExplicitPemWithoutCofactor(string namedPem)
+    {
+        ECPublicKeyParameters key = (ECPublicKeyParameters)namedPem.PemToKey();
+        ECDomainParameters domain = key.Parameters;
+        Asn1Sequence full = (Asn1Sequence)new X9ECParameters(domain.Curve, new X9ECPoint(domain.G, false), domain.N, domain.H, domain.GetSeed()).ToAsn1Object();
+        Asn1EncodableVector elements = new Asn1EncodableVector();
+        for (int index = 0; index < 5; index++)
+        {
+            elements.Add(full[index]);
+        }
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(X9ObjectIdentifiers.IdECPublicKey, new DerSequence(elements)),
+            key.Q.GetEncoded(false));
+        string base64 = Convert.ToBase64String(info.GetDerEncoded(), Base64FormattingOptions.InsertLineBreaks).Replace("\r\n", "\n");
+        return "-----BEGIN PUBLIC KEY-----\n" + base64 + "\n-----END PUBLIC KEY-----\n";
+    }
+
+    private sealed record CofactorOutcome(bool CofactorAbsent, string? Fingerprint);
+
+    private sealed record AliasOutcome(bool PemsDiffer, string? UnderA, string? UnderXchA, string? Explicit);
+
+    private sealed record LegacyOutcome(bool Seeded, bool Unseeded, bool NoCofactor, bool ContainsCanonical, int RsaCount, int GarbageCount);
 
     private static string ToPem(ECPublicKeyParameters key)
     {

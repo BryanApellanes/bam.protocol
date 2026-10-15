@@ -1,6 +1,7 @@
 using Bam;
 using Bam.Encryption;
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
@@ -22,12 +23,15 @@ namespace Bam.Protocol.Profile;
 /// successor gate (bam.protocol#18 review, condition C1 / T1).
 /// </para>
 /// <para>
-/// An EC key's curve can be written two ways: as a named-curve OID (RFC 5480's required form, as
-/// openssl and .NET write it) or as explicit curve parameters (as Bam's own <c>EccKeyPair</c> writes
-/// it). BouncyCastle re-encodes a parsed key in whichever form it was read, so an EC key whose
-/// explicit parameters match a known named curve is converted to the named-curve form before hashing.
-/// Both encodings of one EC key therefore produce one fingerprint (bam.protocol#47). The equivalent
-/// openssl command is <c>openssl ec -pubin -in key.pem -param_enc named_curve -outform DER | sha256sum</c>.
+/// An EC key's curve can be written as a named-curve OID (RFC 5480's required form, as openssl and .NET
+/// write it) or as explicit curve parameters (as Bam's own <c>EccKeyPair</c> writes it), with or without
+/// the optional cofactor and seed, and a few curves are known under more than one OID. BouncyCastle
+/// re-encodes a parsed key in whichever form it was read, so every EC key whose parameters (curve, base
+/// point and order, plus the cofactor when present) match a known named curve is rewritten with that
+/// curve's OID before hashing; when several OIDs name the same parameters, the ordinally lowest OID wins,
+/// so the choice does not depend on the table's order. Every encoding of one EC key therefore produces
+/// one fingerprint (bam.protocol#47). The equivalent openssl command is
+/// <c>openssl ec -pubin -in key.pem -param_enc named_curve -conv_form uncompressed -outform DER | sha256sum</c>.
 /// </para>
 /// </summary>
 public static class PublicKeyFingerprint
@@ -66,15 +70,15 @@ public static class PublicKeyFingerprint
     }
 
     /// <summary>
-    /// Returns the fingerprints an EC key had before bam.protocol#47 when it was registered with
-    /// explicit curve parameters: the SHA-256 of the explicit-parameter encoding, with and without
-    /// the curve seed. Fingerprints stamped on stored rows before that change used whichever form the
-    /// key was registered in, so an indexed lookup queries these as well as <see cref="Of"/> until a
-    /// repair pass has restamped every row. Empty for a non-EC key, a key on no known named curve, or
-    /// input that does not parse.
+    /// Returns the other fingerprints an EC key could have been stamped with before bam.protocol#47, when
+    /// fingerprints followed the encoding the key was registered in: the SHA-256 of each named form under
+    /// an OID that names the same curve, and of the explicit-parameter form with and without the seed and
+    /// the cofactor. An indexed lookup queries these as well as <see cref="Of"/> until a repair pass has
+    /// restamped every row. Empty for a non-EC key, a key on no known named curve, or input that does
+    /// not parse.
     /// </summary>
     /// <param name="pem">The PEM-encoded public key, or null/empty.</param>
-    /// <returns>The distinct pre-#47 explicit-form fingerprints that differ from <see cref="Of"/>.</returns>
+    /// <returns>The distinct pre-#47 fingerprints of the key that differ from <see cref="Of"/>.</returns>
     internal static IReadOnlyList<string> LegacyExplicitFormsOf(string? pem)
     {
         List<string> fingerprints = new List<string>();
@@ -95,13 +99,29 @@ public static class PublicKeyFingerprint
             }
             ECDomainParameters domain = named.Parameters;
             string canonical = HashOf(named);
+            List<AsymmetricKeyParameter> forms = new List<AsymmetricKeyParameter>();
+            foreach (DerObjectIdentifier alias in MatchingCurves(domain))
+            {
+                forms.Add(new ECPublicKeyParameters(ecKey.AlgorithmName, named.Q, alias));
+            }
             foreach (byte[]? seed in new[] { domain.GetSeed(), null })
             {
-                ECDomainParameters explicitDomain = new ECDomainParameters(domain.Curve, domain.G, domain.N, domain.H, seed);
-                string legacy = HashOf(new ECPublicKeyParameters(ecKey.AlgorithmName, named.Q, explicitDomain));
+                forms.Add(new ECPublicKeyParameters(ecKey.AlgorithmName, named.Q, new ECDomainParameters(domain.Curve, domain.G, domain.N, domain.H, seed)));
+            }
+            foreach (AsymmetricKeyParameter form in forms)
+            {
+                string legacy = HashOf(form);
                 if (legacy != canonical && !fingerprints.Contains(legacy))
                 {
                     fingerprints.Add(legacy);
+                }
+            }
+            foreach (byte[]? seed in new[] { domain.GetSeed(), null })
+            {
+                string? withoutCofactor = HashWithoutCofactor(named.Q, domain, seed);
+                if (withoutCofactor != null && withoutCofactor != canonical && !fingerprints.Contains(withoutCofactor))
+                {
+                    fingerprints.Add(withoutCofactor);
                 }
             }
         }
@@ -118,26 +138,68 @@ public static class PublicKeyFingerprint
     }
 
     /// <summary>
-    /// Converts an EC public key written with explicit curve parameters to the equivalent key
-    /// carrying the named-curve OID, when the parameters match a known named curve. Any other key
-    /// is returned unchanged.
+    /// The SHA-256 of the explicit-parameter encoding of a key with the optional cofactor left out, the
+    /// shape a 5-element X9.62 <c>ECParameters</c> sequence takes.
+    /// </summary>
+    private static string? HashWithoutCofactor(Org.BouncyCastle.Math.EC.ECPoint q, ECDomainParameters domain, byte[]? seed)
+    {
+        X9ECParameters full = new X9ECParameters(domain.Curve, new X9ECPoint(domain.G, false), domain.N, domain.H, seed);
+        Asn1Sequence sequence = (Asn1Sequence)full.ToAsn1Object();
+        if (sequence.Count < 6)
+        {
+            return null;
+        }
+        Asn1EncodableVector elements = new Asn1EncodableVector();
+        for (int index = 0; index < sequence.Count; index++)
+        {
+            if (index != 5)
+            {
+                elements.Add(sequence[index]);
+            }
+        }
+        AlgorithmIdentifier algorithm = new AlgorithmIdentifier(X9ObjectIdentifiers.IdECPublicKey, new DerSequence(elements));
+        SubjectPublicKeyInfo info = new SubjectPublicKeyInfo(algorithm, q.GetEncoded(false));
+        return info.GetDerEncoded().Sha256();
+    }
+
+    /// <summary>
+    /// Rewrites an EC public key with the OID of the named curve its parameters describe: the curve,
+    /// base point and order must match, and the cofactor too when the encoding carries one (X9.62 makes
+    /// it optional). When several OIDs name the same parameters, the ordinally lowest OID is used. This
+    /// applies to keys written with explicit parameters and to keys already carrying an OID, so aliases
+    /// collapse to one form. A key on no known curve, or a non-EC key, is returned unchanged.
     /// </summary>
     private static AsymmetricKeyParameter ToNamedCurveForm(AsymmetricKeyParameter key)
     {
-        if (key is not ECPublicKeyParameters ecKey || ecKey.Parameters is ECNamedDomainParameters)
+        if (key is not ECPublicKeyParameters ecKey)
         {
             return key;
         }
-        ECDomainParameters domain = ecKey.Parameters;
-        foreach (KeyValuePair<DerObjectIdentifier, X9ECParameters> curve in NamedCurves.Value)
+        DerObjectIdentifier? canonicalOid = MatchingCurves(ecKey.Parameters).FirstOrDefault();
+        if (canonicalOid == null)
         {
-            X9ECParameters named = curve.Value;
-            if (named.Curve.Equals(domain.Curve) && named.G.Equals(domain.G) && named.N.Equals(domain.N) && named.H.Equals(domain.H))
-            {
-                return new ECPublicKeyParameters(ecKey.AlgorithmName, ecKey.Q, curve.Key);
-            }
+            return key;
         }
-        return key;
+        if (ecKey.Parameters is ECNamedDomainParameters alreadyNamed && alreadyNamed.Name.Equals(canonicalOid))
+        {
+            return key;
+        }
+        return new ECPublicKeyParameters(ecKey.AlgorithmName, ecKey.Q, canonicalOid);
+    }
+
+    /// <summary>
+    /// The OIDs of the known named curves whose parameters match <paramref name="domain"/>, ordinally
+    /// lowest first. The cofactor is compared only when <paramref name="domain"/> carries one.
+    /// </summary>
+    private static IEnumerable<DerObjectIdentifier> MatchingCurves(ECDomainParameters domain)
+    {
+        return NamedCurves.Value
+            .Where(curve => curve.Value.Curve.Equals(domain.Curve)
+                && curve.Value.G.Equals(domain.G)
+                && curve.Value.N.Equals(domain.N)
+                && (domain.H == null || curve.Value.H.Equals(domain.H)))
+            .Select(curve => curve.Key)
+            .OrderBy(oid => oid.Id, StringComparer.Ordinal);
     }
 
     private static IReadOnlyList<KeyValuePair<DerObjectIdentifier, X9ECParameters>> LoadNamedCurves()

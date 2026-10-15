@@ -6,7 +6,7 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 /// <summary>
 /// One P-256 public key written by openssl in both curve encodings, and its fingerprint as the
 /// documented openssl command computes it:
-/// <c>openssl ec -pubin -in key.pem -param_enc named_curve -outform DER | sha256sum</c>.
+/// <c>openssl ec -pubin -in key.pem -param_enc named_curve -conv_form uncompressed -outform DER | sha256sum</c>.
 /// </summary>
 internal static class EcKeyEncodingFixtures
 {
@@ -29,7 +29,14 @@ internal static class EcKeyEncodingFixtures
         "4sMoz68EyhCvahcHN5z9fY4Vcgws4nefLa22IIiNuYSr9czJMNUk5s1C8tLO7Ro=\n" +
         "-----END PUBLIC KEY-----\n";
 
-    /// <summary>The fingerprint the documented openssl command prints for either PEM above.</summary>
+    /// <summary>The same key with its named-curve OID and a compressed point, as <c>openssl ec -conv_form compressed</c> writes it.</summary>
+    internal const string CompressedPointPem =
+        "-----BEGIN PUBLIC KEY-----\n" +
+        "MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgAC3z51Z1uB07fK6X10tqf6L1DiwyjP\n" +
+        "rwTKEK9qFwc3nP0=\n" +
+        "-----END PUBLIC KEY-----\n";
+
+    /// <summary>The fingerprint the documented openssl command prints for each PEM above.</summary>
     internal const string OpensslFingerprint = "33b6e4f612db64916f00c81ed986526cfb497c9979dd820686d2979ff26ab294";
 
     /// <summary>
