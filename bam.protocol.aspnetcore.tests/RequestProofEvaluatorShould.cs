@@ -2,8 +2,15 @@ using Bam.Encryption;
 using Bam.Protocol.Data.Common;
 using Bam.Protocol.Server;
 using Bam.Test;
+using System.Net;
+using System.Text;
+using Bam.Protocol.Data.Common;
 using Bam.Web;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Bam.Protocol.AspNetCore.Tests;
 
@@ -73,9 +80,13 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 bool fromTheFuture = Passes(evaluator, future, pair);
                 bool insideWindow = Passes(evaluator, edge, pair);
 
+                RequestProofHeaders boundary = Requests.Proof(Requests.WithEndpoint().At("GET", "/actor-api/hello"), pair, Now - TimeSpan.FromMinutes(5));
+                bool boundaryFirst = Passes(evaluator, Requests.WithEndpoint().At("GET", "/actor-api/hello").WithProof(boundary), pair);
+                bool boundaryReplay = Passes(evaluator, Requests.WithEndpoint().At("GET", "/actor-api/hello").WithProof(boundary), pair);
+
                 clock.Now = Now + TimeSpan.FromMinutes(6);
                 bool reuseAfterExpiry = Passes(evaluator, Requests.WithEndpoint().At("GET", "/actor-api/hello").WithProof(proof), pair);
-                return new FreshnessOutcome(firstUse, reuse, expired, fromTheFuture, insideWindow, reuseAfterExpiry);
+                return new FreshnessOutcome(firstUse, reuse, expired, fromTheFuture, insideWindow, reuseAfterExpiry, boundaryFirst, boundaryReplay);
             })
             .TheTest
             .ShouldPass<FreshnessOutcome>((because, outcome) =>
@@ -86,6 +97,8 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue("a proof from beyond the window ahead fails", !outcome.FromTheFuture);
                 because.ItsTrue("a proof inside the window verifies", outcome.InsideWindow);
                 because.ItsTrue("the proof still fails once its timestamp has left the window", !outcome.ReuseAfterExpiry);
+                because.ItsTrue("a proof exactly at the edge of the window verifies", outcome.BoundaryFirst);
+                because.ItsTrue("and its replay at that same instant is refused", !outcome.BoundaryReplay);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -133,11 +146,11 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 DefaultHttpContext textTimestamp = Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now);
                 textTimestamp.Request.Headers[CanonicalRequest.TimestampHeader] = "yesterday";
                 DefaultHttpContext noNonce = Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now);
-                noNonce.Request.Headers.Remove(Headers.Nonce);
+                noNonce.Request.Headers.Remove(CanonicalRequest.NonceHeader);
                 DefaultHttpContext shortNonce = Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now);
-                shortNonce.Request.Headers[Headers.Nonce] = "abc";
+                shortNonce.Request.Headers[CanonicalRequest.NonceHeader] = "abc";
                 DefaultHttpContext newlineNonce = Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now);
-                newlineNonce.Request.Headers[Headers.Nonce] = "0123456789abcdef\nGET";
+                newlineNonce.Request.Headers[CanonicalRequest.NonceHeader] = "0123456789abcdef\nGET";
                 return new HeaderOutcome(
                     evaluator.EvaluateAsync(noTimestamp.Request, pair.PublicPem).GetAwaiter().GetResult(),
                     Passes(evaluator, textTimestamp, pair),
@@ -150,7 +163,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
             {
                 because.ItsTrue("a missing timestamp fails and names the header", !outcome.NoTimestamp.Success && outcome.NoTimestamp.Reason!.Contains(CanonicalRequest.TimestampHeader, StringComparison.Ordinal));
                 because.ItsTrue("a non-numeric timestamp fails", !outcome.TextTimestamp);
-                because.ItsTrue("a missing nonce fails and names the header", !outcome.NoNonce.Success && outcome.NoNonce.Reason!.Contains(Headers.Nonce, StringComparison.Ordinal));
+                because.ItsTrue("a missing nonce fails and names the header", !outcome.NoNonce.Success && outcome.NoNonce.Reason!.Contains(CanonicalRequest.NonceHeader, StringComparison.Ordinal));
                 because.ItsTrue("a short nonce fails", !outcome.ShortNonce);
                 because.ItsTrue("a nonce with a line break fails", !outcome.NewlineNonce);
             })
@@ -214,6 +227,105 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void ReportACapacityRefusalAsLoadNotAsAReplay()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        ActorAuthenticationOptions tight = new ActorAuthenticationOptions { RequestProofNonceCapacity = 1, RequestProofNoncesPerKey = 1 };
+
+        When.A<RequestProofEvaluator>("verifies two proofs from one key against a store that holds one",
+            () => Evaluators.Create(new FixedClock(Now), tight),
+            (evaluator) =>
+            {
+                RequestProofResult first = evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+                RequestProofResult second = evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+                return new CapacityOutcome(first.Success, second.Success, second.Reason);
+            })
+            .TheTest
+            .ShouldPass<CapacityOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the first proof verifies", outcome.First);
+                because.ItsTrue("the second is refused", !outcome.Second);
+                because.ItsTrue("with a capacity reason, not a replay reason", outcome.Reason?.Contains("cannot record", StringComparison.Ordinal) == true && outcome.Reason.Contains("already used", StringComparison.Ordinal) == false);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void VerifyARealRequestWithABoundBodyAPathBaseAndAnEscapedPath()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+
+        When.A<string>("posts signed and tampered JSON through Kestrel",
+            () => "rpe",
+            (_) => PipelineAsync(pair).GetAwaiter().GetResult())
+            .TheTest
+            .ShouldPass<PipelineOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"a signed request reaches the handler ({outcome.SignedStatus})", outcome.SignedStatus == HttpStatusCode.OK);
+                because.ItsTrue($"the handler saw the bound body and the decoded route value ({outcome.SignedBody})", outcome.SignedBody.Contains("a:b|widget", StringComparison.Ordinal));
+                because.ItsTrue($"a body with one byte changed is refused ({outcome.TamperedStatus})", outcome.TamperedStatus == HttpStatusCode.Unauthorized);
+                because.ItsTrue($"a replay of the signed request is refused ({outcome.ReplayStatus})", outcome.ReplayStatus == HttpStatusCode.Unauthorized);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static async Task<PipelineOutcome> PipelineAsync(EccKeyPair pair)
+    {
+        ActorAuthenticationOptions options = new ActorAuthenticationOptions();
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Logging.ClearProviders();
+        builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton<IRequestProof>(new BodySignatureProofVerifier(options));
+        builder.Services.AddSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(options));
+        builder.Services.AddSingleton(provider => new RequestProofEvaluator(provider.GetRequiredService<IRequestProof>(), provider.GetRequiredService<IRequestProofNonceStore>(), options));
+        WebApplication app = builder.Build();
+        app.UsePathBase("/base");
+        app.Use(async (context, next) =>
+        {
+            context.Request.EnableBuffering();
+            context.SetActor(new ActorData { Handle = "alice", Name = "alice" }, pair.PublicPem);
+            await next(context);
+        });
+        app.MapPost("/items/{id}", (string id, PipelinePayload payload) => Results.Text(id + "|" + payload.Name))
+            .WithMetadata(new RequiredAccessAttribute(BamAccess.Execute))
+            .AddEndpointFilter<RequestProofEndpointFilter>();
+        await app.StartAsync();
+        try
+        {
+            Uri address = new Uri(app.Urls.First());
+            Uri target = new Uri(address, "/base/items/a%3Ab?x=1");
+            byte[] body = Encoding.UTF8.GetBytes("{\"name\":\"widget\"}");
+            using HttpClient client = new HttpClient();
+            RequestProofHeaders proof = RequestProofSigner.Sign(new PrivateKeyProvider(pair.PrivateKey.Value), "POST", target, body, DateTimeOffset.UtcNow);
+
+            using HttpResponseMessage signed = await client.SendAsync(Post(target, body, proof));
+            string signedBody = await signed.Content.ReadAsStringAsync();
+            byte[] tampered = (byte[])body.Clone();
+            tampered[10] = (byte)'W';
+            RequestProofHeaders tamperedProof = RequestProofSigner.Sign(new PrivateKeyProvider(pair.PrivateKey.Value), "POST", target, body, DateTimeOffset.UtcNow);
+            using HttpResponseMessage tamperedResponse = await client.SendAsync(Post(target, tampered, tamperedProof));
+            using HttpResponseMessage replay = await client.SendAsync(Post(target, body, proof));
+            return new PipelineOutcome(signed.StatusCode, signedBody, tamperedResponse.StatusCode, replay.StatusCode);
+        }
+        finally
+        {
+            await app.StopAsync();
+            await app.DisposeAsync();
+        }
+    }
+
+    private static HttpRequestMessage Post(Uri target, byte[] body, RequestProofHeaders proof)
+    {
+        HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, target) { Content = new ByteArrayContent(body) };
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+        proof.ApplyTo(request);
+        return request;
+    }
+
     private static bool Refusal(Func<string> compose)
     {
         try
@@ -227,9 +339,16 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
         }
     }
 
+    private sealed record CapacityOutcome(bool First, bool Second, string? Reason);
+
+    private sealed record PipelineOutcome(HttpStatusCode SignedStatus, string SignedBody, HttpStatusCode TamperedStatus, HttpStatusCode ReplayStatus);
+
+    /// <summary>The JSON body the pipeline test binds.</summary>
+    public sealed record PipelinePayload(string Name);
+
     private sealed record BindingOutcome(bool Original, bool OtherMethod, bool OtherPath, bool OtherQuery, bool OtherBody);
 
-    private sealed record FreshnessOutcome(bool FirstUse, bool Reuse, bool Expired, bool FromTheFuture, bool InsideWindow, bool ReuseAfterExpiry);
+    private sealed record FreshnessOutcome(bool FirstUse, bool Reuse, bool Expired, bool FromTheFuture, bool InsideWindow, bool ReuseAfterExpiry, bool BoundaryFirst, bool BoundaryReplay);
 
     private sealed record RawBytesOutcome(bool SameDecodedText, bool OtherBody, bool SignedBody);
 
@@ -246,41 +365,67 @@ public class MemoryRequestProofNonceStoreShould : UnitTestMenuContainer
     private static readonly DateTimeOffset Now = new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero);
 
     [UnitTest]
-    public void RefuseNewNoncesWhenFullUntilEntriesExpire()
+    public void BoundEachKeySoOneKeyCannotLockOutAnother()
     {
-        When.A<MemoryRequestProofNonceStore>("keeps every unexpired nonce and fails closed at capacity",
-            () => new MemoryRequestProofNonceStore(new ActorAuthenticationOptions { RequestProofNonceCapacity = 2 }),
+        When.A<MemoryRequestProofNonceStore>("fills one key to its limit, then claims for another key",
+            () => new MemoryRequestProofNonceStore(new ActorAuthenticationOptions { RequestProofNonceCapacity = 5, RequestProofNoncesPerKey = 2 }),
             (store) =>
             {
-                bool first = store.TryClaim("key-a", "nonce-1", Now.AddMinutes(5), Now);
-                bool second = store.TryClaim("key-b", "nonce-1", Now.AddMinutes(1), Now);
-                bool repeat = store.TryClaim("key-a", "nonce-1", Now.AddMinutes(5), Now);
-                bool full = store.TryClaim("key-a", "nonce-2", Now.AddMinutes(5), Now);
-                bool afterExpiry = store.TryClaim("key-a", "nonce-2", Now.AddMinutes(5), Now.AddMinutes(2));
-                bool stillRemembered = store.TryClaim("key-a", "nonce-1", Now.AddMinutes(5), Now.AddMinutes(2));
-                return new StoreOutcome(first, second, repeat, full, afterExpiry, stillRemembered, store.Count, Refusal(0));
+                NonceClaimResult first = store.TryClaim("key-a", "nonce-1", Now.AddMinutes(5), Now);
+                NonceClaimResult repeat = store.TryClaim("key-a", "nonce-1", Now.AddMinutes(5), Now);
+                NonceClaimResult second = store.TryClaim("key-a", "nonce-2", Now.AddMinutes(5), Now);
+                NonceClaimResult keyFull = store.TryClaim("key-a", "nonce-3", Now.AddMinutes(5), Now);
+                NonceClaimResult otherKey = store.TryClaim("key-b", "nonce-1", Now.AddMinutes(5), Now);
+                NonceClaimResult afterExpiry = store.TryClaim("key-a", "nonce-3", Now.AddMinutes(5), Now.AddMinutes(6));
+                return new PerKeyOutcome(first, repeat, second, keyFull, otherKey, afterExpiry);
             })
             .TheTest
-            .ShouldPass<StoreOutcome>((because, outcome) =>
+            .ShouldPass<PerKeyOutcome>((because, outcome) =>
             {
-                because.ItsTrue("a fresh nonce is claimed", outcome.First);
-                because.ItsTrue("the same nonce under another key is separate", outcome.SecondScope);
-                because.ItsTrue("a repeated nonce is refused", !outcome.Repeat);
-                because.ItsTrue("a new nonce is refused while the store is full of unexpired ones", !outcome.Full);
-                because.ItsTrue("an expired entry frees room", outcome.AfterExpiry);
-                because.ItsTrue("an unexpired nonce is still refused", !outcome.StillRemembered);
-                because.ItsTrue("the store holds exactly its capacity", outcome.Count == 2);
-                because.ItsTrue("a zero capacity is refused at construction", outcome.ZeroCapacityRefused);
+                because.ItsTrue("a fresh nonce is claimed", outcome.First == NonceClaimResult.Claimed);
+                because.ItsTrue("a repeated nonce is a replay, not a capacity refusal", outcome.Repeat == NonceClaimResult.AlreadyUsed);
+                because.ItsTrue("a second nonce for the key is claimed", outcome.Second == NonceClaimResult.Claimed);
+                because.ItsTrue("the key at its limit is refused for capacity", outcome.KeyFull == NonceClaimResult.StoreFull);
+                because.ItsTrue("another key is unaffected", outcome.OtherKey == NonceClaimResult.Claimed);
+                because.ItsTrue("expired nonces free the key's room", outcome.AfterExpiry == NonceClaimResult.Claimed);
             })
             .SoBeHappy()
             .UnlessItFailed();
     }
 
-    private static bool Refusal(int capacity)
+    [UnitTest]
+    public void KeepTheTotalBoundAsABackstopAndDropOnlyAfterExpiry()
+    {
+        When.A<MemoryRequestProofNonceStore>("fills the whole store across keys",
+            () => new MemoryRequestProofNonceStore(new ActorAuthenticationOptions { RequestProofNonceCapacity = 2, RequestProofNoncesPerKey = 2 }),
+            (store) =>
+            {
+                store.TryClaim("key-a", "nonce-1", Now, Now);
+                store.TryClaim("key-b", "nonce-1", Now.AddMinutes(5), Now);
+                NonceClaimResult full = store.TryClaim("key-c", "nonce-1", Now.AddMinutes(5), Now);
+                NonceClaimResult atExpiry = store.TryClaim("key-a", "nonce-1", Now, Now);
+                NonceClaimResult afterExpiry = store.TryClaim("key-a", "nonce-1", Now, Now.AddTicks(1));
+                return new TotalOutcome(full, atExpiry, afterExpiry, Refusal(0, 0), Refusal(5, 6), Refusal(5, 0));
+            })
+            .TheTest
+            .ShouldPass<TotalOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a full store refuses a new key for capacity", outcome.Full == NonceClaimResult.StoreFull);
+                because.ItsTrue("a nonce is still remembered at its expiry instant", outcome.AtExpiry == NonceClaimResult.AlreadyUsed);
+                because.ItsTrue("and dropped one tick later", outcome.AfterExpiry == NonceClaimResult.Claimed);
+                because.ItsTrue("a zero capacity is refused at construction", outcome.ZeroRefused);
+                because.ItsTrue("a per-key limit above the total is refused", outcome.PerKeyAboveTotalRefused);
+                because.ItsTrue("a zero per-key limit is refused", outcome.ZeroPerKeyRefused);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static bool Refusal(int capacity, int perKey)
     {
         try
         {
-            new MemoryRequestProofNonceStore(new ActorAuthenticationOptions { RequestProofNonceCapacity = capacity });
+            new MemoryRequestProofNonceStore(new ActorAuthenticationOptions { RequestProofNonceCapacity = capacity, RequestProofNoncesPerKey = perKey });
             return false;
         }
         catch (InvalidOperationException)
@@ -289,7 +434,9 @@ public class MemoryRequestProofNonceStoreShould : UnitTestMenuContainer
         }
     }
 
-    private sealed record StoreOutcome(bool First, bool SecondScope, bool Repeat, bool Full, bool AfterExpiry, bool StillRemembered, int Count, bool ZeroCapacityRefused);
+    private sealed record PerKeyOutcome(NonceClaimResult First, NonceClaimResult Repeat, NonceClaimResult Second, NonceClaimResult KeyFull, NonceClaimResult OtherKey, NonceClaimResult AfterExpiry);
+
+    private sealed record TotalOutcome(NonceClaimResult Full, NonceClaimResult AtExpiry, NonceClaimResult AfterExpiry, bool ZeroRefused, bool PerKeyAboveTotalRefused, bool ZeroPerKeyRefused);
 }
 
 [UnitTestMenu("Client token audience Should", Selector = "aud")]
@@ -331,6 +478,67 @@ public class ClientTokenAudienceShould : UnitTestMenuContainer
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    [UnitTest]
+    public void RefuseToStartAnEnabledHostWithoutAnAudienceUnlessOptedOut()
+    {
+        When.A<string>("verifies prerequisites with and without ClientTokenAudience",
+            () => "aud",
+            (_) => new StartupOutcome(
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = "   " }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = "https://gateway.example" }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, AllowMissingClientTokenAudience = true })))
+            .TheTest
+            .ShouldPass<StartupOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a missing audience refuses start-up and names the setting", outcome.Missing?.Contains("ClientTokenAudience", StringComparison.Ordinal) == true);
+                because.ItsTrue("a blank audience counts as missing", outcome.Blank?.Contains("ClientTokenAudience", StringComparison.Ordinal) == true);
+                because.ItsTrue("a set audience starts", outcome.Set is null);
+                because.ItsTrue("the explicit opt-out starts", outcome.OptedOut is null);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void TreatABlankAudienceAsUnsetWhenVerifying()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        FakeKeySetResolver resolver = new FakeKeySetResolver().Add(TestKeys.KeySet("alice", pair));
+
+        When.A<SignedActorTokenVerifier>("verifies a token without aud under a blank configured audience",
+            () => new SignedActorTokenVerifier(resolver, new ActorAuthenticationOptions { ClientTokenAudience = " " }),
+            (verifier) => verifier.Verify(Token(pair, null)).Success)
+            .TheTest
+            .ShouldPass<bool>((because, verified) =>
+            {
+                because.ItsTrue("a blank audience does not demand aud == \" \"", verified);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static string? StartupFailure(ActorAuthenticationOptions options)
+    {
+        Microsoft.Extensions.DependencyInjection.ServiceProvider services = HostServicesForAudience().AddActorAuthentication(options).BuildServiceProvider();
+        try
+        {
+            ActorAuthenticationRegistration.VerifyPrerequisites(services, options);
+            return null;
+        }
+        catch (InvalidOperationException failure)
+        {
+            return failure.Message;
+        }
+    }
+
+    private static Microsoft.Extensions.DependencyInjection.IServiceCollection HostServicesForAudience()
+    {
+        return ActorAuthenticationRegistrationShould.HostServices(new FakeKeySetResolver(), new InMemoryNamedKeyStorage());
+    }
+
+    private sealed record StartupOutcome(string? Missing, string? Blank, string? Set, string? OptedOut);
 
     private sealed record AudienceOutcome(bool Matching, bool OtherHost, bool Missing, bool Unchecked, string? RoundTrip);
 }

@@ -204,7 +204,7 @@ public class ActorEndpointsShould : UnitTestMenuContainer
 [UnitTestMenu("ActorAuthenticationRegistration Should", Selector = "aar")]
 public class ActorAuthenticationRegistrationShould : UnitTestMenuContainer
 {
-    private static IServiceCollection HostServices(FakeKeySetResolver resolver, InMemoryNamedKeyStorage storage)
+    internal static IServiceCollection HostServices(FakeKeySetResolver resolver, InMemoryNamedKeyStorage storage)
     {
         ServiceCollection services = new ServiceCollection();
         services.AddSingleton<IPublicKeySetResolver>(resolver);
