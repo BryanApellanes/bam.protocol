@@ -13,15 +13,56 @@ filters, and minimal-API endpoints.
 then obtains a server-issued token by POSTing a short-lived token it signed itself to
 `/actor/token`. The server token (ES256, signed with the host's ECC key from `INamedKeyStorage`)
 carries `kfp` — the canonical fingerprint of the caller's registered ECC key. Every request presents
-that token as `Authorization: Bearer ...`; protected endpoints additionally require
-`X-Bam-Body-Signature` (SHA256WITHECDSA over the raw body, base64) made with the same key. The algorithm
-is pinned: an `X-Bam-Body-Signature-Algorithm` outside `ActorAuth:AllowedBodySignatureAlgorithms` (default
-`SHA256WITHECDSA` only) fails verification. Verification
+that token as `Authorization: Bearer ...`; protected endpoints additionally require a request proof
+made with the same key (see "Request proof" below). Verification
 resolves the caller's ACTIVE key set on every request and requires its fingerprint to equal `kfp`, so
 rotating or revoking the set invalidates outstanding tokens with no denylist.
 
 **ClientSignedOnly mode.** For hosts without a server key: the bearer token is the caller's own
 signed token (max 5 minutes), verified against the registered key set. No `/actor/token` needed.
+
+**Client token audience.** A client-signed token (the bearer token in `ClientSignedOnly` mode, and the
+proof posted to `/actor/token`) carries `aud`, the audience of the host it is meant for. An enabled host must
+set `ActorAuth:ClientTokenAudience`, for example to its public origin, and rejects a client-signed token whose
+`aud` is missing or different, so a token one host has seen cannot be replayed at another.
+`UseActorAuthentication` refuses to start without it; `ActorAuth:AllowMissingClientTokenAudience=true` is the
+explicit opt-out, for a single-host test setup only. Only the single-string form of `aud` is accepted.
+
+## Request proof
+
+The proof binds a signature to one request, once, for a few minutes (bam.protocol#46). The client signs this
+text, one field per line joined with `\n`, UTF-8 encoded, with its ECC key:
+
+```
+BAM-REQUEST-PROOF-1
+<METHOD, upper case>
+<path, exactly as on the request line>
+<query, exactly as on the request line, with its leading ?, or an empty line>
+<X-Bam-Timestamp: Unix seconds>
+<X-Bam-Proof-Nonce: 16-128 characters of A-Z a-z 0-9 - _>
+<lowercase hex SHA-256 of the raw body bytes>
+```
+
+The path and query are the request target's bytes as sent, split at the first `?`, with no decoding or
+re-escaping: a client in any language signs what it puts on the request line (for an absolute-form target, its
+path and query). It sends `X-Bam-Body-Signature` (base64; despite the name it signs the whole text above),
+`X-Bam-Body-Signature-Algorithm`, `X-Bam-Timestamp` and `X-Bam-Proof-Nonce` (not `X-Bam-Nonce`, which the native
+transport uses for its session nonce). For .NET, `Bam.Protocol.RequestProofSigner.Sign(...).ApplyTo(request)` does
+all of it; `CanonicalRequest` and the signer live in the core `bam.protocol` assembly, so a client needs no ASP.NET
+Core reference. The host rebuilds the text from the request it received, so a proof made for one method, path,
+query or body fails on any other; the body is hashed as raw bytes, never decoded. The timestamp must be within `ActorAuth:RequestProofMaxAge` (default five
+minutes) of the host's clock, and a nonce is accepted once per key while its proof could still be accepted.
+The nonce is recorded only after the signature verifies. The algorithm is pinned: an
+`X-Bam-Body-Signature-Algorithm` outside `ActorAuth:AllowedBodySignatureAlgorithms` (default
+`SHA256WITHECDSA` only) fails verification.
+
+Used nonces live in `IRequestProofNonceStore`. The default, `MemoryRequestProofNonceStore`, holds at most
+`ActorAuth:RequestProofNoncesPerKey` unexpired nonces per signing key and `ActorAuth:RequestProofNonceCapacity` in
+all, in one process. At either limit it refuses new proofs rather than forget an unexpired nonce, which could
+then be replayed; the per-key limit means one busy or hostile key locks out only itself. A capacity refusal is
+reported as such ("cannot record another proof for this key right now") and logged at Warning, distinct from a
+replay ("the nonce was already used"). A host running more than one instance registers a shared store before
+`AddActorAuthentication`, or a proof accepted by one instance can be replayed once at each of the others.
 
 ## Host wiring
 
@@ -48,7 +89,7 @@ inside an anonymous route group doesn't make it anonymous.
 verifies the bearer token and checks admission on every non-anonymous endpoint, but the access-level check
 and the body signature run only where `RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
-and `RequestProofRule.EvaluateAsync`, and the access level with `IActorAccessPolicy`.
+and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
 ## Admission: enrolling grants nothing by default
 
@@ -110,6 +151,11 @@ Every authentication failure, from the middleware and from `/actor/token`, answe
 | `OpenEnrollment` | `false` | Admit every enrolled actor |
 | `AdmittedHandles` | empty | `handle` or `handle@fingerprint` entries admitted when `OpenEnrollment` is off (exact match) |
 | `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the body signature may name |
+| `RequestProofMaxAge` | `00:05:00` | How far a proof's timestamp may be from the host's clock |
+| `RequestProofNonceCapacity` | `200000` | Unexpired nonces `MemoryRequestProofNonceStore` holds in all before refusing new proofs |
+| `RequestProofNoncesPerKey` | `10000` | Unexpired nonces it holds for one signing key before refusing that key's new proofs |
+| `ClientTokenAudience` | none (required when `Enabled`) | `aud` required in client-signed tokens |
+| `AllowMissingClientTokenAudience` | `false` | Explicit opt-out that lets an enabled host start without `ClientTokenAudience` |
 
 `UseActorAuthentication` fails fast, naming what is missing, when a prerequisite contract is not
 registered or (hybrid) the server key is absent. Provisioning the server key is the host's job.
@@ -121,10 +167,10 @@ registered or (hybrid) the server key is absent. Provisioning the server key is 
 2. Optionally `POST /actor/challenge`, sign the base64 text of the challenge with the RSA key
    (SHA512WITHRSA), and `POST /actor/confirm` to prove possession of the RSA key. Confirmation does not
    grant access; the host's admission does (see above).
-3. Mint a `BamJwtToken` (sub = handle, 2-minute expiry) signed with the ECC key; `POST /actor/token`
-   → server token (45 min).
-4. Call protected endpoints with `Authorization: Bearer <server token>` and
-   `X-Bam-Body-Signature: <base64 SHA256WITHECDSA over the exact body>`.
+3. Mint a `BamJwtToken` (sub = handle, `aud` = the host's `ClientTokenAudience`, 2-minute expiry) signed
+   with the ECC key; `POST /actor/token` → server token (45 min).
+4. Call protected endpoints with `Authorization: Bearer <server token>` and a fresh request proof for each
+   request (`Bam.Protocol.RequestProofSigner.Sign(...).ApplyTo(request)`, or the four headers described under "Request proof").
 5. On 401 "key binding does not match", your key set was rotated or revoked — re-issue.
 
-Deferred by design: nonce single-use custody (`X-Bam-Nonce`), encrypted bodies. See the design doc.
+Deferred by design: encrypted bodies. See the design doc.

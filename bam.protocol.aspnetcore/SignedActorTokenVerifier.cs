@@ -59,6 +59,11 @@ public sealed class SignedActorTokenVerifier : IActorTokenVerifier
             return ActorTokenVerification.Failed(timing);
         }
 
+        if (!string.IsNullOrWhiteSpace(_options.ClientTokenAudience) && !string.Equals(token.Audience, _options.ClientTokenAudience, StringComparison.Ordinal))
+        {
+            return ActorTokenVerification.Failed("Client-signed token is not for this host's audience.");
+        }
+
         PublicKeySetData? keySet = _keySets.ResolveByHandle(token.ActorHandle);
         if (keySet is null)
         {

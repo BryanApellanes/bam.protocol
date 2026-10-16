@@ -8,23 +8,23 @@ namespace Bam.Protocol.AspNetCore;
 /// its access ladder — <see cref="RequiredAccessAttribute"/> at or above
 /// <see cref="ActorAuthenticationOptions.ProofRequiredAtOrAbove"/> — unless
 /// <see cref="RequireRequestProofAttribute"/> forces or waives it; anonymous-marked endpoints never
-/// require it. When required, <see cref="RequestProofRule.EvaluateAsync"/> re-reads the raw body (the
-/// middleware enabled buffering) and the <c>X-Bam-Body-Signature</c> header must verify against the
-/// actor's registered ECC key.
+/// require it. When required, <see cref="RequestProofEvaluator"/> checks the request's signed canonical
+/// form (method, path and query, timestamp, single-use nonce, raw body digest) against the actor's
+/// registered ECC key.
 /// </summary>
 public sealed class RequestProofEndpointFilter : IEndpointFilter
 {
-    private readonly IRequestProof _proof;
+    private readonly RequestProofEvaluator _evaluator;
     private readonly ActorAuthenticationOptions _options;
 
     /// <summary>Creates the filter.</summary>
-    /// <param name="proof">Verifies body signatures.</param>
+    /// <param name="evaluator">Checks request proofs.</param>
     /// <param name="options">Carries the proof threshold.</param>
-    public RequestProofEndpointFilter(IRequestProof proof, ActorAuthenticationOptions options)
+    public RequestProofEndpointFilter(RequestProofEvaluator evaluator, ActorAuthenticationOptions options)
     {
-        ArgumentNullException.ThrowIfNull(proof);
+        ArgumentNullException.ThrowIfNull(evaluator);
         ArgumentNullException.ThrowIfNull(options);
-        _proof = proof;
+        _evaluator = evaluator;
         _options = options;
     }
 
@@ -49,7 +49,7 @@ public sealed class RequestProofEndpointFilter : IEndpointFilter
             return await next(context).ConfigureAwait(false);
         }
 
-        RequestProofResult result = await RequestProofRule.EvaluateAsync(http.Request, _proof, http.GetActorEccPublicKeyPem()).ConfigureAwait(false);
+        RequestProofResult result = await _evaluator.EvaluateAsync(http.Request, http.GetActorEccPublicKeyPem()).ConfigureAwait(false);
         if (!result.Success)
         {
             return Unauthorized(result.Reason ?? "Request proof failed.");
