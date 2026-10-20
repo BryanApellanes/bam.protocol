@@ -32,6 +32,13 @@ public static class ActorAuthenticationRegistration
     {
         ArgumentNullException.ThrowIfNull(registry);
         ActorAuthenticationOptions effective = options ?? new ActorAuthenticationOptions();
+        // A ServiceRegistry host never passes through UseActorAuthentication's prerequisite check, so the audience
+        // requirement is enforced here for it.
+        string? audienceProblem = AudienceProblem(effective);
+        if (audienceProblem is not null)
+        {
+            throw new InvalidOperationException(audienceProblem);
+        }
         registry.For<ActorAuthenticationOptions>().UseSingleton(effective);
         registry.For<SignedActorTokenVerifier>().UseSingleton<SignedActorTokenVerifier>();
         registry.For<ServerIssuedTokenVerifier>().UseSingleton<ServerIssuedTokenVerifier>();
@@ -191,6 +198,16 @@ public static class ActorAuthenticationRegistration
         return true;
     }
 
+    private static string? AudienceProblem(ActorAuthenticationOptions options)
+    {
+        if (options.Enabled && string.IsNullOrWhiteSpace(options.ClientTokenAudience) && !options.AllowMissingClientTokenAudience)
+        {
+            return "Actor authentication requires ActorAuth:ClientTokenAudience (this host's audience, for example its public origin), so client-signed tokens made for another host are refused. Set ActorAuth:AllowMissingClientTokenAudience=true only for a single-host test setup.";
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Fails fast when the host did not provide a prerequisite contract, or when hybrid mode has no
     /// server key in storage.
@@ -224,16 +241,21 @@ public static class ActorAuthenticationRegistration
             missing.Add(nameof(INamedKeyStorage));
         }
 
-        if (options.Enabled && string.IsNullOrWhiteSpace(options.ClientTokenAudience) && !options.AllowMissingClientTokenAudience)
-        {
-            throw new InvalidOperationException(
-                "Actor authentication requires ActorAuth:ClientTokenAudience (this host's audience, for example its public origin), so client-signed tokens made for another host are refused. Set ActorAuth:AllowMissingClientTokenAudience=true only for a single-host test setup.");
-        }
-
+        List<string> problems = new List<string>();
         if (missing.Count > 0)
         {
-            throw new InvalidOperationException(
-                $"Actor authentication requires the host to register: {string.Join(", ", missing)}. Register the key-set store (IPublicKeySetResolver/IPublicKeySetRegistrar), the confirmation flow (AddDeviceKeyAccountConfirmation), and named key storage before UseActorAuthentication.");
+            problems.Add($"Actor authentication requires the host to register: {string.Join(", ", missing)}. Register the key-set store (IPublicKeySetResolver/IPublicKeySetRegistrar), the confirmation flow (AddDeviceKeyAccountConfirmation), and named key storage before UseActorAuthentication.");
+        }
+
+        string? audienceProblem = AudienceProblem(options);
+        if (audienceProblem is not null)
+        {
+            problems.Add(audienceProblem);
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", problems));
         }
 
         if (options.Mode == ActorAuthenticationMode.Hybrid)

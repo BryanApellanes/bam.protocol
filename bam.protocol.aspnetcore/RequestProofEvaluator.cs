@@ -27,6 +27,7 @@ public sealed class RequestProofEvaluator
     private readonly ActorAuthenticationOptions _options;
     private readonly TimeProvider _clock;
     private readonly ILogger? _logger;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> _lastCapacityWarning = new System.Collections.Concurrent.ConcurrentDictionary<string, long>(StringComparer.Ordinal);
 
     /// <summary>Creates the evaluator.</summary>
     /// <param name="proof">Verifies signatures.</param>
@@ -102,9 +103,25 @@ public sealed class RequestProofEvaluator
             return RequestProofResult.Failed("Request proof failed: the timestamp is outside the accepted window.");
         }
 
-        KeyValuePair<string, string> target = CanonicalRequest.SplitTarget(RequestTarget(request));
+        string requestTarget = RequestTarget(request);
+        if (!CanonicalRequest.IsOriginForm(requestTarget))
+        {
+            // An absolute-form or fragment-bearing target is reduced by the server's own rules, which need not match
+            // any split done here; refusing it keeps the signed path the routed path.
+            return RequestProofResult.Failed("Request proof failed: only an origin-form request target can carry a proof.");
+        }
+
+        KeyValuePair<string, string> target = CanonicalRequest.SplitTarget(requestTarget);
         string bodyDigest = await DigestBodyAsync(request).ConfigureAwait(false);
-        string canonical = CanonicalRequest.Compose(request.Method, target.Key, target.Value, timestamp, nonce!, bodyDigest);
+        string canonical;
+        try
+        {
+            canonical = CanonicalRequest.Compose(request.Method, target.Key, target.Value, timestamp, nonce!, bodyDigest);
+        }
+        catch (ArgumentException)
+        {
+            return RequestProofResult.Failed("Request proof failed: the request line cannot be put in canonical form.");
+        }
         string? algorithm = request.Headers[Headers.BodySignatureAlgorithm].FirstOrDefault();
         if (!_proof.Verify(canonical, signature, algorithm, eccPublicKeyPem))
         {
@@ -118,9 +135,36 @@ public sealed class RequestProofEvaluator
                 return RequestProofResult.Verified;
             case NonceClaimResult.AlreadyUsed:
                 return RequestProofResult.Failed("Request proof failed: the nonce was already used.");
-            default:
-                _logger?.LogWarning("Request proof refused: the nonce store is at capacity for this signing key or in total; raise ActorAuth:RequestProofNoncesPerKey or RequestProofNonceCapacity if this is legitimate load.");
+            case NonceClaimResult.KeyFull:
+                WarnAtCapacity(scope, "per-key (ActorAuth:RequestProofNoncesPerKey)", now);
                 return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
+            default:
+                WarnAtCapacity(scope, "total (ActorAuth:RequestProofNonceCapacity)", now);
+                return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
+        }
+    }
+
+    /// <summary>
+    /// Logs a capacity refusal at Warning, naming the signing key's fingerprint and the bound that tripped, at most once a
+    /// minute per key, so a key at its limit cannot flood the log.
+    /// </summary>
+    private void WarnAtCapacity(string scope, string bound, DateTimeOffset now)
+    {
+        if (_logger is null)
+        {
+            return;
+        }
+
+        long tick = now.UtcTicks;
+        long last = _lastCapacityWarning.GetOrAdd(scope, long.MinValue);
+        if (last != long.MinValue && tick - last < TimeSpan.TicksPerMinute)
+        {
+            return;
+        }
+
+        if (_lastCapacityWarning.TryUpdate(scope, tick, last))
+        {
+            _logger.LogWarning("Request proof refused: the nonce store is at its {Bound} limit for signing key {KeyFingerprint}; raise the limit if this is legitimate load, or remove the key's admission if it is not.", bound, scope);
         }
     }
 

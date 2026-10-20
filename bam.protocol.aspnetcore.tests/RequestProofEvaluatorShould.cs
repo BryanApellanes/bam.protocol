@@ -4,7 +4,6 @@ using Bam.Protocol.Server;
 using Bam.Test;
 using System.Net;
 using System.Text;
-using Bam.Protocol.Data.Common;
 using Bam.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -228,6 +227,63 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void RefuseAbsoluteFormAndFragmentTargets()
+    {
+        // #51 round-2 security condition 1: Kestrel reduces http://h?x=1/evil to path "/" and query "?x=1/evil", so a
+        // proof signed for /evil must not verify on it. Only origin-form targets carry a proof.
+        EccKeyPair pair = TestKeys.NewEcc();
+
+        When.A<RequestProofEvaluator>("evaluates a proof for /evil delivered under other request targets",
+            () => Evaluators.Create(new FixedClock(Now)),
+            (evaluator) =>
+            {
+                RequestProofHeaders proof = Requests.Proof(Requests.WithEndpoint().At("GET", "/evil"), pair, Now);
+                return new TargetOutcome(
+                    Under(evaluator, pair, proof, "http://h:5000?x=1/evil"),
+                    Under(evaluator, pair, proof, "http://h:5000/evil"),
+                    Under(evaluator, pair, proof, "/evil#frag"),
+                    Under(evaluator, pair, proof, "*"),
+                    Under(evaluator, pair, proof, "/evil"),
+                    CanonicalRequest.IsOriginForm("/a?b"),
+                    SplitRefuses("http://h?x=1/evil"));
+            })
+            .TheTest
+            .ShouldPass<TargetOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("an absolute-form target with a query before the path is refused", outcome.AuthorityQuery?.Contains("origin-form", StringComparison.Ordinal) == true);
+                because.ItsTrue("any absolute-form target is refused", outcome.Absolute?.Contains("origin-form", StringComparison.Ordinal) == true);
+                because.ItsTrue("a target with a fragment is refused", outcome.Fragment?.Contains("origin-form", StringComparison.Ordinal) == true);
+                because.ItsTrue("an asterisk-form target is refused", outcome.Asterisk?.Contains("origin-form", StringComparison.Ordinal) == true);
+                because.ItsTrue("the origin-form target the proof was made for verifies", outcome.Origin is null);
+                because.ItsTrue("origin form is recognised", outcome.OriginRecognised);
+                because.ItsTrue("SplitTarget refuses a non-origin target", outcome.SplitRefused);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static string? Under(RequestProofEvaluator evaluator, EccKeyPair pair, RequestProofHeaders proof, string rawTarget)
+    {
+        DefaultHttpContext context = Requests.WithEndpoint().At("GET", "/evil").WithProof(proof);
+        context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpRequestFeature>()!.RawTarget = rawTarget;
+        RequestProofResult result = evaluator.EvaluateAsync(context.Request, pair.PublicPem).GetAwaiter().GetResult();
+        return result.Success ? null : result.Reason;
+    }
+
+    private static bool SplitRefuses(string target)
+    {
+        try
+        {
+            CanonicalRequest.SplitTarget(target);
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return true;
+        }
+    }
+
+    [UnitTest]
     public void ReportACapacityRefusalAsLoadNotAsAReplay()
     {
         EccKeyPair pair = TestKeys.NewEcc();
@@ -339,6 +395,8 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
         }
     }
 
+    private sealed record TargetOutcome(string? AuthorityQuery, string? Absolute, string? Fragment, string? Asterisk, string? Origin, bool OriginRecognised, bool SplitRefused);
+
     private sealed record CapacityOutcome(bool First, bool Second, string? Reason);
 
     private sealed record PipelineOutcome(HttpStatusCode SignedStatus, string SignedBody, HttpStatusCode TamperedStatus, HttpStatusCode ReplayStatus);
@@ -385,7 +443,7 @@ public class MemoryRequestProofNonceStoreShould : UnitTestMenuContainer
                 because.ItsTrue("a fresh nonce is claimed", outcome.First == NonceClaimResult.Claimed);
                 because.ItsTrue("a repeated nonce is a replay, not a capacity refusal", outcome.Repeat == NonceClaimResult.AlreadyUsed);
                 because.ItsTrue("a second nonce for the key is claimed", outcome.Second == NonceClaimResult.Claimed);
-                because.ItsTrue("the key at its limit is refused for capacity", outcome.KeyFull == NonceClaimResult.StoreFull);
+                because.ItsTrue("the key at its limit is refused for its own capacity", outcome.KeyFull == NonceClaimResult.KeyFull);
                 because.ItsTrue("another key is unaffected", outcome.OtherKey == NonceClaimResult.Claimed);
                 because.ItsTrue("expired nonces free the key's room", outcome.AfterExpiry == NonceClaimResult.Claimed);
             })
@@ -514,6 +572,38 @@ public class ClientTokenAudienceShould : UnitTestMenuContainer
             .ShouldPass<bool>((because, verified) =>
             {
                 because.ItsTrue("a blank audience does not demand aud == \" \"", verified);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RefuseAnEnabledServiceRegistryHostWithoutAnAudience()
+    {
+        When.A<string>("registers into a ServiceRegistry with and without an audience",
+            () => "aud",
+            (_) =>
+            {
+                string? missing = null;
+                try
+                {
+                    Bam.DependencyInjection.ServiceRegistry.Create().AddActorAuthentication(new ActorAuthenticationOptions { Enabled = true });
+                }
+                catch (InvalidOperationException failure)
+                {
+                    missing = failure.Message;
+                }
+
+                Bam.DependencyInjection.ServiceRegistry complete = Bam.DependencyInjection.ServiceRegistry.Create();
+                complete.For<Bam.Protocol.Data.IPublicKeySetResolver>().UseSingleton<Bam.Protocol.Data.IPublicKeySetResolver>(new FakeKeySetResolver());
+                complete.For<Bam.Encryption.INamedKeyStorage>().UseSingleton<Bam.Encryption.INamedKeyStorage>(new InMemoryNamedKeyStorage());
+                complete.AddActorAuthentication(new ActorAuthenticationOptions { Enabled = true, ClientTokenAudience = "https://host.example" });
+                return missing;
+            })
+            .TheTest
+            .ShouldPass<string?>((because, message) =>
+            {
+                because.ItsTrue("the ServiceRegistry path refuses an enabled host without an audience", message?.Contains("ClientTokenAudience", StringComparison.Ordinal) == true);
             })
             .SoBeHappy()
             .UnlessItFailed();

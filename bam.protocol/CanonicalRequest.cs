@@ -80,23 +80,32 @@ public static class CanonicalRequest
         return canonical.ToString();
     }
 
-    /// <summary>
-    /// Splits a request target into the path and query a proof signs. An absolute-form target
-    /// (<c>http://host/path?q</c>) is reduced to its path and query first.
-    /// </summary>
+    /// <summary>Whether a request target is in origin form: it starts with <c>/</c> and carries no fragment.</summary>
     /// <param name="requestTarget">The request target as on the request line.</param>
-    /// <returns>The path (at least <c>/</c>) and the query with its leading <c>?</c>, or empty.</returns>
+    /// <returns>True for an origin-form target, the only form a proof covers.</returns>
+    public static bool IsOriginForm(string? requestTarget)
+    {
+        return !string.IsNullOrEmpty(requestTarget) && requestTarget[0] == '/' && !requestTarget.Contains('#', StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Splits an origin-form request target into the path and query a proof signs. Absolute-form targets
+    /// (<c>http://host/path</c>) are not accepted: servers reduce them by rules that need not agree with any split done
+    /// here, so the signed path could differ from the routed one, and a client talking to an origin server never sends
+    /// one.
+    /// </summary>
+    /// <param name="requestTarget">The origin-form request target as on the request line.</param>
+    /// <returns>The path and the query with its leading <c>?</c>, or empty.</returns>
+    /// <exception cref="ArgumentException">The target is not in origin form (see <see cref="IsOriginForm"/>).</exception>
     public static KeyValuePair<string, string> SplitTarget(string requestTarget)
     {
         ArgumentNullException.ThrowIfNull(requestTarget);
-        string target = requestTarget;
-        int scheme = target.IndexOf("://", StringComparison.Ordinal);
-        if (scheme > 0 && target.IndexOf('/', StringComparison.Ordinal) > scheme)
+        if (!IsOriginForm(requestTarget))
         {
-            int pathStart = target.IndexOf('/', scheme + 3);
-            target = pathStart < 0 ? "/" : target.Substring(pathStart);
+            throw new ArgumentException("A request proof covers only an origin-form request target: one that starts with '/' and has no fragment.", nameof(requestTarget));
         }
 
+        string target = requestTarget;
         int question = target.IndexOf('?', StringComparison.Ordinal);
         string path = question < 0 ? target : target.Substring(0, question);
         string query = question < 0 ? string.Empty : target.Substring(question);

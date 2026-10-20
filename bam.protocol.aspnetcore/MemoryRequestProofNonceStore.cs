@@ -63,7 +63,12 @@ public sealed class MemoryRequestProofNonceStore : IRequestProofNonceStore
             }
 
             int held = _perScope.TryGetValue(scope, out int count) ? count : 0;
-            if (held >= _perKey || _claimed.Count >= _capacity)
+            if (held >= _perKey)
+            {
+                return NonceClaimResult.KeyFull;
+            }
+
+            if (_claimed.Count >= _capacity)
             {
                 return NonceClaimResult.StoreFull;
             }

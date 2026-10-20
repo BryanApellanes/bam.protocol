@@ -8,7 +8,10 @@ namespace Bam.Protocol.AspNetCore;
 public interface IRequestProofNonceStore
 {
     /// <summary>
-    /// Records a nonce as used, unless it already is or the store cannot record it.
+    /// Records a nonce as used, unless it already is or the store cannot record it. A shared implementation must claim
+    /// atomically (two instances racing on one nonce: exactly one gets <see cref="NonceClaimResult.Claimed"/>) and must
+    /// keep the nonce through <paramref name="expiresAt"/> inclusive: a store whose expiry rounds down, such as a
+    /// whole-second TTL, would reopen the replay window at the edge of <see cref="ActorAuthenticationOptions.RequestProofMaxAge"/>.
     /// </summary>
     /// <param name="scope">Whose nonce this is: the fingerprint of the signing key.</param>
     /// <param name="nonce">The nonce from the request.</param>
@@ -28,8 +31,11 @@ public enum NonceClaimResult
     AlreadyUsed = 1,
 
     /// <summary>
-    /// The store is at a capacity limit and cannot record the nonce. The proof is refused, because accepting an
-    /// unrecorded nonce would allow its replay; this is load, not an attack on this request.
+    /// The store holds as many nonces as it may in total and cannot record this one. The proof is refused, because
+    /// accepting an unrecorded nonce would allow its replay; this is load, not an attack on this request.
     /// </summary>
     StoreFull = 2,
+
+    /// <summary>The signing key holds as many unexpired nonces as one key may; only this key's proofs are refused.</summary>
+    KeyFull = 3,
 }

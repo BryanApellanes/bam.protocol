@@ -54,7 +54,7 @@ query or body fails on any other; the body is hashed as raw bytes, never decoded
 minutes) of the host's clock, and a nonce is accepted once per key while its proof could still be accepted.
 The nonce is recorded only after the signature verifies. The algorithm is pinned: an
 `X-Bam-Body-Signature-Algorithm` outside `ActorAuth:AllowedBodySignatureAlgorithms` (default
-`SHA256WITHECDSA` only) fails verification.
+`SHA256WITHECDSA` only) fails verification. Only an origin-form request target (one that starts with `/` and has no fragment) carries a proof: an absolute-form target is refused, because a server reduces it by its own rules and the signed path could then differ from the routed one. The canonical text has no host line, so `ClientTokenAudience` is what keeps a client-signed token, and the proofs made with it, bound to one host. A proxy that rewrites the path or query before the evaluator runs makes every proof fail closed ("the signature does not verify"); evaluate proofs on the request as the client sent it.
 
 Used nonces live in `IRequestProofNonceStore`. The default, `MemoryRequestProofNonceStore`, holds at most
 `ActorAuth:RequestProofNoncesPerKey` unexpired nonces per signing key and `ActorAuth:RequestProofNonceCapacity` in
@@ -74,20 +74,20 @@ builder.Services.AddActorAuthentication(builder.Configuration);   // binds the A
 app.UseActorAuthentication();            // no-op unless ActorAuth:Enabled = true
 app.MapActorEnrollment();                // /actor/register, /actor/challenge, /actor/confirm (anonymous)
 app.MapActorToken();                     // /actor/token (anonymous; hybrid mode)
-app.MapPost("/cognition", handler).RequireActorAccess(BamAccess.Execute);   // token + body signature
+app.MapPost("/cognition", handler).RequireActorAccess(BamAccess.Execute);   // token + request proof
 app.MapGet("/healthz", handler).WithMetadata(new AnonymousAccessAttribute());
 ```
 
 `RequireActorAccess` records `RequiredAccessAttribute` metadata and attaches the request-proof and
 access filters. Endpoints at or above `ActorAuth:ProofRequiredAtOrAbove` (default `Execute`) require
-the body signature; `[RequireRequestProof(false)]` waives it, `[RequireRequestProof]` forces it on a
+the request proof; `[RequireRequestProof(false)]` waives it, `[RequireRequestProof]` forces it on a
 `Read` endpoint. Endpoints marked `AnonymousAccessAttribute` bypass authentication and carry the
 well-known anonymous actor. `RequireActorAccess` also marks its endpoint non-anonymous, so mapping it
 inside an anonymous route group doesn't make it anonymous.
 
 **Endpoints mapped without `RequireActorAccess` get authentication and admission only.** The middleware
 verifies the bearer token and checks admission on every non-anonymous endpoint, but the access-level check
-and the body signature run only where `RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
+and the request proof run only where `RequireActorAccess` attached the filters. That includes MVC controllers, where endpoint filters don't run.
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
 and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
@@ -146,11 +146,11 @@ Every authentication failure, from the middleware and from `/actor/token`, answe
 | `ServerTokenLifetime` | `00:45:00` | 30–60 min recommended |
 | `ClientTokenMaxLifetime` | `00:05:00` | Cap on client-signed token lifetime |
 | `ClockSkewAllowance` | `00:01:00` | Tolerance on iat/exp |
-| `ProofRequiredAtOrAbove` | `Execute` | Access ladder threshold for body signatures |
+| `ProofRequiredAtOrAbove` | `Execute` | Access ladder threshold for the request proof |
 | `EnrolledActorAccess` | `Execute` | Access an admitted enrolled actor holds (phase-1 policy) |
 | `OpenEnrollment` | `false` | Admit every enrolled actor |
 | `AdmittedHandles` | empty | `handle` or `handle@fingerprint` entries admitted when `OpenEnrollment` is off (exact match) |
-| `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the body signature may name |
+| `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the request-proof signature may name |
 | `RequestProofMaxAge` | `00:05:00` | How far a proof's timestamp may be from the host's clock |
 | `RequestProofNonceCapacity` | `200000` | Unexpired nonces `MemoryRequestProofNonceStore` holds in all before refusing new proofs |
 | `RequestProofNoncesPerKey` | `10000` | Unexpired nonces it holds for one signing key before refusing that key's new proofs |
