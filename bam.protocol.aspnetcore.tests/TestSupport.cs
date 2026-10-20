@@ -253,9 +253,33 @@ internal sealed class FixedClock : TimeProvider
 /// <summary>Builds request-proof evaluators for tests.</summary>
 internal static class Evaluators
 {
-    internal static RequestProofEvaluator Create(TimeProvider? clock = null, ActorAuthenticationOptions? options = null, IRequestProofNonceStore? nonces = null)
+    internal static RequestProofEvaluator Create(TimeProvider? clock = null, ActorAuthenticationOptions? options = null, IRequestProofNonceStore? nonces = null, Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator>? logger = null)
     {
         ActorAuthenticationOptions effective = options ?? new ActorAuthenticationOptions();
-        return new RequestProofEvaluator(new BodySignatureProofVerifier(effective), nonces ?? new MemoryRequestProofNonceStore(effective), effective, clock);
+        return new RequestProofEvaluator(new BodySignatureProofVerifier(effective), nonces ?? new MemoryRequestProofNonceStore(effective), effective, clock, logger);
+    }
+}
+
+/// <summary>A logger that keeps each formatted entry with its level.</summary>
+internal sealed class CapturingLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
+{
+    internal List<KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>> Entries { get; } = new List<KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>>();
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    {
+        return null;
+    }
+
+    public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel)
+    {
+        return true;
+    }
+
+    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        lock (Entries)
+        {
+            Entries.Add(new KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>(logLevel, formatter(state, exception)));
+        }
     }
 }

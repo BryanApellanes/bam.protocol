@@ -244,6 +244,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                     Under(evaluator, pair, proof, "/evil#frag"),
                     Under(evaluator, pair, proof, "*"),
                     Under(evaluator, pair, proof, "/evil"),
+                    Under(evaluator, pair, proof, "/evil\nX"),
                     CanonicalRequest.IsOriginForm("/a?b"),
                     SplitRefuses("http://h?x=1/evil"));
             })
@@ -255,6 +256,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue("a target with a fragment is refused", outcome.Fragment?.Contains("origin-form", StringComparison.Ordinal) == true);
                 because.ItsTrue("an asterisk-form target is refused", outcome.Asterisk?.Contains("origin-form", StringComparison.Ordinal) == true);
                 because.ItsTrue("the origin-form target the proof was made for verifies", outcome.Origin is null);
+                because.ItsTrue("a target that cannot be put in canonical form is refused with 401, not a 500", outcome.LineBreak?.Contains("canonical form", StringComparison.Ordinal) == true);
                 because.ItsTrue("origin form is recognised", outcome.OriginRecognised);
                 because.ItsTrue("SplitTarget refuses a non-origin target", outcome.SplitRefused);
             })
@@ -281,6 +283,55 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
         {
             return true;
         }
+    }
+
+    [UnitTest]
+    public void WarnAboutCapacityOncePerKeyPerMinuteNamingTheKeyAndTheBound()
+    {
+        EccKeyPair keyA = TestKeys.NewEcc();
+        EccKeyPair keyB = TestKeys.NewEcc();
+        EccKeyPair keyC = TestKeys.NewEcc();
+        ActorAuthenticationOptions tight = new ActorAuthenticationOptions { RequestProofNonceCapacity = 2, RequestProofNoncesPerKey = 1 };
+
+        When.A<FixedClock>("refuses proofs at the per-key and total bounds over a minute and more",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                CapturingLogger<RequestProofEvaluator> logger = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofEvaluator evaluator = Evaluators.Create(clock, tight, logger: logger);
+                bool Prove(EccKeyPair pair) => evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult().Success;
+                int Warnings() => logger.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Warning);
+
+                bool firstA = Prove(keyA);
+                Prove(keyA);
+                Prove(keyA);
+                int afterTwoRefusals = Warnings();
+                clock.Now = Now + TimeSpan.FromSeconds(59);
+                Prove(keyA);
+                int after59Seconds = Warnings();
+                clock.Now = Now + TimeSpan.FromSeconds(60);
+                Prove(keyA);
+                int after60Seconds = Warnings();
+                bool firstB = Prove(keyB);
+                bool keyCRefused = !Prove(keyC);
+                List<string> messages = logger.Entries.Where(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Warning).Select(entry => entry.Value).ToList();
+                return new WarningOutcome(firstA, afterTwoRefusals, after59Seconds, after60Seconds, firstB, keyCRefused, messages,
+                    Bam.Protocol.Profile.PublicKeyFingerprint.Of(keyA.PublicPem)!, Bam.Protocol.Profile.PublicKeyFingerprint.Of(keyC.PublicPem)!);
+            })
+            .TheTest
+            .ShouldPass<WarningOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the first proof for key A verifies", outcome.FirstA);
+                because.ItsTrue("two refusals at the same instant log one warning", outcome.AfterTwoRefusals == 1);
+                because.ItsTrue("a refusal 59 s later logs none", outcome.After59Seconds == 1);
+                because.ItsTrue("one at 60 s logs a second", outcome.After60Seconds == 2);
+                because.ItsTrue("the per-key warning names the bound and key A", outcome.Messages[0].Contains("per-key", StringComparison.Ordinal) && outcome.Messages[0].Contains(outcome.FingerprintA, StringComparison.Ordinal));
+                because.ItsTrue("key B fits in the total", outcome.FirstB);
+                because.ItsTrue("key C is refused at the total bound", outcome.KeyCRefused);
+                because.ItsTrue("and that warning names the total bound and key C", outcome.Messages.Count == 3 && outcome.Messages[2].Contains("total", StringComparison.Ordinal) && outcome.Messages[2].Contains(outcome.FingerprintC, StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
     }
 
     [UnitTest]
@@ -395,7 +446,9 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
         }
     }
 
-    private sealed record TargetOutcome(string? AuthorityQuery, string? Absolute, string? Fragment, string? Asterisk, string? Origin, bool OriginRecognised, bool SplitRefused);
+    private sealed record TargetOutcome(string? AuthorityQuery, string? Absolute, string? Fragment, string? Asterisk, string? Origin, string? LineBreak, bool OriginRecognised, bool SplitRefused);
+
+    private sealed record WarningOutcome(bool FirstA, int AfterTwoRefusals, int After59Seconds, int After60Seconds, bool FirstB, bool KeyCRefused, List<string> Messages, string FingerprintA, string FingerprintC);
 
     private sealed record CapacityOutcome(bool First, bool Second, string? Reason);
 

@@ -44,8 +44,8 @@ BAM-REQUEST-PROOF-1
 ```
 
 The path and query are the request target's bytes as sent, split at the first `?`, with no decoding or
-re-escaping: a client in any language signs what it puts on the request line (for an absolute-form target, its
-path and query). It sends `X-Bam-Body-Signature` (base64; despite the name it signs the whole text above),
+re-escaping: a client in any language signs what it puts on the request line, which must be an origin-form
+target (see below). It sends `X-Bam-Body-Signature` (base64; despite the name it signs the whole text above),
 `X-Bam-Body-Signature-Algorithm`, `X-Bam-Timestamp` and `X-Bam-Proof-Nonce` (not `X-Bam-Nonce`, which the native
 transport uses for its session nonce). For .NET, `Bam.Protocol.RequestProofSigner.Sign(...).ApplyTo(request)` does
 all of it; `CanonicalRequest` and the signer live in the core `bam.protocol` assembly, so a client needs no ASP.NET

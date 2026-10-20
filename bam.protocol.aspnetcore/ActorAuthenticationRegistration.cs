@@ -242,6 +242,17 @@ public static class ActorAuthenticationRegistration
         }
 
         List<string> problems = new List<string>();
+        try
+        {
+            // Build the evaluator now, so an out-of-range RequestProofMaxAge fails at start-up on this path too, as the
+            // ServiceRegistry path and the nonce store already do, rather than on the first proof-gated request.
+            services.GetService<RequestProofEvaluator>();
+        }
+        catch (InvalidOperationException invalid)
+        {
+            problems.Add(invalid.Message);
+        }
+
         if (missing.Count > 0)
         {
             problems.Add($"Actor authentication requires the host to register: {string.Join(", ", missing)}. Register the key-set store (IPublicKeySetResolver/IPublicKeySetRegistrar), the confirmation flow (AddDeviceKeyAccountConfirmation), and named key storage before UseActorAuthentication.");
