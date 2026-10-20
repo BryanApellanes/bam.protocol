@@ -177,9 +177,109 @@ internal static class Requests
 
     internal static DefaultHttpContext WithBody(this DefaultHttpContext context, string body)
     {
-        byte[] bytes = Encoding.UTF8.GetBytes(body);
+        return context.WithBodyBytes(Encoding.UTF8.GetBytes(body));
+    }
+
+    internal static DefaultHttpContext WithBodyBytes(this DefaultHttpContext context, byte[] bytes)
+    {
         context.Request.Body = new MemoryStream(bytes);
         context.Request.ContentLength = bytes.Length;
         return context;
+    }
+
+    internal static DefaultHttpContext At(this DefaultHttpContext context, string method, string path, string query = "")
+    {
+        context.Request.Method = method;
+        context.Request.Path = new PathString(path);
+        context.Request.QueryString = new QueryString(query);
+        return context;
+    }
+
+    /// <summary>Signs the request as a client would, with <see cref="RequestProofSigner"/>, and sets the proof headers.</summary>
+    internal static DefaultHttpContext Proved(this DefaultHttpContext context, EccKeyPair pair, DateTimeOffset now)
+    {
+        RequestProofHeaders headers = Proof(context, pair, now);
+        return context.WithProof(headers);
+    }
+
+    internal static RequestProofHeaders Proof(DefaultHttpContext context, EccKeyPair pair, DateTimeOffset now)
+    {
+        if (string.IsNullOrEmpty(context.Request.Method))
+        {
+            context.At("POST", "/actor-api/hello");
+        }
+
+        byte[] body = Array.Empty<byte>();
+        if (context.Request.Body.CanSeek)
+        {
+            context.Request.Body.Position = 0;
+            using MemoryStream copy = new MemoryStream();
+            context.Request.Body.CopyTo(copy);
+            context.Request.Body.Position = 0;
+            body = copy.ToArray();
+        }
+
+        Uri uri = new Uri(context.Request.Path.ToUriComponent() + context.Request.QueryString.Value, UriKind.Relative);
+        return RequestProofSigner.Sign(new PrivateKeyProvider(pair.PrivateKey.Value), context.Request.Method, uri, body, now);
+    }
+
+    internal static DefaultHttpContext WithProof(this DefaultHttpContext context, RequestProofHeaders headers)
+    {
+        foreach (KeyValuePair<string, string> header in headers.ToHeaders())
+        {
+            context.Request.Headers[header.Key] = header.Value;
+        }
+
+        return context;
+    }
+}
+
+/// <summary>A clock tests set by hand.</summary>
+internal sealed class FixedClock : TimeProvider
+{
+    internal FixedClock(DateTimeOffset now)
+    {
+        Now = now;
+    }
+
+    internal DateTimeOffset Now { get; set; }
+
+    public override DateTimeOffset GetUtcNow()
+    {
+        return Now;
+    }
+}
+
+/// <summary>Builds request-proof evaluators for tests.</summary>
+internal static class Evaluators
+{
+    internal static RequestProofEvaluator Create(TimeProvider? clock = null, ActorAuthenticationOptions? options = null, IRequestProofNonceStore? nonces = null, Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator>? logger = null)
+    {
+        ActorAuthenticationOptions effective = options ?? new ActorAuthenticationOptions();
+        return new RequestProofEvaluator(new BodySignatureProofVerifier(effective), nonces ?? new MemoryRequestProofNonceStore(effective), effective, clock, logger);
+    }
+}
+
+/// <summary>A logger that keeps each formatted entry with its level.</summary>
+internal sealed class CapturingLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
+{
+    internal List<KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>> Entries { get; } = new List<KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>>();
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    {
+        return null;
+    }
+
+    public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel)
+    {
+        return true;
+    }
+
+    public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        lock (Entries)
+        {
+            Entries.Add(new KeyValuePair<Microsoft.Extensions.Logging.LogLevel, string>(logLevel, formatter(state, exception)));
+        }
     }
 }

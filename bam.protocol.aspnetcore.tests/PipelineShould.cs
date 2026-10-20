@@ -248,21 +248,20 @@ public class EndpointFiltersShould : UnitTestMenuContainer
         EccKeyPair pair = TestKeys.NewEcc();
         string body = "{\"goal\":\"write hello\"}";
         ActorData actor = new ActorData { Handle = "alice", Name = "alice" };
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        When.A<RequestProofEndpointFilter>("accepts a signed body and rejects missing or bad signatures",
-            () => new RequestProofEndpointFilter(new BodySignatureProofVerifier(), Options),
+        When.A<RequestProofEndpointFilter>("accepts a signed request and rejects missing or bad signatures",
+            () => new RequestProofEndpointFilter(Evaluators.Create(), Options),
             (filter) =>
             {
-                DefaultHttpContext signed = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute)).WithBody(body);
+                DefaultHttpContext signed = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute)).WithBody(body).Proved(pair, now);
                 signed.SetActor(actor, pair.PublicPem);
-                signed.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(pair, body);
 
                 DefaultHttpContext unsigned = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute)).WithBody(body);
                 unsigned.SetActor(actor, pair.PublicPem);
 
-                DefaultHttpContext forged = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute)).WithBody(body);
+                DefaultHttpContext forged = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Execute)).WithBody(body).Proved(TestKeys.NewEcc(), now);
                 forged.SetActor(actor, pair.PublicPem);
-                forged.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(TestKeys.NewEcc(), body);
 
                 DefaultHttpContext readOnly = Requests.WithEndpoint(new RequiredAccessAttribute(BamAccess.Read)).WithBody(body);
                 readOnly.SetActor(actor, pair.PublicPem);
@@ -276,7 +275,7 @@ public class EndpointFiltersShould : UnitTestMenuContainer
             .TheTest
             .ShouldPass<ProofFilterOutcome>((because, outcome) =>
             {
-                because.ItsTrue("a correctly signed body reaches the handler", Equals(outcome.Signed, "handled"));
+                because.ItsTrue("a correctly signed request reaches the handler", Equals(outcome.Signed, "handled"));
                 because.ItsTrue("a missing signature is 401", outcome.UnsignedStatus == 401);
                 because.ItsTrue("a signature by another key is 401", outcome.ForgedStatus == 401);
                 because.ItsTrue("a Read endpoint needs no proof", Equals(outcome.ReadOnly, "handled"));
@@ -352,29 +351,27 @@ public class EndpointFiltersShould : UnitTestMenuContainer
     {
         EccKeyPair pair = TestKeys.NewEcc();
         string body = "{\"goal\":\"proxy hello\"}";
-        BodySignatureProofVerifier proof = new BodySignatureProofVerifier();
+        DateTimeOffset now = DateTimeOffset.UtcNow;
 
-        When.A<BodySignatureProofVerifier>("evaluates a request directly, as a proxy host would",
-            () => proof,
+        When.A<RequestProofEvaluator>("evaluates a request directly, as a proxy host would",
+            () => Evaluators.Create(),
             (subject) =>
             {
-                DefaultHttpContext valid = Requests.WithEndpoint().WithBody(body);
-                valid.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(pair, body);
+                DefaultHttpContext valid = Requests.WithEndpoint().WithBody(body).Proved(pair, now);
                 DefaultHttpContext missing = Requests.WithEndpoint().WithBody(body);
-                DefaultHttpContext forged = Requests.WithEndpoint().WithBody(body);
-                forged.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(TestKeys.NewEcc(), body);
-                DefaultHttpContext algorithm = Requests.WithEndpoint().WithBody(body);
-                algorithm.Request.Headers[Headers.BodySignature] = TestKeys.BodySignature(pair, body);
+                DefaultHttpContext forged = Requests.WithEndpoint().WithBody(body).Proved(TestKeys.NewEcc(), now);
+                DefaultHttpContext algorithm = Requests.WithEndpoint().WithBody(body).Proved(pair, now);
                 algorithm.Request.Headers[Headers.BodySignatureAlgorithm] = "NONEwithECDSA";
-                RequestProofResult validResult = RequestProofRule.EvaluateAsync(valid.Request, subject, pair.PublicPem).GetAwaiter().GetResult();
+                DefaultHttpContext noKey = Requests.WithEndpoint().WithBody(body).Proved(pair, now);
+                RequestProofResult validResult = subject.EvaluateAsync(valid.Request, pair.PublicPem).GetAwaiter().GetResult();
                 string afterRead = new StreamReader(valid.Request.Body).ReadToEnd();
                 return new EvaluateOutcome(
                     validResult.Success,
                     afterRead == body,
-                    RequestProofRule.EvaluateAsync(missing.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
-                    RequestProofRule.EvaluateAsync(forged.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
-                    RequestProofRule.EvaluateAsync(algorithm.Request, subject, pair.PublicPem).GetAwaiter().GetResult().Success,
-                    RequestProofRule.EvaluateAsync(valid.Request, subject, null).GetAwaiter().GetResult().Success);
+                    subject.EvaluateAsync(missing.Request, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    subject.EvaluateAsync(forged.Request, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    subject.EvaluateAsync(algorithm.Request, pair.PublicPem).GetAwaiter().GetResult().Success,
+                    subject.EvaluateAsync(noKey.Request, null).GetAwaiter().GetResult().Success);
             })
             .TheTest
             .ShouldPass<EvaluateOutcome>((because, outcome) =>

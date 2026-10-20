@@ -3,10 +3,9 @@ using Bam.Encryption;
 namespace Bam.Protocol.AspNetCore;
 
 /// <summary>
-/// The ASP.NET binding of the existing body-signature convention: the signature is
-/// <c>SHA256WITHECDSA</c> over the UTF-8 request body, base64 in <c>X-Bam-Body-Signature</c>, made with
-/// the actor's ECC private key and verified here with the registered ECC public key through
-/// <see cref="EccSignatureProvider"/>. No new cryptography. The algorithm is pinned: an
+/// Verifies the request-proof signature: <c>SHA256WITHECDSA</c> over the UTF-8 <see cref="CanonicalRequest"/>,
+/// base64 in <c>X-Bam-Body-Signature</c>, made with the actor's ECC private key and verified here with the
+/// registered ECC public key through <see cref="EccSignatureProvider"/>. No new cryptography. The algorithm is pinned: an
 /// <c>X-Bam-Body-Signature-Algorithm</c> outside <see cref="ActorAuthenticationOptions.AllowedBodySignatureAlgorithms"/>
 /// fails verification, because a verifier that lets the signer pick the scheme can be handed one that
 /// doesn't hash the input.
@@ -14,7 +13,7 @@ namespace Bam.Protocol.AspNetCore;
 public sealed class BodySignatureProofVerifier : IRequestProof
 {
     /// <summary>The algorithm assumed when <c>X-Bam-Body-Signature-Algorithm</c> is absent.</summary>
-    public const string DefaultAlgorithm = "SHA256WITHECDSA";
+    public const string DefaultAlgorithm = CanonicalRequest.DefaultAlgorithm;
 
     private readonly EccSignatureProvider _signatures = new EccSignatureProvider();
     private readonly IReadOnlyList<string> _allowedAlgorithms;
@@ -66,9 +65,9 @@ public sealed class BodySignatureProofVerifier : IRequestProof
     }
 
     /// <inheritdoc />
-    public bool Verify(string body, string signatureBase64, string? algorithm, string eccPublicKeyPem)
+    public bool Verify(string signedText, string signatureBase64, string? algorithm, string eccPublicKeyPem)
     {
-        if (body is null || string.IsNullOrWhiteSpace(signatureBase64) || string.IsNullOrWhiteSpace(eccPublicKeyPem))
+        if (signedText is null || string.IsNullOrWhiteSpace(signatureBase64) || string.IsNullOrWhiteSpace(eccPublicKeyPem))
         {
             return false;
         }
@@ -84,7 +83,7 @@ public sealed class BodySignatureProofVerifier : IRequestProof
             Signature signature = new Signature
             {
                 SignatureBytes = Convert.FromBase64String(signatureBase64),
-                Data = body,
+                Data = signedText,
                 Algorithm = allowedAlgorithm,
             };
             EccPublicKey publicKey = new EccPublicKey(eccPublicKeyPem);

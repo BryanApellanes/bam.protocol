@@ -32,6 +32,13 @@ public static class ActorAuthenticationRegistration
     {
         ArgumentNullException.ThrowIfNull(registry);
         ActorAuthenticationOptions effective = options ?? new ActorAuthenticationOptions();
+        // A ServiceRegistry host never passes through UseActorAuthentication's prerequisite check, so the audience
+        // requirement is enforced here for it.
+        string? audienceProblem = AudienceProblem(effective);
+        if (audienceProblem is not null)
+        {
+            throw new InvalidOperationException(audienceProblem);
+        }
         registry.For<ActorAuthenticationOptions>().UseSingleton(effective);
         registry.For<SignedActorTokenVerifier>().UseSingleton<SignedActorTokenVerifier>();
         registry.For<ServerIssuedTokenVerifier>().UseSingleton<ServerIssuedTokenVerifier>();
@@ -45,7 +52,15 @@ public static class ActorAuthenticationRegistration
             registry.For<IActorTokenVerifier>().UseSingleton<SignedActorTokenVerifier>();
         }
 
-        registry.For<IRequestProof>().UseSingleton<IRequestProof>(new BodySignatureProofVerifier(effective));
+        BodySignatureProofVerifier proof = new BodySignatureProofVerifier(effective);
+        registry.For<IRequestProof>().UseSingleton<IRequestProof>(proof);
+        if (!registry.Contains<IRequestProofNonceStore>())
+        {
+            registry.For<IRequestProofNonceStore>().UseSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(effective));
+        }
+
+        registry.For<RequestProofEvaluator>().UseSingleton(new RequestProofEvaluator(proof, registry.Get<IRequestProofNonceStore>(), effective));
+        // The evaluator above logs nothing: a ServiceRegistry host has no ILoggerFactory to hand it.
         if (!registry.Contains<IActorAdmission>())
         {
             registry.For<IActorAdmission>().UseSingleton<IActorAdmission>(new ConfiguredActorAdmission(effective));
@@ -97,6 +112,14 @@ public static class ActorAuthenticationRegistration
             ? provider.GetRequiredService<ServerIssuedTokenVerifier>()
             : provider.GetRequiredService<SignedActorTokenVerifier>());
         services.AddSingleton<IRequestProof>(new BodySignatureProofVerifier(options));
+        services.TryAddSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(options));
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton(provider => new RequestProofEvaluator(
+            provider.GetRequiredService<IRequestProof>(),
+            provider.GetRequiredService<IRequestProofNonceStore>(),
+            options,
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetService<Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator>>()));
         services.TryAddSingleton<IActorAdmission>(new ConfiguredActorAdmission(options));
         services.AddSingleton<IActorAccessPolicy, ConfiguredActorAccessPolicy>();
         services.TryAddSingleton<IAnonymousActorProvider, AnonymousActorProvider>();
@@ -175,6 +198,16 @@ public static class ActorAuthenticationRegistration
         return true;
     }
 
+    private static string? AudienceProblem(ActorAuthenticationOptions options)
+    {
+        if (options.Enabled && string.IsNullOrWhiteSpace(options.ClientTokenAudience) && !options.AllowMissingClientTokenAudience)
+        {
+            return "Actor authentication requires ActorAuth:ClientTokenAudience (this host's audience, for example its public origin), so client-signed tokens made for another host are refused. Set ActorAuth:AllowMissingClientTokenAudience=true only for a single-host test setup.";
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Fails fast when the host did not provide a prerequisite contract, or when hybrid mode has no
     /// server key in storage.
@@ -208,10 +241,32 @@ public static class ActorAuthenticationRegistration
             missing.Add(nameof(INamedKeyStorage));
         }
 
+        List<string> problems = new List<string>();
+        try
+        {
+            // Build the evaluator now, so an out-of-range RequestProofMaxAge fails at start-up on this path too, as the
+            // ServiceRegistry path and the nonce store already do, rather than on the first proof-gated request.
+            services.GetService<RequestProofEvaluator>();
+        }
+        catch (InvalidOperationException invalid)
+        {
+            problems.Add(invalid.Message);
+        }
+
         if (missing.Count > 0)
         {
-            throw new InvalidOperationException(
-                $"Actor authentication requires the host to register: {string.Join(", ", missing)}. Register the key-set store (IPublicKeySetResolver/IPublicKeySetRegistrar), the confirmation flow (AddDeviceKeyAccountConfirmation), and named key storage before UseActorAuthentication.");
+            problems.Add($"Actor authentication requires the host to register: {string.Join(", ", missing)}. Register the key-set store (IPublicKeySetResolver/IPublicKeySetRegistrar), the confirmation flow (AddDeviceKeyAccountConfirmation), and named key storage before UseActorAuthentication.");
+        }
+
+        string? audienceProblem = AudienceProblem(options);
+        if (audienceProblem is not null)
+        {
+            problems.Add(audienceProblem);
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(" ", problems));
         }
 
         if (options.Mode == ActorAuthenticationMode.Hybrid)
