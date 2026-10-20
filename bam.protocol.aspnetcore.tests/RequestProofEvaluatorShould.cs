@@ -662,6 +662,30 @@ public class ClientTokenAudienceShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void RefuseToStartWithAnOutOfRangeRequestProofMaxAge()
+    {
+        When.A<string>("verifies prerequisites with a zero, a two-day and a one-day RequestProofMaxAge",
+            () => "aud",
+            (_) => new MaxAgeOutcome(
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = "https://gateway.example", RequestProofMaxAge = TimeSpan.Zero }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = "https://gateway.example", RequestProofMaxAge = TimeSpan.FromDays(2) }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = "https://gateway.example", RequestProofMaxAge = TimeSpan.FromDays(1) }),
+                StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, RequestProofMaxAge = TimeSpan.Zero })))
+            .TheTest
+            .ShouldPass<MaxAgeOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a zero max age refuses start-up and names the setting", outcome.Zero?.Contains("RequestProofMaxAge", StringComparison.Ordinal) == true);
+                because.ItsTrue("a two-day max age refuses start-up", outcome.TwoDays?.Contains("RequestProofMaxAge", StringComparison.Ordinal) == true);
+                because.ItsTrue("a one-day max age starts", outcome.OneDay is null);
+                because.ItsTrue("both problems are reported together", outcome.Both?.Contains("RequestProofMaxAge", StringComparison.Ordinal) == true && outcome.Both.Contains("ClientTokenAudience", StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record MaxAgeOutcome(string? Zero, string? TwoDays, string? OneDay, string? Both);
+
     private static string? StartupFailure(ActorAuthenticationOptions options)
     {
         Microsoft.Extensions.DependencyInjection.ServiceProvider services = HostServicesForAudience().AddActorAuthentication(options).BuildServiceProvider();
