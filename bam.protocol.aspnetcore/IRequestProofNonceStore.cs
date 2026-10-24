@@ -18,6 +18,13 @@ public interface IRequestProofNonceStore
     /// <param name="expiresAt">When the proof stops being acceptable anyway; the nonce need not be kept after it.</param>
     /// <param name="now">The current time.</param>
     /// <returns>Whether the nonce was claimed, was already used, or could not be recorded.</returns>
+    /// <remarks>
+    /// A shared store whose backing storage fails returns <see cref="NonceClaimResult.Unavailable"/> (or throws), and never
+    /// returns <see cref="NonceClaimResult.Claimed"/> for a nonce it did not record. <see cref="RequestProofEvaluator"/>
+    /// refuses the proof in both cases and logs the outage. A store's own timeout counts as an outage whatever exception
+    /// carries it, <see cref="OperationCanceledException"/> included; only a cancellation caused by the client aborting the
+    /// request propagates.
+    /// </remarks>
     NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now);
 }
 
@@ -38,4 +45,10 @@ public enum NonceClaimResult
 
     /// <summary>The signing key holds as many unexpired nonces as one key may; only this key's proofs are refused.</summary>
     KeyFull = 3,
+
+    /// <summary>
+    /// The store could not reach its backing storage, so it cannot tell whether the nonce is new. The proof is refused
+    /// (fail closed): accepting it would allow its replay on another instance.
+    /// </summary>
+    Unavailable = 4,
 }
