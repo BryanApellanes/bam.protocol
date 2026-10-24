@@ -212,7 +212,15 @@ public class MethodInvocationRequest : IInvocationRequest
     /// <summary>
     /// Invokes the method with the stored arguments, matching by parameter name.
     /// </summary>
+    /// <remarks>
+    /// Each supplied argument is first coerced to its parameter's declared type by
+    /// <see cref="InvocationArgumentCoercer"/>, because a deserialized <see cref="Arguments"/> dictionary holds
+    /// untyped JSON representations (Newtonsoft <c>JObject</c>/<c>JValue</c>, System.Text.Json <c>JsonElement</c>)
+    /// that reflection would otherwise refuse. A parameter with no supplied argument takes its declared default,
+    /// or null.
+    /// </remarks>
     /// <returns>The result of the method invocation.</returns>
+    /// <exception cref="InvocationArgumentException">A supplied argument cannot be converted to its parameter type.</exception>
     public object Invoke()
     {
         ParameterInfo[] parameters = MethodInfo.GetParameters();
@@ -222,7 +230,7 @@ public class MethodInvocationRequest : IInvocationRequest
             string name = parameters[i].Name!;
             if (Arguments.TryGetValue(name, out object? value))
             {
-                values[i] = value;
+                values[i] = InvocationArgumentCoercer.Coerce(name, value, parameters[i].ParameterType);
             }
             else
             {
