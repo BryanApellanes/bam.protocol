@@ -87,6 +87,70 @@ public class TestInvocationService
     }
 }
 
+/// <summary>A registered type carrying no access attribute at all: every method must default to Denied.</summary>
+public class UnattributedService
+{
+    public string Hi()
+    {
+        return "hi";
+    }
+}
+
+/// <summary>A base type that is only sometimes registered; its public method must not ride on a derived type's grant.</summary>
+public class BaseService
+{
+    public string FromBase()
+    {
+        return "base";
+    }
+}
+
+[RequiredAccess(BamAccess.Execute)]
+public class DerivedService : BaseService
+{
+    public string Own()
+    {
+        return "own";
+    }
+
+    public string Generic<T>(T value)
+    {
+        return value?.ToString() ?? string.Empty;
+    }
+}
+
+/// <summary>An interface-keyed registration: only the interface's attributes count.</summary>
+public interface IKeyedService
+{
+    [RequiredAccess(BamAccess.Execute)]
+    string Granted();
+
+    string Ungranted();
+}
+
+public class KeyedService : IKeyedService
+{
+    public string Granted()
+    {
+        return "granted";
+    }
+
+    [RequiredAccess(BamAccess.Read)]
+    public string Ungranted()
+    {
+        return "ungranted";
+    }
+}
+
+/// <summary>A type whose construction is the observable event a polymorphic <c>$type</c> would trigger.</summary>
+public class BoobyTrap
+{
+    public BoobyTrap()
+    {
+        throw new InvalidOperationException("BoobyTrap was instantiated");
+    }
+}
+
 /// <summary>A type that is loaded but never registered for dispatch.</summary>
 public class UnregisteredService
 {

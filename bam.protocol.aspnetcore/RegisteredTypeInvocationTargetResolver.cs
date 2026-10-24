@@ -13,9 +13,13 @@ namespace Bam.Protocol.AspNetCore;
 /// <c>+</c>) resolve too. A type matches when a registered key has the same full name and its assembly has the
 /// same simple name; the assembly's version, culture and token are ignored, which is what lets a client built
 /// against one build of a contract assembly call a host running another. Refused: an identifier without all three
-/// parts, a type that is not registered, a method that is not public, is declared by <see cref="object"/>, is a
-/// special-name accessor, or is overloaded (ambiguous). Static methods are allowed because their declaring type had
-/// to be registered to get here. Nothing here loads or enumerates assemblies.
+/// parts, a type that is not registered, a method that is not public, is a special-name accessor, is an open generic
+/// method, is overloaded (ambiguous), or is inherited from a base type that is not itself registered (so
+/// <see cref="object"/> members, and anything a registered service inherits from an unregistered base such as a
+/// logging helper, stay unreachable). Static methods are allowed because their declaring type is registered. For an
+/// interface-keyed registration the interface's members and attributes are what resolve; the implementation's
+/// attributes are not consulted. Closed generic types are not resolvable (their full names contain commas). Nothing
+/// here loads or enumerates assemblies.
 /// </remarks>
 public sealed class RegisteredTypeInvocationTargetResolver : IInvocationTargetResolver
 {
@@ -59,12 +63,22 @@ public sealed class RegisteredTypeInvocationTargetResolver : IInvocationTargetRe
             return null;
         }
 
-        if (method is null || method.IsSpecialName || method.DeclaringType == typeof(object))
+        if (method is null || method.IsSpecialName || method.ContainsGenericParameters)
+        {
+            return null;
+        }
+
+        if (method.DeclaringType != declaringType && !IsRegistered(method.DeclaringType))
         {
             return null;
         }
 
         return InvocationTarget.For(declaringType, method);
+    }
+
+    private bool IsRegistered(Type? type)
+    {
+        return type is not null && _targets.Registry.MappedTypes.Contains(type);
     }
 
     /// <summary>

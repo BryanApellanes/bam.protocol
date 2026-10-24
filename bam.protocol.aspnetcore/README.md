@@ -111,16 +111,24 @@ app.MapBamInvocation();                                        // POST /invoke, 
 
 The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
 only against the dispatch registry's registered types (same full name, same assembly simple name; version,
-culture and token are ignored) and only to a public, non-overloaded method that is not an `object` member
-or a property accessor. It never loads or scans assemblies. An identifier that does not resolve answers
-`461`, the native `CommandResolutionFailed` code.
+culture and token are ignored) and only to a public, non-overloaded, non-generic method that the registered
+type declares itself or inherits from another *registered* type. `object` members, property accessors and
+anything inherited from an unregistered base (a logging helper, say) are unreachable. It never loads or scans
+assemblies. Closed generic types cannot be named (their full names contain commas) and are not invocable. An
+identifier that does not resolve answers `461`, the native `CommandResolutionFailed` code.
+
+For an interface-keyed registration (`For<ILogEventService>().Use<LogEventService>()`) the identifier names
+the interface, and the interface's methods and attributes are what apply: `[RequiredAccess]` on the
+implementation is not consulted. Put the access attributes on the interface methods, or register the class.
 
 Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
 on the method or its type (the method wins). The required access defaults to `Denied` when neither carries
 `[RequiredAccess]`, as in the native pipeline, so a dispatchable service must declare its level. The caller's
 access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as
 `RequireActorAccess`. Methods marked `[AnonymousAccess]` are refused with `403`: `/invoke` is not an
-anonymous surface.
+anonymous surface. `MapBamInvocation` refuses to map when `ActorAuth:Enabled` is false, because without the
+middleware no request to it can succeed, and the handler answers `401` before reading any of the body when no
+verified actor is present.
 
 | Status | Meaning |
 | --- | --- |

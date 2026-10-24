@@ -15,7 +15,48 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
         ServiceRegistry registry = new ServiceRegistry();
         registry.For<TestInvocationService>().Use<TestInvocationService>();
         registry.For<TestInvocationService.Nested>().Use<TestInvocationService.Nested>();
+        registry.For<UnattributedService>().Use<UnattributedService>();
+        registry.For<DerivedService>().Use<DerivedService>();
+        registry.For<IKeyedService>().Use<KeyedService>();
         return new RegisteredTypeInvocationTargetResolver(new BamInvocationDispatchRegistry(registry));
+    }
+
+    [UnitTest]
+    public void KeepInheritedGenericAndInterfaceMembersInsideTheRegisteredSurface()
+    {
+        When.A<RegisteredTypeInvocationTargetResolver>("resolves inherited members only when their declaring type is registered",
+            Resolver,
+            (resolver) =>
+            {
+                ServiceRegistry withBase = new ServiceRegistry();
+                withBase.For<BaseService>().Use<BaseService>();
+                withBase.For<DerivedService>().Use<DerivedService>();
+                RegisteredTypeInvocationTargetResolver baseRegistered = new RegisteredTypeInvocationTargetResolver(new BamInvocationDispatchRegistry(withBase));
+
+                return new SurfaceOutcome(
+                    resolver.Resolve(Invocations.Operation<DerivedService>("Own")),
+                    resolver.Resolve(Invocations.Operation<DerivedService>("FromBase")),
+                    baseRegistered.Resolve(Invocations.Operation<DerivedService>("FromBase")),
+                    resolver.Resolve(Invocations.Operation<DerivedService>("Generic")),
+                    resolver.Resolve(Invocations.Operation<UnattributedService>("Hi")),
+                    resolver.Resolve(Invocations.Operation<IKeyedService>("Granted")),
+                    resolver.Resolve(Invocations.Operation<IKeyedService>("Ungranted")),
+                    resolver.Resolve(Invocations.Operation<KeyedService>("Granted")));
+            })
+            .TheTest
+            .ShouldPass<SurfaceOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a method the registered type declares resolves", outcome.Own?.Method.Name == "Own");
+                because.ItsTrue("a method inherited from an unregistered base is refused", outcome.InheritedFromUnregistered is null);
+                because.ItsTrue("the same method resolves once the base is registered too", outcome.InheritedFromRegistered?.Method.DeclaringType == typeof(BaseService));
+                because.ItsTrue("an open generic method is refused", outcome.Generic is null);
+                because.ItsTrue("a type with no access attribute defaults to Denied", outcome.Unattributed?.RequiredAccess == BamAccess.Denied);
+                because.ItsTrue("an interface method's own attribute applies", outcome.InterfaceGranted?.RequiredAccess == BamAccess.Execute);
+                because.ItsTrue("an interface method without an attribute is Denied whatever the implementation says", outcome.InterfaceUngranted?.RequiredAccess == BamAccess.Denied);
+                because.ItsTrue("the implementation class is not reachable by its own name when only the interface is registered", outcome.ImplementationByName is null);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
     }
 
     [UnitTest]
@@ -113,6 +154,8 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
             .SoBeHappy()
             .UnlessItFailed();
     }
+
+    private sealed record SurfaceOutcome(InvocationTarget? Own, InvocationTarget? InheritedFromUnregistered, InvocationTarget? InheritedFromRegistered, InvocationTarget? Generic, InvocationTarget? Unattributed, InvocationTarget? InterfaceGranted, InvocationTarget? InterfaceUngranted, InvocationTarget? ImplementationByName);
 
     private sealed record ResolvedOutcome(InvocationTarget? Echo, InvocationTarget? Ping, InvocationTarget? Nested, InvocationTarget? Privileged, InvocationTarget? Open, InvocationTarget? FromFor);
 
@@ -284,6 +327,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
         ServiceRegistry registry = new ServiceRegistry();
         registry.For<IActorContext>().Use(new AmbientActorContext());
         registry.For<TestInvocationService>().Use<TestInvocationService>();
+        registry.For<UnattributedService>().Use<UnattributedService>();
         return registry;
     }
 
@@ -366,10 +410,12 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("Echo", Invocations.Args(("text", "x"))), anonymous)),
                 Run(Handler(BamAccess.Read), Request(Invocations.Envelope<TestInvocationService>("Echo", Invocations.Args(("text", "x"))), alice)),
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("Privileged"), alice)),
-                Run(handler, Request(Invocations.Envelope<TestInvocationService>("Add", Invocations.Args(("left", "two"), ("right", 1))), alice))))
+                Run(handler, Request(Invocations.Envelope<TestInvocationService>("Add", Invocations.Args(("left", "two"), ("right", 1))), alice)),
+                Run(Handler(BamAccess.Write), Request(Invocations.Envelope<UnattributedService>("Hi"), alice))))
             .TheTest
             .ShouldPass<RefusalOutcome>((because, outcome) =>
             {
+                because.ItsTrue($"a registered type with no access attribute is Denied even to Write ({outcome.Unattributed})", outcome.Unattributed.StartsWith("403:", StringComparison.Ordinal) && outcome.Unattributed.Contains("Denied", StringComparison.Ordinal));
                 because.ItsTrue($"non-JSON is 400 ({outcome.NotJson})", outcome.NotJson.StartsWith("400:", StringComparison.Ordinal));
                 because.ItsTrue($"an envelope without an operation is 400 ({outcome.NoOperation})", outcome.NoOperation.StartsWith("400:", StringComparison.Ordinal));
                 because.ItsTrue($"a blank operation is 400 ({outcome.BlankOperation})", outcome.BlankOperation.StartsWith("400:", StringComparison.Ordinal));
@@ -444,6 +490,52 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void AcceptTheExactBamClientBodyAndIgnorePolymorphicTypeHints()
+    {
+        TestActor alice = new TestActor("alice");
+        When.A<BamInvocationHandler>("reads a System.Text.Json envelope, refuses $type under poisoned defaults and answers 401 before reading",
+            () => Handler(BamAccess.Execute),
+            (handler) =>
+            {
+                MethodInvocationRequest request = MethodInvocationRequest.For(typeof(TestInvocationService), "Ping");
+                request.ClientInitialize();
+                string stjBody = System.Text.Json.JsonSerializer.Serialize((object)request);
+                string stj = Run(handler, Request(stjBody, alice));
+
+                string trap = typeof(BoobyTrap).AssemblyQualifiedName!;
+                string poisonedEnvelope = "{\"$type\":\"" + trap + "\",\"OperationIdentifier\":" + JsonConvert.ToString(Invocations.Operation<TestInvocationService>("Echo")) + ",\"Arguments\":{\"text\":\"safe\"}}";
+                Func<JsonSerializerSettings>? previous = JsonConvert.DefaultSettings;
+                string poisoned;
+                try
+                {
+                    JsonConvert.DefaultSettings = () => new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
+                    poisoned = Run(handler, Request(poisonedEnvelope, alice));
+                }
+                finally
+                {
+                    JsonConvert.DefaultSettings = previous;
+                }
+
+                DefaultHttpContext unauthenticated = Request(Invocations.Envelope<TestInvocationService>("Ping"), null);
+                string refused = Run(handler, unauthenticated);
+                bool bodyRead = unauthenticated.Request.Body.Position != 0;
+
+                string elided = BamInvocationHandler.Describe(new string('x', BamInvocationHandler.LoggedOperationLength + 50));
+                return new WireOutcome(stj, poisoned, bodyRead, refused + "|" + elided.Length);
+            })
+            .TheTest
+            .ShouldPass<WireOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"the exact body BamClient<T> serializes with System.Text.Json invokes the method ({outcome.StjBody})", outcome.StjBody == "200:\"pong\"");
+                because.ItsTrue($"a $type on the envelope is ignored under poisoned DefaultSettings ({outcome.Poisoned})", outcome.Poisoned == "200:\"Echo: safe\"");
+                because.ItsTrue("an unauthenticated request is refused before any of the body is read", !outcome.BodyRead);
+                because.ItsTrue($"the refusal is the uniform 401 and long identifiers are cut for logs ({outcome.Elided})", outcome.Elided == "401:" + ActorAuthenticationMiddleware.FailureMessage + "|" + (BamInvocationHandler.LoggedOperationLength + 1));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
     public void UnwrapTasksOfEveryShape()
     {
         When.A<AmbientActorContext>("awaits Task, Task<T>, ValueTask-free results and plain values",
@@ -469,7 +561,9 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
 
     private sealed record HappyOutcome(string Echo, string Add, string Describe, string EchoAsync, string DoNothing, string Ping, string WhoAmI);
 
-    private sealed record RefusalOutcome(string NotJson, string NoOperation, string BlankOperation, string Unregistered, string AssemblyLoad, string AnonymousOperation, string NoActor, string AnonymousActor, string Insufficient, string Privileged, string BadArgument);
+    private sealed record RefusalOutcome(string NotJson, string NoOperation, string BlankOperation, string Unregistered, string AssemblyLoad, string AnonymousOperation, string NoActor, string AnonymousActor, string Insufficient, string Privileged, string BadArgument, string Unattributed);
+
+    private sealed record WireOutcome(string StjBody, string Poisoned, bool BodyRead, string Elided);
 
     private sealed record FailureOutcome(string Response, bool Logged);
 

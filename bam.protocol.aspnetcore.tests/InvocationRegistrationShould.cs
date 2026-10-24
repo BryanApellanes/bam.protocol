@@ -116,12 +116,18 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
                 noAuth.Services.AddBamInvocation(DispatchRegistry());
                 string? authRefusal = Refusal(() => noAuth.Build().MapBamInvocation());
 
+                WebApplicationBuilder disabled = WebApplication.CreateBuilder();
+                disabled.Services.AddActorAuthentication(new ActorAuthenticationOptions { Enabled = false });
+                disabled.Services.AddBamInvocation(DispatchRegistry());
+                string? disabledRefusal = Refusal(() => disabled.Build().MapBamInvocation());
+
                 return new MappingOutcome(
                     invoke.Metadata.GetMetadata<AnonymousAccessAttribute>()?.AllowAnonymous,
                     custom.Metadata.GetMetadata<AnonymousAccessAttribute>()?.AllowAnonymous,
                     methods,
                     bridgeRefusal,
-                    authRefusal);
+                    authRefusal,
+                    disabledRefusal);
             })
             .TheTest
             .ShouldPass<MappingOutcome>((because, outcome) =>
@@ -131,6 +137,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
                 because.ItsTrue($"only POST is mapped ({outcome.Methods})", outcome.Methods == "POST");
                 because.ItsTrue("mapping without AddBamInvocation fails fast", outcome.BridgeRefusal?.Contains("AddBamInvocation", StringComparison.Ordinal) == true);
                 because.ItsTrue("mapping without AddActorAuthentication fails fast", outcome.AuthRefusal?.Contains("AddActorAuthentication", StringComparison.Ordinal) == true);
+                because.ItsTrue("mapping with actor authentication disabled fails fast", outcome.DisabledRefusal?.Contains("Enabled", StringComparison.Ordinal) == true);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -230,7 +237,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
 
     private sealed record RegistrationOutcome(bool Handler, bool Resolver, string? Pattern, long? MaxBodyBytes, bool SameRegistry, bool AmbientInRegistry, bool SharedAmbient, bool PresetKept);
 
-    private sealed record MappingOutcome(bool? InvokeAllowsAnonymous, bool? CustomAllowsAnonymous, string? Methods, string? BridgeRefusal, string? AuthRefusal);
+    private sealed record MappingOutcome(bool? InvokeAllowsAnonymous, bool? CustomAllowsAnonymous, string? Methods, string? BridgeRefusal, string? AuthRefusal, string? DisabledRefusal);
 
     private sealed record RoundtripOutcome(string Echo, string WhoAmI, string NoProof, string NoToken, string Forged, string Unregistered);
 }

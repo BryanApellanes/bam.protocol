@@ -15,15 +15,15 @@ namespace Bam.Protocol.AspNetCore;
 /// <remarks>
 /// The handler is the same three steps <c>BamRequestProcessor</c> performs in the native pipeline (deserialize,
 /// bind the instance, invoke) placed behind actor authentication and made safe for caller-controlled input. In
-/// order: the body is read under <see cref="BamInvocationOptions.MaxBodyBytes"/> (413); the envelope is
+/// order: the actor must be present and not the anonymous sentinel (401, the middleware's uniform message, before
+/// any body is read); the body is read under <see cref="BamInvocationOptions.MaxBodyBytes"/> (413); the envelope is
 /// deserialized (400); the operation is resolved by <see cref="IInvocationTargetResolver"/> against registered types
 /// only (461, the native <c>CommandResolutionFailed</c> code); anonymous-marked operations are refused (403, the
-/// endpoint is not an anonymous surface); the actor must be present and not the anonymous sentinel (401, the
-/// middleware's uniform message); the actor's access from <see cref="IActorAccessPolicy"/> must satisfy the target's
+/// endpoint is not an anonymous surface); the actor's access from <see cref="IActorAccessPolicy"/> must satisfy the target's
 /// <see cref="InvocationTarget.RequiredAccess"/> (403); the body proof is verified by the registered
 /// <see cref="RequestProofEvaluator"/> when <see cref="InvocationAccessRule.RequiresProof"/> says so (401); the
-/// instance comes from the dispatch registry (461 when it refuses); the call runs inside an
-/// <see cref="AmbientActorContext"/> scope; a <see cref="Task"/> result is awaited and unwrapped; and the result is
+/// instance comes from the dispatch registry inside an <see cref="AmbientActorContext"/> scope (461 when it
+/// refuses); a <see cref="Task"/> result is awaited and unwrapped; and the result is
 /// written as bare JSON with 200, which is what <c>BamClient&lt;T&gt;.InvokeAsync</c> deserializes. An
 /// <see cref="InvocationArgumentException"/> is the caller's fault (400); any other exception from the target is a
 /// server fault answered with a generic 500 and logged in full on the host only.
@@ -36,9 +36,18 @@ public sealed class BamInvocationHandler
     /// <summary>The generic body for a target that threw; the exception itself is only logged.</summary>
     public const string InvocationFailedMessage = "Invocation failed.";
 
+    /// <summary>The longest operation identifier echoed into a log message; longer ones are cut.</summary>
+    public const int LoggedOperationLength = 256;
+
+    /// <summary>
+    /// Envelope parsing is pinned to no polymorphic type handling so a host's <see cref="JsonConvert.DefaultSettings"/>
+    /// can never re-enable <c>$type</c> on caller-controlled JSON.
+    /// </summary>
     private static readonly JsonSerializerSettings EnvelopeSettings = new JsonSerializerSettings
     {
-        MaxDepth = 64
+        MaxDepth = 64,
+        TypeNameHandling = TypeNameHandling.None,
+        MetadataPropertyHandling = MetadataPropertyHandling.Ignore
     };
 
     private readonly IInvocationTargetResolver _resolver;
@@ -88,9 +97,22 @@ public sealed class BamInvocationHandler
     /// </summary>
     /// <param name="http">The request context; the middleware has already run.</param>
     /// <returns>The result to write.</returns>
+    /// <remarks>
+    /// The actor check comes first so a request without a verified actor is answered before any of its body is
+    /// read, parsed or resolved: nothing about the registered surface is learnable without credentials.
+    /// </remarks>
     public async Task<IResult> HandleAsync(HttpContext http)
     {
         Args.ThrowIfNull(http, nameof(http));
+
+        IActor? actor = http.GetActor();
+        if (actor is null || string.Equals(actor.Handle, AnonymousActorProvider.AnonymousHandle, StringComparison.Ordinal))
+        {
+            return Results.Text(ActorAuthenticationMiddleware.FailureMessage, statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        string? eccPublicKeyPem = http.GetActorEccPublicKeyPem();
+        string? fingerprint = eccPublicKeyPem is null ? null : PublicKeyFingerprint.Of(eccPublicKeyPem);
 
         string? body = await ReadBodyAsync(http.Request).ConfigureAwait(false);
         if (body is null)
@@ -104,31 +126,24 @@ public sealed class BamInvocationHandler
             return Results.Problem(detail: "The request body is not a method invocation.", statusCode: StatusCodes.Status400BadRequest);
         }
 
+        string operation = Describe(envelope.OperationIdentifier);
         InvocationTarget? target = _resolver.Resolve(envelope.OperationIdentifier);
         if (target is null)
         {
-            _logger.LogInformation("Invocation refused: '{Operation}' does not name a registered public method.", envelope.OperationIdentifier);
+            _logger.LogInformation("Invocation refused: '{Operation}' does not name a registered public method.", operation);
             return Results.Problem(detail: "The operation is not available.", statusCode: OperationNotFoundStatus);
         }
 
         if (target.IsAnonymous)
         {
-            _logger.LogWarning("Invocation refused: '{Operation}' allows anonymous access, which /invoke does not serve.", envelope.OperationIdentifier);
+            _logger.LogWarning("Invocation refused: '{Operation}' allows anonymous access, which /invoke does not serve.", operation);
             return Results.Problem(detail: "Anonymous operations are not served by this endpoint.", statusCode: StatusCodes.Status403Forbidden);
         }
 
-        IActor? actor = http.GetActor();
-        if (actor is null || string.Equals(actor.Handle, AnonymousActorProvider.AnonymousHandle, StringComparison.Ordinal))
-        {
-            return Results.Text(ActorAuthenticationMiddleware.FailureMessage, statusCode: StatusCodes.Status401Unauthorized);
-        }
-
-        string? eccPublicKeyPem = http.GetActorEccPublicKeyPem();
-        string? fingerprint = eccPublicKeyPem is null ? null : PublicKeyFingerprint.Of(eccPublicKeyPem);
         BamAccess held = _policy.GetAccess(actor, fingerprint);
         if (!InvocationAccessRule.IsAllowed(held, target.RequiredAccess))
         {
-            _logger.LogWarning("Invocation denied: actor '{Handle}' holds {Held} but '{Operation}' requires {Required}.", actor.Handle, held, envelope.OperationIdentifier, target.RequiredAccess);
+            _logger.LogWarning("Invocation denied: actor '{Handle}' holds {Held} but '{Operation}' requires {Required}.", actor.Handle, held, operation, target.RequiredAccess);
             return Results.Problem(detail: $"Actor '{actor.Handle}' has {held} access but the operation requires {target.RequiredAccess}.", statusCode: StatusCodes.Status403Forbidden);
         }
 
@@ -137,53 +152,71 @@ public sealed class BamInvocationHandler
             RequestProofResult proof = await _proofs.EvaluateAsync(http.Request, eccPublicKeyPem).ConfigureAwait(false);
             if (!proof.Success)
             {
-                _logger.LogWarning("Invocation refused: request proof failed for actor '{Handle}' on '{Operation}': {Reason}", actor.Handle, envelope.OperationIdentifier, proof.Reason);
+                _logger.LogWarning("Invocation refused: request proof failed for actor '{Handle}' on '{Operation}': {Reason}", actor.Handle, operation, proof.Reason);
                 return Results.Problem(detail: proof.Reason ?? "Request proof failed.", statusCode: StatusCodes.Status401Unauthorized);
             }
         }
 
-        object? instance = null;
-        if (!target.Method.IsStatic)
-        {
-            try
-            {
-                instance = _targets.Registry.Get(target.DeclaringType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Invocation refused: the dispatch registry would not supply '{Type}'.", target.DeclaringType.FullName);
-                return Results.Problem(detail: "The operation is not available.", statusCode: OperationNotFoundStatus);
-            }
-        }
-
-        MethodInvocationRequest call = new MethodInvocationRequest(instance!, target.Method)
-        {
-            Arguments = envelope.Arguments ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
-        };
-
         ActorInvocationContext context = new ActorInvocationContext(actor, fingerprint, http.Connection.RemoteIpAddress?.ToString());
-        object? result;
+        string json;
         try
         {
             using (AmbientActorContext.Enter(context))
             {
-                result = await UnwrapAsync(call.Invoke()).ConfigureAwait(false);
+                // The instance is created inside the scope so a service may read IActorContext in its constructor.
+                object? instance = null;
+                if (!target.Method.IsStatic)
+                {
+                    try
+                    {
+                        instance = _targets.Registry.Get(target.DeclaringType);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Invocation refused: the dispatch registry would not supply '{Type}'.", target.DeclaringType.FullName);
+                        return Results.Problem(detail: "The operation is not available.", statusCode: OperationNotFoundStatus);
+                    }
+                }
+
+                MethodInvocationRequest call = new MethodInvocationRequest(instance!, target.Method)
+                {
+                    Arguments = envelope.Arguments ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                };
+
+                object? result = await UnwrapAsync(call.Invoke()).ConfigureAwait(false);
+                json = JsonConvert.SerializeObject(result);
             }
         }
         catch (InvocationArgumentException ex)
         {
-            _logger.LogInformation(ex, "Invocation rejected: argument '{Parameter}' on '{Operation}' could not be converted.", ex.ParamName, envelope.OperationIdentifier);
+            _logger.LogInformation(ex, "Invocation rejected: argument '{Parameter}' on '{Operation}' could not be converted.", ex.ParamName, operation);
             return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+        catch (OperationCanceledException) when (http.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogInformation("Invocation of '{Operation}' by actor '{Handle}' was abandoned: the client disconnected.", operation, actor.Handle);
+            return Results.Problem(detail: InvocationFailedMessage, statusCode: StatusCodes.Status500InternalServerError);
         }
         catch (Exception ex)
         {
             Exception cause = ex is TargetInvocationException { InnerException: not null } wrapped ? wrapped.InnerException! : ex;
-            _logger.LogError(cause, "Invocation of '{Operation}' by actor '{Handle}' threw.", envelope.OperationIdentifier, actor.Handle);
+            _logger.LogError(cause, "Invocation of '{Operation}' by actor '{Handle}' threw.", operation, actor.Handle);
             return Results.Problem(detail: InvocationFailedMessage, statusCode: StatusCodes.Status500InternalServerError);
         }
 
-        _logger.LogDebug("Invocation of '{Operation}' by actor '{Handle}' succeeded.", envelope.OperationIdentifier, actor.Handle);
-        return Results.Content(JsonConvert.SerializeObject(result), "application/json", Encoding.UTF8, StatusCodes.Status200OK);
+        _logger.LogDebug("Invocation of '{Operation}' by actor '{Handle}' succeeded.", operation, actor.Handle);
+        return Results.Content(json, "application/json", Encoding.UTF8, StatusCodes.Status200OK);
+    }
+
+    /// <summary>
+    /// Cuts a caller-supplied operation identifier down to <see cref="LoggedOperationLength"/> characters for logging.
+    /// </summary>
+    /// <param name="operationIdentifier">The identifier from the envelope.</param>
+    /// <returns>The identifier, or its first <see cref="LoggedOperationLength"/> characters followed by an ellipsis.</returns>
+    public static string Describe(string operationIdentifier)
+    {
+        Args.ThrowIfNull(operationIdentifier, nameof(operationIdentifier));
+        return operationIdentifier.Length <= LoggedOperationLength ? operationIdentifier : operationIdentifier.Substring(0, LoggedOperationLength) + "\u2026";
     }
 
     /// <summary>

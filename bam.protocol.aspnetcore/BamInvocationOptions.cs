@@ -5,9 +5,9 @@ namespace Bam.Protocol.AspNetCore;
 /// </summary>
 /// <remarks>
 /// Everything about <em>who</em> may invoke comes from <see cref="ActorAuthenticationOptions"/>; these options only
-/// shape the endpoint itself. Bound from configuration when a host calls
-/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, Bam.DependencyInjection.ServiceRegistry, BamInvocationOptions?)"/>
-/// with an explicit instance; otherwise the defaults apply.
+/// shape the endpoint itself. A host passes an instance to
+/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, Bam.DependencyInjection.ServiceRegistry, BamInvocationOptions?)"/>;
+/// otherwise the defaults apply.
 /// </remarks>
 public sealed record BamInvocationOptions
 {

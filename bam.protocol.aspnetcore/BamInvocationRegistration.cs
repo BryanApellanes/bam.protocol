@@ -62,8 +62,8 @@ public static class BamInvocationRegistration
     /// <param name="pattern">The route pattern, or null for <see cref="BamInvocationOptions.Pattern"/>.</param>
     /// <returns>The route handler, for chaining.</returns>
     /// <exception cref="InvalidOperationException">
-    /// <see cref="AddBamInvocation"/> or <c>AddActorAuthentication</c> was not called, so the bridge would run
-    /// without authentication.
+    /// <see cref="AddBamInvocation"/> or <c>AddActorAuthentication</c> was not called, or actor authentication is
+    /// not enabled, so the bridge would run without authentication.
     /// </exception>
     public static RouteHandlerBuilder MapBamInvocation(this IEndpointRouteBuilder routes, string? pattern = null)
     {
@@ -75,9 +75,15 @@ public static class BamInvocationRegistration
             throw new InvalidOperationException("MapBamInvocation requires AddBamInvocation(dispatchRegistry) on the service collection.");
         }
 
-        if (routes.ServiceProvider.GetService<ActorAuthenticationOptions>() is null)
+        ActorAuthenticationOptions? authentication = routes.ServiceProvider.GetService<ActorAuthenticationOptions>();
+        if (authentication is null)
         {
             throw new InvalidOperationException("MapBamInvocation requires AddActorAuthentication: the invocation endpoint is never served without actor authentication.");
+        }
+
+        if (!authentication.Enabled)
+        {
+            throw new InvalidOperationException("MapBamInvocation requires ActorAuthenticationOptions.Enabled = true: without the middleware no request to the invocation endpoint can succeed.");
         }
 
         // Resolve the handler only once both prerequisites are known present, so a missing registration surfaces
