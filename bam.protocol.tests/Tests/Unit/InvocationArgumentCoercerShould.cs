@@ -169,7 +169,58 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void IgnorePolymorphicTypeHintsEvenUnderPoisonedDefaultSettings()
+    {
+        string trap = typeof(TestBoobyTrap).AssemblyQualifiedName!;
+        When.A<MethodInvocationRequest>("coerces a $type-bearing object while the process default is TypeNameHandling.All",
+            () => new MethodInvocationRequest(new TestCoercionService(), typeof(TestCoercionService).GetMethod("Describe")!)
+            {
+                Arguments = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["widget"] = JObject.Parse("{\"$type\":\"" + trap + "\",\"Name\":\"safe\",\"Count\":1}"),
+                    ["times"] = new JValue(1L),
+                    ["kind"] = new JValue("gadget"),
+                    ["note"] = new TestWidget { Name = "plain" }
+                }
+            },
+            (request) =>
+            {
+                Func<Newtonsoft.Json.JsonSerializerSettings>? previous = Newtonsoft.Json.JsonConvert.DefaultSettings;
+                try
+                {
+                    Newtonsoft.Json.JsonConvert.DefaultSettings = () => new Newtonsoft.Json.JsonSerializerSettings { TypeNameHandling = Newtonsoft.Json.TypeNameHandling.All };
+                    string? failure = null;
+                    string? result = null;
+                    try
+                    {
+                        result = request.Invoke<string>();
+                    }
+                    catch (Exception ex)
+                    {
+                        failure = ex.ToString();
+                    }
+
+                    return new PoisonOutcome(result, failure);
+                }
+                finally
+                {
+                    Newtonsoft.Json.JsonConvert.DefaultSettings = previous;
+                }
+            })
+        .TheTest
+        .ShouldPass<PoisonOutcome>((because, _, outcome) =>
+        {
+            because.ItsTrue($"the $type is ignored and the JObject becomes the declared TestWidget ({outcome.Result})", outcome.Result == "safe x1 [] kind=Gadget count=1 note=<none>" || outcome.Result is not null && outcome.Result.StartsWith("safe x1 [] kind=Gadget count=1", StringComparison.Ordinal));
+            because.ItsTrue("the named type was never instantiated", outcome.Failure is null || !outcome.Failure.Contains("TestBoobyTrap was instantiated", StringComparison.Ordinal));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
     private sealed record SumOutcome(int FromJson, int FromArray);
+
+    private sealed record PoisonOutcome(string? Result, string? Failure);
 
     private sealed record FailureOutcome(string? ParamName, string? Message);
 }

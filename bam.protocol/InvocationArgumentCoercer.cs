@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Bam.Protocol;
@@ -19,11 +20,24 @@ namespace Bam.Protocol;
 /// common string-encoded BCL types (<see cref="Guid"/>, <see cref="DateTimeOffset"/>, <see cref="TimeSpan"/>,
 /// <see cref="Uri"/>) are parsed; <see cref="IConvertible"/> primitives go through
 /// <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> with the invariant culture; anything else is
-/// round-tripped through JSON as a last resort. Failure throws an <see cref="InvocationArgumentException"/> that
+/// round-tripped through JSON as a last resort. Every Newtonsoft conversion uses a serializer pinned to
+/// <see cref="TypeNameHandling.None"/>, so a <c>$type</c> in the payload is inert whatever the process-wide
+/// defaults say. Failure throws an <see cref="InvocationArgumentException"/> that
 /// names the parameter and both types.
 /// </remarks>
 public static class InvocationArgumentCoercer
 {
+    /// <summary>
+    /// The serializer every Newtonsoft conversion here goes through. It is pinned to no polymorphic type handling
+    /// so a host's <see cref="JsonConvert.DefaultSettings"/> can never let a caller-supplied <c>$type</c> choose the
+    /// type that gets instantiated.
+    /// </summary>
+    private static readonly Newtonsoft.Json.JsonSerializer SafeSerializer = Newtonsoft.Json.JsonSerializer.Create(new JsonSerializerSettings
+    {
+        TypeNameHandling = TypeNameHandling.None,
+        MetadataPropertyHandling = MetadataPropertyHandling.Ignore
+    });
+
     /// <summary>
     /// Coerces <paramref name="value"/> to <paramref name="targetType"/>.
     /// </summary>
@@ -53,12 +67,12 @@ public static class InvocationArgumentCoercer
         {
             if (value is JToken token)
             {
-                return token.ToObject(targetType);
+                return token.ToObject(targetType, SafeSerializer);
             }
 
             if (value is JsonElement element)
             {
-                return JsonSerializer.Deserialize(element.GetRawText(), targetType);
+                return System.Text.Json.JsonSerializer.Deserialize(element.GetRawText(), targetType);
             }
 
             if (underlying.IsEnum)
@@ -85,7 +99,7 @@ public static class InvocationArgumentCoercer
                 return Convert.ChangeType(value, underlying, CultureInfo.InvariantCulture);
             }
 
-            return JToken.FromObject(value).ToObject(targetType);
+            return JToken.FromObject(value, SafeSerializer).ToObject(targetType, SafeSerializer);
         }
         catch (Exception ex) when (ex is not InvocationArgumentException)
         {

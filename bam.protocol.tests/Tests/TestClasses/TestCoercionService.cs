@@ -31,3 +31,12 @@ public class TestCoercionService
         return values.Sum();
     }
 }
+
+/// <summary>A type whose construction is the observable event a polymorphic <c>$type</c> would trigger.</summary>
+public class TestBoobyTrap
+{
+    public TestBoobyTrap()
+    {
+        throw new InvalidOperationException("TestBoobyTrap was instantiated");
+    }
+}
