@@ -335,6 +335,49 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void FailClosedAndLogOnceAMinuteWhenTheNonceStoreIsUnavailable()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+
+        When.A<FixedClock>("verifies proofs against a store that throws and one that reports itself unavailable",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                CapturingLogger<RequestProofEvaluator> throwingLog = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofEvaluator throwing = Evaluators.Create(clock, nonces: new UnavailableNonceStore(throws: true), logger: throwingLog);
+                CapturingLogger<RequestProofEvaluator> reportingLog = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofEvaluator reporting = Evaluators.Create(clock, nonces: new UnavailableNonceStore(throws: false), logger: reportingLog);
+                RequestProofResult Prove(RequestProofEvaluator evaluator) => evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+                int Errors(CapturingLogger<RequestProofEvaluator> logger) => logger.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error);
+
+                RequestProofResult thrown = Prove(throwing);
+                Prove(throwing);
+                int throwingErrors = Errors(throwingLog);
+                RequestProofResult reported = Prove(reporting);
+                Prove(reporting);
+                int reportingErrors = Errors(reportingLog);
+                clock.Now = Now + TimeSpan.FromSeconds(60);
+                Prove(reporting);
+                int reportingAfterAMinute = Errors(reportingLog);
+                string message = throwingLog.Entries.First(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error).Value;
+                return new UnavailableOutcome(thrown.Success, thrown.Reason, reported.Success, reported.Reason, throwingErrors, reportingErrors, reportingAfterAMinute, message,
+                    Bam.Protocol.Profile.PublicKeyFingerprint.Of(pair.PublicPem)!);
+            })
+            .TheTest
+            .ShouldPass<UnavailableOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a store that throws refuses the proof", !outcome.ThrownSuccess && outcome.ThrownReason?.Contains("cannot verify", StringComparison.Ordinal) == true);
+                because.ItsTrue("a store that reports Unavailable refuses the proof", !outcome.ReportedSuccess && outcome.ReportedReason?.Contains("cannot verify", StringComparison.Ordinal) == true);
+                because.ItsTrue("two failures in the same minute log one error", outcome.ThrowingErrors == 1 && outcome.ReportingErrors == 1);
+                because.ItsTrue("a failure a minute later logs again", outcome.ReportingAfterAMinute == 2);
+                because.ItsTrue("the error names the store", outcome.Message.Contains(nameof(UnavailableNonceStore), StringComparison.Ordinal));
+                because.ItsTrue("and not the key", !outcome.Message.Contains(outcome.Fingerprint, StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
     public void ReportACapacityRefusalAsLoadNotAsAReplay()
     {
         EccKeyPair pair = TestKeys.NewEcc();
@@ -451,6 +494,28 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
     private sealed record WarningOutcome(bool FirstA, int AfterTwoRefusals, int After59Seconds, int After60Seconds, bool FirstB, bool KeyCRefused, List<string> Messages, string FingerprintA, string FingerprintC);
 
     private sealed record CapacityOutcome(bool First, bool Second, string? Reason);
+
+    private sealed record UnavailableOutcome(bool ThrownSuccess, string? ThrownReason, bool ReportedSuccess, string? ReportedReason, int ThrowingErrors, int ReportingErrors, int ReportingAfterAMinute, string Message, string Fingerprint);
+
+    /// <summary>A nonce store whose backing storage is down: it throws, or reports <see cref="NonceClaimResult.Unavailable"/>.</summary>
+    private sealed class UnavailableNonceStore : IRequestProofNonceStore
+    {
+        private readonly bool _throws;
+
+        internal UnavailableNonceStore(bool throws)
+        {
+            _throws = throws;
+        }
+
+        public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
+        {
+            if (_throws)
+            {
+                throw new InvalidOperationException("connection refused");
+            }
+            return NonceClaimResult.Unavailable;
+        }
+    }
 
     private sealed record PipelineOutcome(HttpStatusCode SignedStatus, string SignedBody, HttpStatusCode TamperedStatus, HttpStatusCode ReplayStatus);
 

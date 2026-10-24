@@ -28,6 +28,7 @@ public sealed class RequestProofEvaluator
     private readonly TimeProvider _clock;
     private readonly ILogger? _logger;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> _lastCapacityWarning = new System.Collections.Concurrent.ConcurrentDictionary<string, long>(StringComparer.Ordinal);
+    private long _lastUnavailableError = long.MinValue;
 
     /// <summary>Creates the evaluator.</summary>
     /// <param name="proof">Verifies signatures.</param>
@@ -129,18 +130,59 @@ public sealed class RequestProofEvaluator
         }
 
         string scope = PublicKeyFingerprint.Of(eccPublicKeyPem) ?? eccPublicKeyPem;
-        switch (_nonces.TryClaim(scope, nonce!, signedAt + _options.RequestProofMaxAge, now))
+        NonceClaimResult claim;
+        try
+        {
+            claim = _nonces.TryClaim(scope, nonce!, signedAt + _options.RequestProofMaxAge, now);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // A store that cannot say whether the nonce is new must not let the proof through: fail closed.
+            ErrorUnavailable(now, exception);
+            return RequestProofResult.Failed(UnavailableReason);
+        }
+
+        switch (claim)
         {
             case NonceClaimResult.Claimed:
                 return RequestProofResult.Verified;
             case NonceClaimResult.AlreadyUsed:
                 return RequestProofResult.Failed("Request proof failed: the nonce was already used.");
+            case NonceClaimResult.Unavailable:
+                ErrorUnavailable(now, null);
+                return RequestProofResult.Failed(UnavailableReason);
             case NonceClaimResult.KeyFull:
                 WarnAtCapacity(scope, "per-key (ActorAuth:RequestProofNoncesPerKey)", now);
                 return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
             default:
                 WarnAtCapacity(scope, "total (ActorAuth:RequestProofNonceCapacity)", now);
                 return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
+        }
+    }
+
+    private const string UnavailableReason = "Request proof refused: the host cannot verify this proof right now; retry later.";
+
+    /// <summary>
+    /// Logs, at Error and at most once a minute, that the nonce store could not record a nonce, so an outage of a shared
+    /// store is visible without flooding the log. Names the store type and the exception, never the nonce or the key.
+    /// </summary>
+    private void ErrorUnavailable(DateTimeOffset now, Exception? exception)
+    {
+        if (_logger is null)
+        {
+            return;
+        }
+
+        long tick = now.UtcTicks;
+        long last = Interlocked.Read(ref _lastUnavailableError);
+        if (last != long.MinValue && tick - last < TimeSpan.TicksPerMinute)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _lastUnavailableError, tick, last) == last)
+        {
+            _logger.LogError(exception, "Request proofs are being refused: the nonce store {Store} is unavailable. Proofs fail closed until it recovers.", _nonces.GetType().FullName);
         }
     }
 
