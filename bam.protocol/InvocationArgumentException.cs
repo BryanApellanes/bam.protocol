@@ -18,6 +18,18 @@ public class InvocationArgumentException : ArgumentException
     /// <param name="actualType">The runtime type of the deserialized argument.</param>
     /// <param name="targetType">The parameter type the method declares.</param>
     /// <param name="innerException">The converter's failure, when there is one.</param>
+    /// <summary>
+    /// Initializes a new instance for a parameter that has no default and was not supplied at all.
+    /// </summary>
+    /// <param name="parameterName">The missing parameter's name.</param>
+    /// <param name="targetType">The parameter type the method declares.</param>
+    public InvocationArgumentException(string parameterName, Type targetType)
+        : base($"Argument '{parameterName}' of type {targetType.FullName} is required but was not supplied.", parameterName)
+    {
+        ActualType = typeof(System.Reflection.Missing);
+        TargetType = targetType;
+    }
+
     public InvocationArgumentException(string parameterName, Type actualType, Type targetType, Exception? innerException = null)
         : base($"Argument '{parameterName}' of type {actualType.FullName} cannot be converted to {targetType.FullName}.", parameterName, innerException)
     {

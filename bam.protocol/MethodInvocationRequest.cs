@@ -232,9 +232,13 @@ public class MethodInvocationRequest : IInvocationRequest
             {
                 values[i] = InvocationArgumentCoercer.Coerce(name, value, parameters[i].ParameterType);
             }
+            else if (parameters[i].HasDefaultValue)
+            {
+                values[i] = parameters[i].DefaultValue;
+            }
             else
             {
-                values[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : null;
+                throw new InvocationArgumentException(name, parameters[i].ParameterType);
             }
         }
 

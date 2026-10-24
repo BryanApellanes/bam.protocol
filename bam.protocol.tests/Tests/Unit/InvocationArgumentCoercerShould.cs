@@ -181,7 +181,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                     ["widget"] = JObject.Parse("{\"$type\":\"" + trap + "\",\"Name\":\"safe\",\"Count\":1}"),
                     ["times"] = new JValue(1L),
                     ["kind"] = new JValue("gadget"),
-                    ["note"] = new TestWidget { Name = "plain" }
+                    ["note"] = "plain"
                 }
             },
             (request) =>
@@ -211,12 +211,177 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         .TheTest
         .ShouldPass<PoisonOutcome>((because, _, outcome) =>
         {
-            because.ItsTrue($"the $type is ignored and the JObject becomes the declared TestWidget ({outcome.Result})", outcome.Result == "safe x1 [] kind=Gadget count=1 note=<none>" || outcome.Result is not null && outcome.Result.StartsWith("safe x1 [] kind=Gadget count=1", StringComparison.Ordinal));
+            because.ItsTrue($"the $type is ignored and the JObject becomes the declared TestWidget ({outcome.Result})", outcome.Result == "safe x1 [] kind=Gadget count=1 note=plain");
             because.ItsTrue("the named type was never instantiated", outcome.Failure is null || !outcome.Failure.Contains("TestBoobyTrap was instantiated", StringComparison.Ordinal));
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
+
+    private static string Describe(Dictionary<string, object?> arguments)
+    {
+        MethodInvocationRequest request = new MethodInvocationRequest(new TestCoercionService(), typeof(TestCoercionService).GetMethod("Describe")!)
+        {
+            Arguments = arguments
+        };
+        return request.Invoke<string>();
+    }
+
+    private static string? Refusal(Dictionary<string, object?> arguments)
+    {
+        try
+        {
+            Describe(arguments);
+            return null;
+        }
+        catch (InvocationArgumentException ex)
+        {
+            return ex.ParamName + ": " + ex.Message;
+        }
+    }
+
+    private static Dictionary<string, object?> Arguments(params (string Name, object? Value)[] values)
+    {
+        Dictionary<string, object?> arguments = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        foreach ((string name, object? value) in values)
+        {
+            arguments[name] = value;
+        }
+
+        return arguments;
+    }
+
+    [UnitTest]
+    public void MaterializeSystemTextJsonElementsLikeNewtonsoftTokens()
+    {
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"widget\":{\"name\":\"sprocket\",\"count\":7,\"tags\":[\"a\",\"b\"]},\"times\":3,\"kind\":\"gizmo\",\"note\":null}");
+        System.Text.Json.JsonElement root = document.RootElement;
+        When.A<TestCoercionService>("invokes Describe with JsonElement arguments",
+            () => new TestCoercionService(),
+            (_) => Describe(Arguments(
+                ("widget", root.GetProperty("widget").Clone()),
+                ("times", root.GetProperty("times").Clone()),
+                ("kind", root.GetProperty("kind").Clone()),
+                ("note", root.GetProperty("note").Clone()))))
+        .TheTest
+        .ShouldPass<string>((because, _, result) =>
+        {
+            because.ItsTrue($"a camelCase JsonElement becomes a TestWidget, a number an int, a string an enum and a JSON null a null ({result})",
+                "sprocket x3 [a,b] kind=Gizmo count=7 note=<none>".Equals(result));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void KeepStringParametersHonestAndRoundTripDates()
+    {
+        DateTime stamp = new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc);
+        JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
+        When.A<TestCoercionService>("coerces string parameters from text, dates, primitives and refuses objects",
+            () => new TestCoercionService(),
+            (_) => new StringOutcome(
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", stamp))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new DateTimeOffset(stamp)))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", 42L))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(true)))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new TestWidget { Name = "object" }))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", DBNull.Value))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", JObject.Parse("{\"a\":1}"))))))
+        .TheTest
+        .ShouldPass<StringOutcome>((because, _, outcome) =>
+        {
+            because.ItsTrue($"a DateTime that the envelope reader produced is written back in round-trip form ({outcome.FromDateTime})", outcome.FromDateTime.EndsWith("note=2026-10-24T12:00:00.0000000Z", StringComparison.Ordinal));
+            because.ItsTrue($"a DateTimeOffset likewise ({outcome.FromDateTimeOffset})", outcome.FromDateTimeOffset.EndsWith("note=2026-10-24T12:00:00.0000000+00:00", StringComparison.Ordinal));
+            because.ItsTrue($"a primitive becomes its invariant text ({outcome.FromNumber})", outcome.FromNumber.EndsWith("note=42", StringComparison.Ordinal));
+            because.ItsTrue($"a scalar JValue becomes its text ({outcome.FromJValue})", outcome.FromJValue.EndsWith("note=True", StringComparison.Ordinal));
+            because.ItsTrue($"an arbitrary object is refused naming the parameter ({outcome.ObjectRefusal})", outcome.ObjectRefusal?.StartsWith("note: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"DBNull is refused ({outcome.DbNullRefusal})", outcome.DbNullRefusal?.Contains("System.DBNull", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a JObject is refused for a string parameter ({outcome.JObjectRefusal})", outcome.JObjectRefusal?.StartsWith("note: ", StringComparison.Ordinal) == true);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectUndefinedEnumValuesAndFractionalIntegers()
+    {
+        JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
+        When.A<TestCoercionService>("refuses enum values the enum does not define and non-integral numbers for int",
+            () => new TestCoercionService(),
+            (_) => new StrictOutcome(
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", 99L))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "99"))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", new JValue(99)))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "Gadget, Gizmo"))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", 2L))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", new JValue("GIZMO")))),
+                Refusal(Arguments(("widget", widget), ("times", 3.7d), ("kind", "gadget"))),
+                Refusal(Arguments(("widget", widget), ("times", new JValue(3.7d)), ("kind", "gadget"))),
+                Describe(Arguments(("widget", widget), ("times", new JValue(3.0d)), ("kind", "gadget")))))
+        .TheTest
+        .ShouldPass<StrictOutcome>((because, _, outcome) =>
+        {
+            because.ItsTrue($"an undefined numeric enum value is refused ({outcome.UndefinedNumber})", outcome.UndefinedNumber?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"an undefined numeric string is refused ({outcome.UndefinedText})", outcome.UndefinedText?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"an undefined JValue number is refused ({outcome.UndefinedToken})", outcome.UndefinedToken?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a combined name on a non-flags enum is refused ({outcome.CombinedNames})", outcome.CombinedNames?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a defined numeric value still coerces ({outcome.DefinedNumber})", outcome.DefinedNumber.Contains("kind=Gizmo", StringComparison.Ordinal));
+            because.ItsTrue($"a defined name in any case still coerces ({outcome.DefinedName})", outcome.DefinedName.Contains("kind=Gizmo", StringComparison.Ordinal));
+            because.ItsTrue($"a fractional double for an int is refused ({outcome.FractionDouble})", outcome.FractionDouble?.StartsWith("times: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a fractional JValue for an int is refused ({outcome.FractionToken})", outcome.FractionToken?.StartsWith("times: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a whole double for an int coerces ({outcome.WholeToken})", outcome.WholeToken.Contains(" x3 ", StringComparison.Ordinal));
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void DistinguishMissingOptionalExplicitNullAndMissingRequired()
+    {
+        JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
+        When.A<TestCoercionService>("applies declared defaults for absent keys, default(T) for explicit nulls, and refuses an absent required parameter",
+            () => new TestCoercionService(),
+            (_) =>
+            {
+                string absentOptional = Describe(Arguments(("widget", widget), ("times", 2L), ("kind", "gadget")));
+                string explicitNullOptional = Describe(Arguments(("widget", widget), ("times", 2L), ("kind", "gadget"), ("note", null)));
+                string explicitNullInt = Describe(Arguments(("widget", widget), ("times", null), ("kind", "gadget")));
+                string? missingRequired = Refusal(Arguments(("widget", widget), ("kind", "gadget")));
+
+                string? underSupplied;
+                try
+                {
+                    MethodInvocationRequest request = MethodInvocationRequest.For(typeof(TestCoercionService), "Describe", new TestWidget { Name = "w" });
+                    request.ServerInitialize(new ServiceRegistry());
+                    request.Invoke();
+                    underSupplied = null;
+                }
+                catch (InvocationArgumentException ex)
+                {
+                    underSupplied = ex.ParamName + ": " + ex.Message;
+                }
+
+                return new MissingOutcome(absentOptional, explicitNullOptional, explicitNullInt, missingRequired, underSupplied);
+            })
+        .TheTest
+        .ShouldPass<MissingOutcome>((because, _, outcome) =>
+        {
+            because.ItsTrue($"an absent optional parameter takes its declared default ({outcome.AbsentOptional})", outcome.AbsentOptional.EndsWith("note=<none>", StringComparison.Ordinal));
+            because.ItsTrue($"an explicit null for an optional parameter is null ({outcome.ExplicitNullOptional})", outcome.ExplicitNullOptional.EndsWith("note=<none>", StringComparison.Ordinal));
+            because.ItsTrue($"an explicit null for an int is default(int) ({outcome.ExplicitNullInt})", outcome.ExplicitNullInt.Contains(" x0 ", StringComparison.Ordinal));
+            because.ItsTrue($"an absent required parameter is refused by name ({outcome.MissingRequired})", outcome.MissingRequired?.StartsWith("times: ", StringComparison.Ordinal) == true && outcome.MissingRequired.Contains("required", StringComparison.Ordinal));
+            because.ItsTrue($"an under-supplied For(...) request is refused by name ({outcome.UnderSupplied})", outcome.UnderSupplied?.StartsWith("times: ", StringComparison.Ordinal) == true);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
+
+    private sealed record StrictOutcome(string? UndefinedNumber, string? UndefinedText, string? UndefinedToken, string? CombinedNames, string DefinedNumber, string DefinedName, string? FractionDouble, string? FractionToken, string WholeToken);
+
+    private sealed record MissingOutcome(string AbsentOptional, string ExplicitNullOptional, string ExplicitNullInt, string? MissingRequired, string? UnderSupplied);
 
     private sealed record SumOutcome(int FromJson, int FromArray);
 
