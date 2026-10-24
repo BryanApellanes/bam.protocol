@@ -91,6 +91,52 @@ and the request proof run only where `RequireActorAccess` attached the filters. 
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
 and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
+## Invocation (`/invoke`)
+
+`BamClient<T>.InvokeAsync` posts a `MethodInvocationRequest` (`OperationIdentifier` + named `Arguments`) to
+`/invoke` and expects the method's result back as bare JSON. The native `bam.server` pipeline serves that
+endpoint with its own session security; this adapter serves it behind actor authentication instead, so one
+host can expose typed RPC and plain HTTP routes under the same tokens and proofs.
+
+```csharp
+ServiceRegistry dispatch = new ServiceRegistry();              // or a WebServiceRegistry to enforce [WebService]
+dispatch.For<LogEventService>().Use<LogEventService>();        // only registered types are invocable
+
+builder.Services.AddActorAuthentication(builder.Configuration);
+builder.Services.AddBamInvocation(dispatch);                   // optional BamInvocationOptions { Pattern, MaxBodyBytes }
+
+app.UseActorAuthentication();
+app.MapBamInvocation();                                        // POST /invoke, never anonymous
+```
+
+The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
+only against the dispatch registry's registered types (same full name, same assembly simple name; version,
+culture and token are ignored) and only to a public, non-overloaded method that is not an `object` member
+or a property accessor. It never loads or scans assemblies. An identifier that does not resolve answers
+`461`, the native `CommandResolutionFailed` code.
+
+Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
+on the method or its type (the method wins). The required access defaults to `Denied` when neither carries
+`[RequiredAccess]`, as in the native pipeline, so a dispatchable service must declare its level. The caller's
+access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as
+`RequireActorAccess`. Methods marked `[AnonymousAccess]` are refused with `403`: `/invoke` is not an
+anonymous surface.
+
+| Status | Meaning |
+| --- | --- |
+| `200` | The result, as bare JSON (`null` for `void`/`Task`). `Task<T>` is awaited and unwrapped. |
+| `400` | The body is not an invocation envelope, or an argument cannot be converted to its parameter type (`InvocationArgumentException`, naming the parameter). |
+| `401` | No verified actor (`Authentication failed.`), or the request proof is missing or invalid. |
+| `403` | The actor's access is below the method's requirement, or the method allows anonymous access. |
+| `413` | The body exceeds `BamInvocationOptions.MaxBodyBytes` (default 1 MiB). |
+| `461` | The operation does not name a registered public method, or the registry would not supply the instance. |
+| `500` | The method threw. The caller sees only `Invocation failed.`; the exception is logged on the host. |
+
+A dispatched service learns who is calling through `IActorContext`, which `AddBamInvocation` registers in the
+dispatch registry (unless the host already did). It carries the verified `Actor`, the `KeyFingerprint` of the
+actor's ECC key and the `ClientIp`, scoped to the current invocation on the async flow, so a service that
+takes it in its constructor reads the identity the middleware verified and never anything the payload claimed.
+
 ## Admission: enrolling grants nothing by default
 
 The enrollment endpoints are anonymous and self-service, so enrolling proves only that a caller holds the
