@@ -21,7 +21,9 @@ public interface IRequestProofNonceStore
     /// <remarks>
     /// A shared store whose backing storage fails returns <see cref="NonceClaimResult.Unavailable"/> (or throws), and never
     /// returns <see cref="NonceClaimResult.Claimed"/> for a nonce it did not record. <see cref="RequestProofEvaluator"/>
-    /// refuses the proof in both cases and logs the outage.
+    /// refuses the proof in both cases and logs the outage. A store's own timeout counts as an outage whatever exception
+    /// carries it, <see cref="OperationCanceledException"/> included; only a cancellation caused by the client aborting the
+    /// request propagates.
     /// </remarks>
     NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now);
 }

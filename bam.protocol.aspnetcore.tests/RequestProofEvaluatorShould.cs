@@ -344,9 +344,9 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
             (clock) =>
             {
                 CapturingLogger<RequestProofEvaluator> throwingLog = new CapturingLogger<RequestProofEvaluator>();
-                RequestProofEvaluator throwing = Evaluators.Create(clock, nonces: new UnavailableNonceStore(throws: true), logger: throwingLog);
+                RequestProofEvaluator throwing = Evaluators.Create(clock, nonces: new UnavailableNonceStore(UnavailableNonceStore.Failure.Throws), logger: throwingLog);
                 CapturingLogger<RequestProofEvaluator> reportingLog = new CapturingLogger<RequestProofEvaluator>();
-                RequestProofEvaluator reporting = Evaluators.Create(clock, nonces: new UnavailableNonceStore(throws: false), logger: reportingLog);
+                RequestProofEvaluator reporting = Evaluators.Create(clock, nonces: new UnavailableNonceStore(UnavailableNonceStore.Failure.Reports), logger: reportingLog);
                 RequestProofResult Prove(RequestProofEvaluator evaluator) => evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
                 int Errors(CapturingLogger<RequestProofEvaluator> logger) => logger.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error);
 
@@ -372,6 +372,44 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue("a failure a minute later logs again", outcome.ReportingAfterAMinute == 2);
                 because.ItsTrue("the error names the store", outcome.Message.Contains(nameof(UnavailableNonceStore), StringComparison.Ordinal));
                 because.ItsTrue("and not the key", !outcome.Message.Contains(outcome.Fingerprint, StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RefuseAStoreTimeoutButPropagateAClientAbort()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+
+        When.A<FixedClock>("verifies a proof against a store whose own timeout throws OperationCanceledException, with and without the request aborted",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                CapturingLogger<RequestProofEvaluator> logger = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofEvaluator evaluator = Evaluators.Create(clock, nonces: new UnavailableNonceStore(UnavailableNonceStore.Failure.TimesOut), logger: logger);
+                RequestProofResult timedOut = evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+                int errors = logger.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error);
+
+                Microsoft.AspNetCore.Http.HttpRequest aborted = Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request;
+                aborted.HttpContext.RequestAborted = new CancellationToken(true);
+                bool propagated = false;
+                try
+                {
+                    evaluator.EvaluateAsync(aborted, pair.PublicPem).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    propagated = true;
+                }
+                return new TimeoutOutcome(timedOut.Success, timedOut.Reason, errors, propagated);
+            })
+            .TheTest
+            .ShouldPass<TimeoutOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a store timeout on a live request refuses the proof as unavailable", !outcome.TimedOutSuccess && outcome.TimedOutReason?.Contains("cannot verify", StringComparison.Ordinal) == true);
+                because.ItsTrue("and is logged at Error", outcome.Errors == 1);
+                because.ItsTrue("a cancellation while the client has aborted the request propagates", outcome.AbortPropagated);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -497,23 +535,39 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
 
     private sealed record UnavailableOutcome(bool ThrownSuccess, string? ThrownReason, bool ReportedSuccess, string? ReportedReason, int ThrowingErrors, int ReportingErrors, int ReportingAfterAMinute, string Message, string Fingerprint);
 
-    /// <summary>A nonce store whose backing storage is down: it throws, or reports <see cref="NonceClaimResult.Unavailable"/>.</summary>
+    private sealed record TimeoutOutcome(bool TimedOutSuccess, string? TimedOutReason, int Errors, bool AbortPropagated);
+
+    /// <summary>
+    /// A nonce store whose backing storage is down: it throws, reports <see cref="NonceClaimResult.Unavailable"/>, or times
+    /// out with an <see cref="OperationCanceledException"/> of its own.
+    /// </summary>
     private sealed class UnavailableNonceStore : IRequestProofNonceStore
     {
-        private readonly bool _throws;
+        private readonly Failure _failure;
 
-        internal UnavailableNonceStore(bool throws)
+        internal UnavailableNonceStore(Failure failure)
         {
-            _throws = throws;
+            _failure = failure;
+        }
+
+        internal enum Failure
+        {
+            Throws,
+            Reports,
+            TimesOut,
         }
 
         public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
         {
-            if (_throws)
+            switch (_failure)
             {
-                throw new InvalidOperationException("connection refused");
+                case Failure.Throws:
+                    throw new InvalidOperationException("connection refused");
+                case Failure.TimesOut:
+                    throw new OperationCanceledException("the store's command timed out");
+                default:
+                    return NonceClaimResult.Unavailable;
             }
-            return NonceClaimResult.Unavailable;
         }
     }
 

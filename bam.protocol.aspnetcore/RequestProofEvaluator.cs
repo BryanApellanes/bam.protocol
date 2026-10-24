@@ -135,9 +135,10 @@ public sealed class RequestProofEvaluator
         {
             claim = _nonces.TryClaim(scope, nonce!, signedAt + _options.RequestProofMaxAge, now);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (!(exception is OperationCanceledException && request.HttpContext.RequestAborted.IsCancellationRequested))
         {
-            // A store that cannot say whether the nonce is new must not let the proof through: fail closed.
+            // A store that cannot say whether the nonce is new must not let the proof through: fail closed. That includes a
+            // store's own timeout surfacing as OperationCanceledException; only the client aborting the request propagates.
             ErrorUnavailable(now, exception);
             return RequestProofResult.Failed(UnavailableReason);
         }
