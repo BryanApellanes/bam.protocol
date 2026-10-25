@@ -103,26 +103,36 @@ ServiceRegistry dispatch = new ServiceRegistry();              // or a WebServic
 dispatch.For<LogEventService>().Use<LogEventService>();        // only registered types are invocable
 
 builder.Services.AddActorAuthentication(builder.Configuration);
-builder.Services.AddBamInvocation(dispatch);                   // optional BamInvocationOptions { Pattern, MaxBodyBytes }
+builder.Services.AddBamInvocation(dispatch);                   // freezes the allow-list; optional BamInvocationOptions { Pattern, MaxBodyBytes, InvocableTypes }
 
 app.UseActorAuthentication();
 app.MapBamInvocation();                                        // POST /invoke, never anonymous
 ```
 
 The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
-only against the dispatch registry's registered types (same full name, same assembly simple name; version,
-culture and token are ignored) and only to a public, non-overloaded, non-generic method that the registered
-type declares itself or inherits from another *registered* type. `object` members, property accessors and
-anything inherited from an unregistered base (a logging helper, say) are unreachable. It never loads or scans
-assemblies. Closed generic types cannot be named (their full names contain commas) and are not invocable. An
-identifier that does not resolve answers `461`, the native `CommandResolutionFailed` code.
+only against the allow-list of invocable types (same full name, same assembly simple name; version, culture
+and token are ignored) and only to a public, non-overloaded, non-generic method that the named type declares
+itself. The allow-list is frozen when `AddBamInvocation` runs: every type registered in the dispatch registry
+at that moment, or exactly `BamInvocationOptions.InvocableTypes` when set. Register every invocable service
+before that call. The registry caches each type it later constructs (the implementation behind an interface
+key, an unregistered constructor dependency) under that type's own name, and the frozen list is what keeps
+those out of reach. Inherited methods are not reachable through a derived type's name, so `object` members,
+property accessors and anything inherited from a base (a logging helper, say) are unreachable; a base type's
+own public methods are invocable only under the base type's name, with the base type's own rules, and only
+when the base is on the allow-list. `OperationIdentifier.For` names the declaring type, so `BamClient<T>`
+already sends the base name for an inherited method. The resolver never loads or scans assemblies. Closed
+generic types cannot be named (their full names contain commas) and are not invocable. An identifier that
+does not resolve answers `461`, the native `CommandResolutionFailed` code.
 
 For an interface-keyed registration (`For<ILogEventService>().Use<LogEventService>()`) the identifier names
 the interface, and the interface's methods and attributes are what apply: `[RequiredAccess]` on the
 implementation is not consulted. Put the access attributes on the interface methods, or register the class.
+If both the interface and the class are registered, each key carries its own rules and the caller chooses the
+key, so keep their attributes consistent: the weaker key is the one that counts. Members an interface inherits
+from a base interface are not reachable through the derived interface's name.
 
 Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
-on the method or its type (the method wins). The required access defaults to `Denied` when neither carries
+on the method or the type that declares it (the method wins). The required access defaults to `Denied` when neither carries
 `[RequiredAccess]`, as in the native pipeline, so a dispatchable service must declare its level. The caller's
 access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as
 `RequireActorAccess`. Methods marked `[AnonymousAccess]` are refused with `403`: `/invoke` is not an

@@ -24,7 +24,7 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
     [UnitTest]
     public void KeepInheritedGenericAndInterfaceMembersInsideTheRegisteredSurface()
     {
-        When.A<RegisteredTypeInvocationTargetResolver>("resolves inherited members only when their declaring type is registered",
+        When.A<RegisteredTypeInvocationTargetResolver>("resolves only members the named type declares itself",
             Resolver,
             (resolver) =>
             {
@@ -37,6 +37,7 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
                     resolver.Resolve(Invocations.Operation<DerivedService>("Own")),
                     resolver.Resolve(Invocations.Operation<DerivedService>("FromBase")),
                     baseRegistered.Resolve(Invocations.Operation<DerivedService>("FromBase")),
+                    baseRegistered.Resolve(Invocations.Operation<BaseService>("FromBase")),
                     resolver.Resolve(Invocations.Operation<DerivedService>("Generic")),
                     resolver.Resolve(Invocations.Operation<UnattributedService>("Hi")),
                     resolver.Resolve(Invocations.Operation<IKeyedService>("Granted")),
@@ -48,12 +49,69 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
             {
                 because.ItsTrue("a method the registered type declares resolves", outcome.Own?.Method.Name == "Own");
                 because.ItsTrue("a method inherited from an unregistered base is refused", outcome.InheritedFromUnregistered is null);
-                because.ItsTrue("the same method resolves once the base is registered too", outcome.InheritedFromRegistered?.Method.DeclaringType == typeof(BaseService));
+                because.ItsTrue("an inherited method is refused under the derived name even when the base is registered", outcome.InheritedFromRegistered is null);
+                because.ItsTrue("the base's own method resolves under the base's name with the base's rules (Denied, it has no attribute)", outcome.BaseByOwnName?.Method.DeclaringType == typeof(BaseService) && outcome.BaseByOwnName.RequiredAccess == BamAccess.Denied);
                 because.ItsTrue("an open generic method is refused", outcome.Generic is null);
                 because.ItsTrue("a type with no access attribute defaults to Denied", outcome.Unattributed?.RequiredAccess == BamAccess.Denied);
                 because.ItsTrue("an interface method's own attribute applies", outcome.InterfaceGranted?.RequiredAccess == BamAccess.Execute);
                 because.ItsTrue("an interface method without an attribute is Denied whatever the implementation says", outcome.InterfaceUngranted?.RequiredAccess == BamAccess.Denied);
                 because.ItsTrue("the implementation class is not reachable by its own name when only the interface is registered", outcome.ImplementationByName is null);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void FreezeTheAllowListWhenConstructed()
+    {
+        When.A<ServiceRegistry>("keeps types the registry constructs later out of the allow-list",
+            () =>
+            {
+                ServiceRegistry registry = new ServiceRegistry();
+                registry.For<IKeyedService>().Use<KeyedService>();
+                registry.For<NeedsHelper>().Use<NeedsHelper>();
+                return registry;
+            },
+            (registry) =>
+            {
+                RegisteredTypeInvocationTargetResolver resolver = new RegisteredTypeInvocationTargetResolver(new BamInvocationDispatchRegistry(registry));
+                InvocationTarget? implementationBefore = resolver.Resolve(Invocations.Operation<KeyedService>("Granted"));
+
+                registry.Get<IKeyedService>();
+                registry.Get<NeedsHelper>();
+                bool registryGrew = registry.MappedTypes.Contains(typeof(KeyedService)) && registry.MappedTypes.Contains(typeof(Helper));
+
+                InvocationTarget? implementationAfter = resolver.Resolve(Invocations.Operation<KeyedService>("Granted"));
+                InvocationTarget? helperAfter = resolver.Resolve(Invocations.Operation<Helper>("Leak"));
+                InvocationTarget? interfaceStill = resolver.Resolve(Invocations.Operation<IKeyedService>("Granted"));
+
+                RegisteredTypeInvocationTargetResolver explicitList = new RegisteredTypeInvocationTargetResolver(new BamInvocationDispatchRegistry(registry, new[] { typeof(IKeyedService) }));
+                InvocationTarget? listed = explicitList.Resolve(Invocations.Operation<IKeyedService>("Granted"));
+                InvocationTarget? unlisted = explicitList.Resolve(Invocations.Operation<NeedsHelper>("Do"));
+
+                string? unregisteredListing;
+                try
+                {
+                    new BamInvocationDispatchRegistry(registry, new[] { typeof(UnregisteredService) });
+                    unregisteredListing = null;
+                }
+                catch (ArgumentException ex)
+                {
+                    unregisteredListing = ex.Message;
+                }
+
+                return new FrozenOutcome(implementationBefore, registryGrew, implementationAfter, helperAfter, interfaceStill, listed, unlisted, unregisteredListing);
+            })
+            .TheTest
+            .ShouldPass<FrozenOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the implementation behind an interface key is not resolvable by its own name before any call", outcome.ImplementationBefore is null);
+                because.ItsTrue("constructing the services makes the registry cache the implementation and the unregistered constructor dependency", outcome.RegistryGrew);
+                because.ItsTrue("the implementation is still not resolvable afterwards", outcome.ImplementationAfter is null);
+                because.ItsTrue("the constructed constructor dependency is not resolvable either", outcome.HelperAfter is null);
+                because.ItsTrue("the interface key still resolves", outcome.InterfaceStill?.Method.Name == "Granted");
+                because.ItsTrue("an explicit list admits exactly what it names", outcome.Listed?.Method.Name == "Granted" && outcome.Unlisted is null);
+                because.ItsTrue($"listing a type the registry does not hold is refused at construction ({outcome.UnregisteredListing})", outcome.UnregisteredListing?.Contains("UnregisteredService", StringComparison.Ordinal) == true);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -155,7 +213,9 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
             .UnlessItFailed();
     }
 
-    private sealed record SurfaceOutcome(InvocationTarget? Own, InvocationTarget? InheritedFromUnregistered, InvocationTarget? InheritedFromRegistered, InvocationTarget? Generic, InvocationTarget? Unattributed, InvocationTarget? InterfaceGranted, InvocationTarget? InterfaceUngranted, InvocationTarget? ImplementationByName);
+    private sealed record SurfaceOutcome(InvocationTarget? Own, InvocationTarget? InheritedFromUnregistered, InvocationTarget? InheritedFromRegistered, InvocationTarget? BaseByOwnName, InvocationTarget? Generic, InvocationTarget? Unattributed, InvocationTarget? InterfaceGranted, InvocationTarget? InterfaceUngranted, InvocationTarget? ImplementationByName);
+
+    private sealed record FrozenOutcome(InvocationTarget? ImplementationBefore, bool RegistryGrew, InvocationTarget? ImplementationAfter, InvocationTarget? HelperAfter, InvocationTarget? InterfaceStill, InvocationTarget? Listed, InvocationTarget? Unlisted, string? UnregisteredListing);
 
     private sealed record ResolvedOutcome(InvocationTarget? Echo, InvocationTarget? Ping, InvocationTarget? Nested, InvocationTarget? Privileged, InvocationTarget? Open, InvocationTarget? FromFor);
 
@@ -490,6 +550,43 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void KeepInheritedNamesAndConstructedTypesOutOfReach()
+    {
+        TestActor alice = new TestActor("alice");
+        When.A<ServiceRegistry>("refuses a base method under a derived name and a constructor dependency the registry cached",
+            () =>
+            {
+                ServiceRegistry registry = Registry();
+                registry.For<WriteBase>().Use<WriteBase>();
+                registry.For<DerivedOfWrite>().Use<DerivedOfWrite>();
+                registry.For<NeedsHelper>().Use<NeedsHelper>();
+                return registry;
+            },
+            (registry) =>
+            {
+                BamInvocationHandler asExecute = Handler(BamAccess.Execute, registry: registry);
+                BamInvocationHandler asRead = Handler(BamAccess.Read, registry: registry);
+                return new ReachOutcome(
+                    Run(asExecute, Request(Invocations.Envelope<DerivedOfWrite>("FromWriteBase"), alice)),
+                    Run(asExecute, Request(Invocations.Envelope<WriteBase>("FromWriteBase"), alice)),
+                    Run(asExecute, Request(Invocations.Envelope<DerivedOfWrite>("OwnOfWrite"), alice)),
+                    Run(asExecute, Request(Invocations.Envelope<NeedsHelper>("Do"), alice)),
+                    Run(asRead, Request(Invocations.Envelope<Helper>("Leak"), alice)));
+            })
+            .TheTest
+            .ShouldPass<ReachOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"a Write-only base method is not reachable through the Execute derived type's name ({outcome.BaseViaDerived})", outcome.BaseViaDerived.StartsWith("461:", StringComparison.Ordinal));
+                because.ItsTrue($"under its own name the base's own rule applies ({outcome.BaseByOwnName})", outcome.BaseByOwnName.StartsWith("403:", StringComparison.Ordinal));
+                because.ItsTrue($"the derived type's own method runs ({outcome.DerivedOwn})", outcome.DerivedOwn == "200:\"own-of-write\"");
+                because.ItsTrue($"a service with an unregistered constructor dependency runs ({outcome.NeedsHelper})", outcome.NeedsHelper == "200:\"did\"");
+                because.ItsTrue($"the dependency the registry constructed and cached is still not invocable ({outcome.HelperLeak})", outcome.HelperLeak.StartsWith("461:", StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
     public void AcceptTheExactBamClientBodyAndIgnorePolymorphicTypeHints()
     {
         TestActor alice = new TestActor("alice");
@@ -504,12 +601,15 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
 
                 string trap = typeof(BoobyTrap).AssemblyQualifiedName!;
                 string poisonedEnvelope = "{\"$type\":\"" + trap + "\",\"OperationIdentifier\":" + JsonConvert.ToString(Invocations.Operation<TestInvocationService>("Echo")) + ",\"Arguments\":{\"text\":\"safe\"}}";
+                string describeEnvelope = Invocations.Envelope<TestInvocationService>("Describe", Invocations.Args(("payload", new TestInvocationPayload { Name = "w", Count = 1 })));
                 Func<JsonSerializerSettings>? previous = JsonConvert.DefaultSettings;
                 string poisoned;
+                string poisonedResponse;
                 try
                 {
                     JsonConvert.DefaultSettings = () => new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All };
                     poisoned = Run(handler, Request(poisonedEnvelope, alice));
+                    poisonedResponse = Run(handler, Request(describeEnvelope, alice));
                 }
                 finally
                 {
@@ -521,13 +621,14 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 bool bodyRead = unauthenticated.Request.Body.Position != 0;
 
                 string elided = BamInvocationHandler.Describe(new string('x', BamInvocationHandler.LoggedOperationLength + 50));
-                return new WireOutcome(stj, poisoned, bodyRead, refused + "|" + elided.Length);
+                return new WireOutcome(stj, poisoned, poisonedResponse, bodyRead, refused + "|" + elided.Length);
             })
             .TheTest
             .ShouldPass<WireOutcome>((because, outcome) =>
             {
                 because.ItsTrue($"the exact body BamClient<T> serializes with System.Text.Json invokes the method ({outcome.StjBody})", outcome.StjBody == "200:\"pong\"");
                 because.ItsTrue($"a $type on the envelope is ignored under poisoned DefaultSettings ({outcome.Poisoned})", outcome.Poisoned == "200:\"Echo: safe\"");
+                because.ItsTrue($"the response carries no $type under poisoned DefaultSettings ({outcome.PoisonedResponse})", outcome.PoisonedResponse == "200:{\"Name\":\"w\",\"Doubled\":2}");
                 because.ItsTrue("an unauthenticated request is refused before any of the body is read", !outcome.BodyRead);
                 because.ItsTrue($"the refusal is the uniform 401 and long identifiers are cut for logs ({outcome.Elided})", outcome.Elided == "401:" + ActorAuthenticationMiddleware.FailureMessage + "|" + (BamInvocationHandler.LoggedOperationLength + 1));
             })
@@ -563,7 +664,9 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
 
     private sealed record RefusalOutcome(string NotJson, string NoOperation, string BlankOperation, string Unregistered, string AssemblyLoad, string AnonymousOperation, string NoActor, string AnonymousActor, string Insufficient, string Privileged, string BadArgument, string Unattributed);
 
-    private sealed record WireOutcome(string StjBody, string Poisoned, bool BodyRead, string Elided);
+    private sealed record WireOutcome(string StjBody, string Poisoned, string PoisonedResponse, bool BodyRead, string Elided);
+
+    private sealed record ReachOutcome(string BaseViaDerived, string BaseByOwnName, string DerivedOwn, string NeedsHelper, string HelperLeak);
 
     private sealed record FailureOutcome(string Response, bool Logged);
 

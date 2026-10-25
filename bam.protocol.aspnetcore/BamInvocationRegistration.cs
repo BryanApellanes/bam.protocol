@@ -33,8 +33,11 @@ public static class BamInvocationRegistration
     /// <remarks>
     /// Also registers an <see cref="AmbientActorContext"/> as <see cref="IActorContext"/> in
     /// <paramref name="dispatchRegistry"/> unless the host already registered one, so invoked services can take the
-    /// verified caller by constructor.
+    /// verified caller by constructor. The allow-list of invocable types is frozen here: every type registered in
+    /// <paramref name="dispatchRegistry"/> at this moment, or exactly <see cref="BamInvocationOptions.InvocableTypes"/>
+    /// when set. Register the services before calling this.
     /// </remarks>
+    /// <exception cref="ArgumentException">A type in <see cref="BamInvocationOptions.InvocableTypes"/> is not registered.</exception>
     public static IServiceCollection AddBamInvocation(this IServiceCollection services, ServiceRegistry dispatchRegistry, BamInvocationOptions? options = null)
     {
         Args.ThrowIfNull(services, nameof(services));
@@ -48,7 +51,7 @@ public static class BamInvocationRegistration
         }
 
         services.AddSingleton(effective);
-        services.AddSingleton(new BamInvocationDispatchRegistry(dispatchRegistry));
+        services.AddSingleton(new BamInvocationDispatchRegistry(dispatchRegistry, effective.InvocableTypes));
         services.TryAddSingleton<IInvocationTargetResolver, RegisteredTypeInvocationTargetResolver>();
         services.TryAddSingleton<IActorContext>(ambient);
         services.AddSingleton<BamInvocationHandler>();

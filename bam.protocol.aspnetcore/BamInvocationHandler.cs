@@ -50,6 +50,15 @@ public sealed class BamInvocationHandler
         MetadataPropertyHandling = MetadataPropertyHandling.Ignore
     };
 
+    /// <summary>
+    /// Result serialization is pinned the same way, so a poisoned <see cref="JsonConvert.DefaultSettings"/> cannot make
+    /// the response carry <c>$type</c> (CLR type and assembly names) to the caller.
+    /// </summary>
+    private static readonly JsonSerializerSettings ResponseSettings = new JsonSerializerSettings
+    {
+        TypeNameHandling = TypeNameHandling.None
+    };
+
     private readonly IInvocationTargetResolver _resolver;
     private readonly BamInvocationDispatchRegistry _targets;
     private readonly IActorAccessPolicy _policy;
@@ -184,7 +193,7 @@ public sealed class BamInvocationHandler
                 };
 
                 object? result = await UnwrapAsync(call.Invoke()).ConfigureAwait(false);
-                json = JsonConvert.SerializeObject(result);
+                json = JsonConvert.SerializeObject(result, ResponseSettings);
             }
         }
         catch (InvocationArgumentException ex)
@@ -192,14 +201,16 @@ public sealed class BamInvocationHandler
             _logger.LogInformation(ex, "Invocation rejected: argument '{Parameter}' on '{Operation}' could not be converted.", ex.ParamName, operation);
             return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
         }
-        catch (OperationCanceledException) when (http.RequestAborted.IsCancellationRequested)
-        {
-            _logger.LogInformation("Invocation of '{Operation}' by actor '{Handle}' was abandoned: the client disconnected.", operation, actor.Handle);
-            return Results.Problem(detail: InvocationFailedMessage, statusCode: StatusCodes.Status500InternalServerError);
-        }
         catch (Exception ex)
         {
+            // A synchronous throw arrives wrapped by MethodInfo.Invoke; unwrap before deciding how to log it.
             Exception cause = ex is TargetInvocationException { InnerException: not null } wrapped ? wrapped.InnerException! : ex;
+            if (cause is OperationCanceledException && http.RequestAborted.IsCancellationRequested)
+            {
+                _logger.LogInformation("Invocation of '{Operation}' by actor '{Handle}' was abandoned: the client disconnected.", operation, actor.Handle);
+                return Results.Problem(detail: InvocationFailedMessage, statusCode: StatusCodes.Status500InternalServerError);
+            }
+
             _logger.LogError(cause, "Invocation of '{Operation}' by actor '{Handle}' threw.", operation, actor.Handle);
             return Results.Problem(detail: InvocationFailedMessage, statusCode: StatusCodes.Status500InternalServerError);
         }

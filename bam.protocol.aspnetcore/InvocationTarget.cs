@@ -6,15 +6,15 @@ namespace Bam.Protocol.AspNetCore;
 /// A method an invocation request resolved to, together with the access rules its attributes declare.
 /// </summary>
 /// <remarks>
-/// Produced only by an <see cref="IInvocationTargetResolver"/>, so holding one means the declaring type was
-/// registered for dispatch and the method is a public, non-special member of that type. The access values are read
+/// Produced only by an <see cref="IInvocationTargetResolver"/>, so holding one means the declaring type is in the
+/// dispatch allow-list and the method is a public, non-special member that type declares itself. The access values are read
 /// once here so the handler never reflects over attributes itself: <see cref="RequiredAccess"/> follows the native
 /// pipeline's <c>CommandAttributeResolver</c> (method attribute, else type attribute, else
 /// <see cref="BamAccess.Denied"/>), <see cref="ExplicitProof"/> is a <see cref="RequireRequestProofAttribute"/>
 /// on the method or type when present, and <see cref="IsAnonymous"/> reflects an
 /// <see cref="AnonymousAccessAttribute"/> that allows anonymous callers.
 /// </remarks>
-/// <param name="DeclaringType">The registered type the operation named (a class or an interface key in the dispatch registry).</param>
+/// <param name="DeclaringType">The allow-listed type the operation named (a class or an interface key in the dispatch registry), which declares <paramref name="Method"/>.</param>
 /// <param name="Method">The public method to invoke.</param>
 /// <param name="RequiredAccess">The access the caller must hold.</param>
 /// <param name="ExplicitProof">The explicit body-proof requirement, or null to derive it from <paramref name="RequiredAccess"/>.</param>

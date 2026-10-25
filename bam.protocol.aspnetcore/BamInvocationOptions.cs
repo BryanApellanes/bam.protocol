@@ -27,4 +27,12 @@ public sealed record BamInvocationOptions
     /// deserialized. Default <see cref="DefaultMaxBodyBytes"/>.
     /// </summary>
     public long MaxBodyBytes { get; init; } = DefaultMaxBodyBytes;
+
+    /// <summary>
+    /// Gets the exact types the bridge may dispatch to, or null to allow every type registered in the dispatch
+    /// registry when <see cref="BamInvocationRegistration.AddBamInvocation"/> runs. Each listed type must be
+    /// registered there. Either way the list is frozen at that point; types the registry constructs later are not
+    /// invocable.
+    /// </summary>
+    public IReadOnlyCollection<Type>? InvocableTypes { get; init; }
 }

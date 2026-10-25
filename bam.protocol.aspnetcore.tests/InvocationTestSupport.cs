@@ -119,6 +119,49 @@ public class DerivedService : BaseService
     }
 }
 
+/// <summary>A registered base whose rule is stricter than its derived type's; reachable only under its own name.</summary>
+[RequiredAccess(BamAccess.Write)]
+public class WriteBase
+{
+    public string FromWriteBase()
+    {
+        return "write-base";
+    }
+}
+
+[RequiredAccess(BamAccess.Execute)]
+public class DerivedOfWrite : WriteBase
+{
+    public string OwnOfWrite()
+    {
+        return "own-of-write";
+    }
+}
+
+/// <summary>A constructor dependency the host never registers; the registry constructs and caches it on first use.</summary>
+public class Helper
+{
+    [RequiredAccess(BamAccess.Read)]
+    public string Leak()
+    {
+        return "leaked";
+    }
+}
+
+[RequiredAccess(BamAccess.Execute)]
+public class NeedsHelper
+{
+    public NeedsHelper(Helper helper)
+    {
+        Args.ThrowIfNull(helper, nameof(helper));
+    }
+
+    public string Do()
+    {
+        return "did";
+    }
+}
+
 /// <summary>An interface-keyed registration: only the interface's attributes count.</summary>
 public interface IKeyedService
 {
