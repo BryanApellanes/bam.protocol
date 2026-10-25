@@ -138,6 +138,43 @@ public class DerivedOfWrite : WriteBase
     }
 }
 
+/// <summary>A base whose virtual method is Read; the derived type below declares Write at class level with an unattributed override.</summary>
+public class VBase
+{
+    [RequiredAccess(BamAccess.Read)]
+    public virtual string V()
+    {
+        return "vbase";
+    }
+}
+
+[RequiredAccess(BamAccess.Write)]
+public class VDerived : VBase
+{
+    public override string V()
+    {
+        return "vderived";
+    }
+}
+
+/// <summary>A Write base whose derived type carries no attribute at all; the override must be Denied, not Write.</summary>
+[RequiredAccess(BamAccess.Write)]
+public class StrictBase
+{
+    public virtual string S()
+    {
+        return "strict";
+    }
+}
+
+public class LaxDerived : StrictBase
+{
+    public override string S()
+    {
+        return "lax";
+    }
+}
+
 /// <summary>A constructor dependency the host never registers; the registry constructs and caches it on first use.</summary>
 public class Helper
 {

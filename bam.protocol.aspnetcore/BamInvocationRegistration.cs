@@ -28,22 +28,29 @@ public static class BamInvocationRegistration
     /// </summary>
     /// <param name="services">The host's service collection.</param>
     /// <param name="dispatchRegistry">The registry holding the invocable types; pass a <c>WebServiceRegistry</c> to enforce <c>[WebService]</c>.</param>
-    /// <param name="options">Endpoint options, or null for the defaults.</param>
+    /// <param name="options">Endpoint options; <see cref="BamInvocationOptions.InvocableTypes"/> is required.</param>
     /// <returns>The service collection, for chaining.</returns>
     /// <remarks>
     /// Also registers an <see cref="AmbientActorContext"/> as <see cref="IActorContext"/> in
     /// <paramref name="dispatchRegistry"/> unless the host already registered one, so invoked services can take the
-    /// verified caller by constructor. The allow-list of invocable types is frozen here: every type registered in
-    /// <paramref name="dispatchRegistry"/> at this moment, or exactly <see cref="BamInvocationOptions.InvocableTypes"/>
-    /// when set. Register the services before calling this.
+    /// verified caller by constructor. The allow-list of invocable types is exactly
+    /// <see cref="BamInvocationOptions.InvocableTypes"/>, frozen here; it is never derived from
+    /// <paramref name="dispatchRegistry"/>, whose type list also holds everything it has constructed.
     /// </remarks>
-    /// <exception cref="ArgumentException">A type in <see cref="BamInvocationOptions.InvocableTypes"/> is not registered.</exception>
+    /// <exception cref="ArgumentException">
+    /// <see cref="BamInvocationOptions.InvocableTypes"/> is null or empty, or lists a type that is not registered.
+    /// </exception>
     public static IServiceCollection AddBamInvocation(this IServiceCollection services, ServiceRegistry dispatchRegistry, BamInvocationOptions? options = null)
     {
         Args.ThrowIfNull(services, nameof(services));
         Args.ThrowIfNull(dispatchRegistry, nameof(dispatchRegistry));
 
         BamInvocationOptions effective = options ?? new BamInvocationOptions();
+        if (effective.InvocableTypes is null || effective.InvocableTypes.Count == 0)
+        {
+            throw new ArgumentException("BamInvocationOptions.InvocableTypes must list every type the bridge may dispatch to; the allow-list is never derived from the registry.", nameof(options));
+        }
+
         AmbientActorContext ambient = new AmbientActorContext();
         if (!dispatchRegistry.Contains<IActorContext>())
         {

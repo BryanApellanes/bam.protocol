@@ -100,23 +100,26 @@ host can expose typed RPC and plain HTTP routes under the same tokens and proofs
 
 ```csharp
 ServiceRegistry dispatch = new ServiceRegistry();              // or a WebServiceRegistry to enforce [WebService]
-dispatch.For<LogEventService>().Use<LogEventService>();        // only registered types are invocable
+dispatch.For<LogEventService>().Use<LogEventService>();
 
 builder.Services.AddActorAuthentication(builder.Configuration);
-builder.Services.AddBamInvocation(dispatch);                   // freezes the allow-list; optional BamInvocationOptions { Pattern, MaxBodyBytes, InvocableTypes }
+builder.Services.AddBamInvocation(dispatch, new BamInvocationOptions
+{
+    InvocableTypes = new[] { typeof(LogEventService) }         // the complete allow-list; required
+});                                                            // Pattern and MaxBodyBytes have defaults
 
 app.UseActorAuthentication();
 app.MapBamInvocation();                                        // POST /invoke, never anonymous
 ```
 
 The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
-only against the allow-list of invocable types (same full name, same assembly simple name; version, culture
-and token are ignored) and only to a public, non-overloaded, non-generic method that the named type declares
-itself. The allow-list is frozen when `AddBamInvocation` runs: every type registered in the dispatch registry
-at that moment, or exactly `BamInvocationOptions.InvocableTypes` when set. Register every invocable service
-before that call. The registry caches each type it later constructs (the implementation behind an interface
-key, an unregistered constructor dependency) under that type's own name, and the frozen list is what keeps
-those out of reach. Inherited methods are not reachable through a derived type's name, so `object` members,
+only against the allow-list the host writes as `BamInvocationOptions.InvocableTypes` (required, each type
+validated as registered, frozen at `AddBamInvocation`; same full name, same assembly simple name; version,
+culture and token are ignored) and only to a public, non-overloaded, non-generic method that the named type
+declares itself. The bridge never derives the list from the registry: a `ServiceRegistry`'s type list is a
+construction cache that also holds the implementation behind an interface key and every constructor
+dependency it resolved, before or after `AddBamInvocation` (`UseSingleton<T>()` constructs at registration),
+so none of those is invocable unless the host lists it. Inherited methods are not reachable through a derived type's name, so `object` members,
 property accessors and anything inherited from a base (a logging helper, say) are unreachable; a base type's
 own public methods are invocable only under the base type's name, with the base type's own rules, and only
 when the base is on the allow-list. `OperationIdentifier.For` names the declaring type, so `BamClient<T>`
@@ -132,8 +135,12 @@ key, so keep their attributes consistent: the weaker key is the one that counts.
 from a base interface are not reachable through the derived interface's name.
 
 Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
-on the method or the type that declares it (the method wins). The required access defaults to `Denied` when neither carries
-`[RequiredAccess]`, as in the native pipeline, so a dispatchable service must declare its level. The caller's
+on the method or the type that declares it (the method wins). Attributes are not inherited, unlike the native
+pipeline: an override without its own attribute takes its declaring type's level, and a derived type without
+`[RequiredAccess]` is `Denied` whatever its base declares, so attribute the override or the derived type when it
+should differ. The required access defaults to `Denied` when neither carries `[RequiredAccess]`, so a dispatchable
+service must declare its level. Static methods take no instance, so a `WebServiceRegistry` host's `[WebService]`
+check does not run for them (bam.protocol#70); their own attributes are the only gate. The caller's
 access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as
 `RequireActorAccess`. Methods marked `[AnonymousAccess]` are refused with `403`: `/invoke` is not an
 anonymous surface. `MapBamInvocation` refuses to map when `ActorAuth:Enabled` is false, because without the

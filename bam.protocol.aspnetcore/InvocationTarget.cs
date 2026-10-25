@@ -12,7 +12,10 @@ namespace Bam.Protocol.AspNetCore;
 /// pipeline's <c>CommandAttributeResolver</c> (method attribute, else type attribute, else
 /// <see cref="BamAccess.Denied"/>), <see cref="ExplicitProof"/> is a <see cref="RequireRequestProofAttribute"/>
 /// on the method or type when present, and <see cref="IsAnonymous"/> reflects an
-/// <see cref="AnonymousAccessAttribute"/> that allows anonymous callers.
+/// <see cref="AnonymousAccessAttribute"/> that allows anonymous callers. Unlike the native resolver, attributes are
+/// read without inheritance: an override that carries no attribute takes its own declaring type's level, and a
+/// derived type without <see cref="RequiredAccessAttribute"/> is <see cref="BamAccess.Denied"/> whatever its base
+/// declares, so "the method or the type that declares it, else Denied" is the literal rule.
 /// </remarks>
 /// <param name="DeclaringType">The allow-listed type the operation named (a class or an interface key in the dispatch registry), which declares <paramref name="Method"/>.</param>
 /// <param name="Method">The public method to invoke.</param>
@@ -32,9 +35,9 @@ public sealed record InvocationTarget(Type DeclaringType, MethodInfo Method, Bam
         Args.ThrowIfNull(declaringType, nameof(declaringType));
         Args.ThrowIfNull(method, nameof(method));
 
-        RequiredAccessAttribute? required = method.GetCustomAttribute<RequiredAccessAttribute>() ?? declaringType.GetCustomAttribute<RequiredAccessAttribute>();
-        RequireRequestProofAttribute? proof = method.GetCustomAttribute<RequireRequestProofAttribute>() ?? declaringType.GetCustomAttribute<RequireRequestProofAttribute>();
-        AnonymousAccessAttribute? anonymous = method.GetCustomAttribute<AnonymousAccessAttribute>() ?? declaringType.GetCustomAttribute<AnonymousAccessAttribute>();
+        RequiredAccessAttribute? required = method.GetCustomAttribute<RequiredAccessAttribute>(inherit: false) ?? declaringType.GetCustomAttribute<RequiredAccessAttribute>(inherit: false);
+        RequireRequestProofAttribute? proof = method.GetCustomAttribute<RequireRequestProofAttribute>(inherit: false) ?? declaringType.GetCustomAttribute<RequireRequestProofAttribute>(inherit: false);
+        AnonymousAccessAttribute? anonymous = method.GetCustomAttribute<AnonymousAccessAttribute>(inherit: false) ?? declaringType.GetCustomAttribute<AnonymousAccessAttribute>(inherit: false);
 
         return new InvocationTarget(
             declaringType,

@@ -29,6 +29,13 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
         AllowMissingClientTokenAudience = true,
     };
 
+    private static readonly Type[] Invocable = { typeof(TestInvocationService) };
+
+    private static BamInvocationOptions Options()
+    {
+        return new BamInvocationOptions { InvocableTypes = Invocable };
+    }
+
     private static ServiceRegistry DispatchRegistry()
     {
         ServiceRegistry registry = new ServiceRegistry();
@@ -57,13 +64,13 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
             {
                 ServiceCollection services = new ServiceCollection();
                 services.AddActorAuthentication(ClientSigned);
-                services.AddBamInvocation(registry, new BamInvocationOptions { Pattern = "/rpc", MaxBodyBytes = 2048 });
+                services.AddBamInvocation(registry, new BamInvocationOptions { Pattern = "/rpc", MaxBodyBytes = 2048, InvocableTypes = Invocable });
                 ServiceProvider provider = services.BuildServiceProvider();
 
                 ServiceRegistry preset = DispatchRegistry();
                 AmbientActorContext own = new AmbientActorContext();
                 preset.For<IActorContext>().Use(own);
-                new ServiceCollection().AddBamInvocation(preset);
+                new ServiceCollection().AddBamInvocation(preset, Options());
 
                 return new RegistrationOutcome(
                     provider.GetService<BamInvocationHandler>() is not null,
@@ -99,7 +106,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
             {
                 WebApplicationBuilder builder = WebApplication.CreateBuilder();
                 builder.Services.AddActorAuthentication(ClientSigned);
-                builder.Services.AddBamInvocation(registry);
+                builder.Services.AddBamInvocation(registry, Options());
                 WebApplication app = builder.Build();
                 app.MapBamInvocation();
                 app.MapBamInvocation("/custom");
@@ -113,12 +120,12 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
                 string? bridgeRefusal = Refusal(() => noBridge.Build().MapBamInvocation());
 
                 WebApplicationBuilder noAuth = WebApplication.CreateBuilder();
-                noAuth.Services.AddBamInvocation(DispatchRegistry());
+                noAuth.Services.AddBamInvocation(DispatchRegistry(), Options());
                 string? authRefusal = Refusal(() => noAuth.Build().MapBamInvocation());
 
                 WebApplicationBuilder disabled = WebApplication.CreateBuilder();
                 disabled.Services.AddActorAuthentication(new ActorAuthenticationOptions { Enabled = false });
-                disabled.Services.AddBamInvocation(DispatchRegistry());
+                disabled.Services.AddBamInvocation(DispatchRegistry(), Options());
                 string? disabledRefusal = Refusal(() => disabled.Build().MapBamInvocation());
 
                 return new MappingOutcome(
@@ -156,7 +163,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
             {
                 WebApplicationBuilder builder = HostBuilder(resolver, ClientSigned);
                 builder.WebHost.UseUrls("http://127.0.0.1:0");
-                builder.Services.AddBamInvocation(registry);
+                builder.Services.AddBamInvocation(registry, Options());
                 WebApplication app = builder.Build();
                 app.UseActorAuthentication();
                 app.MapBamInvocation();

@@ -4,10 +4,10 @@ namespace Bam.Protocol.AspNetCore;
 /// Settings for the <c>/invoke</c> bridge mapped by <see cref="BamInvocationRegistration.MapBamInvocation"/>.
 /// </summary>
 /// <remarks>
-/// Everything about <em>who</em> may invoke comes from <see cref="ActorAuthenticationOptions"/>; these options only
-/// shape the endpoint itself. A host passes an instance to
-/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, Bam.DependencyInjection.ServiceRegistry, BamInvocationOptions?)"/>;
-/// otherwise the defaults apply.
+/// Everything about <em>who</em> may invoke comes from <see cref="ActorAuthenticationOptions"/>; these options
+/// shape the endpoint itself and name <em>what</em> may be invoked. A host passes an instance to
+/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, Bam.DependencyInjection.ServiceRegistry, BamInvocationOptions?)"/>
+/// with <see cref="InvocableTypes"/> set; the other members have defaults.
 /// </remarks>
 public sealed record BamInvocationOptions
 {
@@ -29,10 +29,10 @@ public sealed record BamInvocationOptions
     public long MaxBodyBytes { get; init; } = DefaultMaxBodyBytes;
 
     /// <summary>
-    /// Gets the exact types the bridge may dispatch to, or null to allow every type registered in the dispatch
-    /// registry when <see cref="BamInvocationRegistration.AddBamInvocation"/> runs. Each listed type must be
-    /// registered there. Either way the list is frozen at that point; types the registry constructs later are not
-    /// invocable.
+    /// Gets the exact types the bridge may dispatch to. Required: <see cref="BamInvocationRegistration.AddBamInvocation"/>
+    /// throws when it is null or empty, and each listed type must be registered in the dispatch registry. The bridge
+    /// never derives this list from the registry, whose type list is a construction cache (interface implementations,
+    /// constructor dependencies) rather than a declaration of what may be invoked.
     /// </summary>
     public IReadOnlyCollection<Type>? InvocableTypes { get; init; }
 }
