@@ -240,6 +240,41 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         }
     }
 
+    private static InvocationArgumentException? RefusalOf(Dictionary<string, object?> arguments)
+    {
+        try
+        {
+            Describe(arguments);
+            return null;
+        }
+        catch (InvocationArgumentException ex)
+        {
+            return ex;
+        }
+    }
+
+    private static string Identify(Dictionary<string, object?> arguments)
+    {
+        MethodInvocationRequest request = new MethodInvocationRequest(new TestCoercionService(), typeof(TestCoercionService).GetMethod("Identify")!)
+        {
+            Arguments = arguments
+        };
+        return request.Invoke<string>();
+    }
+
+    private static string? IdentifyRefusal(Dictionary<string, object?> arguments)
+    {
+        try
+        {
+            Identify(arguments);
+            return null;
+        }
+        catch (InvocationArgumentException ex)
+        {
+            return ex.ParamName + ": " + ex.Message;
+        }
+    }
+
     private static Dictionary<string, object?> Arguments(params (string Name, object? Value)[] values)
     {
         Dictionary<string, object?> arguments = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -283,6 +318,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             (_) => new StringOutcome(
                 Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", stamp))),
                 Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new DateTimeOffset(stamp)))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(stamp)))),
                 Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", 42L))),
                 Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(true)))),
                 Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new TestWidget { Name = "object" }))),
@@ -293,6 +329,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         {
             because.ItsTrue($"a DateTime that the envelope reader produced is written back in round-trip form ({outcome.FromDateTime})", outcome.FromDateTime.EndsWith("note=2026-10-24T12:00:00.0000000Z", StringComparison.Ordinal));
             because.ItsTrue($"a DateTimeOffset likewise ({outcome.FromDateTimeOffset})", outcome.FromDateTimeOffset.EndsWith("note=2026-10-24T12:00:00.0000000+00:00", StringComparison.Ordinal));
+            because.ItsTrue($"a date token the reader produced likewise ({outcome.FromDateToken})", outcome.FromDateToken.EndsWith("note=2026-10-24T12:00:00.0000000Z", StringComparison.Ordinal));
             because.ItsTrue($"a primitive becomes its invariant text ({outcome.FromNumber})", outcome.FromNumber.EndsWith("note=42", StringComparison.Ordinal));
             because.ItsTrue($"a scalar JValue becomes its text ({outcome.FromJValue})", outcome.FromJValue.EndsWith("note=True", StringComparison.Ordinal));
             because.ItsTrue($"an arbitrary object is refused naming the parameter ({outcome.ObjectRefusal})", outcome.ObjectRefusal?.StartsWith("note: ", StringComparison.Ordinal) == true);
@@ -318,7 +355,11 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                 Describe(Arguments(("widget", widget), ("times", 1L), ("kind", new JValue("GIZMO")))),
                 Refusal(Arguments(("widget", widget), ("times", 3.7d), ("kind", "gadget"))),
                 Refusal(Arguments(("widget", widget), ("times", new JValue(3.7d)), ("kind", "gadget"))),
-                Describe(Arguments(("widget", widget), ("times", new JValue(3.0d)), ("kind", "gadget")))))
+                Describe(Arguments(("widget", widget), ("times", new JValue(3.0d)), ("kind", "gadget"))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", 2.5d))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", true))),
+                Refusal(Arguments(("widget", widget), ("times", 123456789012345.67d), ("kind", "gadget"))),
+                Refusal(Arguments(("widget", widget), ("times", true), ("kind", "gadget")))))
         .TheTest
         .ShouldPass<StrictOutcome>((because, _, outcome) =>
         {
@@ -331,6 +372,10 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             because.ItsTrue($"a fractional double for an int is refused ({outcome.FractionDouble})", outcome.FractionDouble?.StartsWith("times: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"a fractional JValue for an int is refused ({outcome.FractionToken})", outcome.FractionToken?.StartsWith("times: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"a whole double for an int coerces ({outcome.WholeToken})", outcome.WholeToken.Contains(" x3 ", StringComparison.Ordinal));
+            because.ItsTrue($"a fractional number for an enum is refused rather than rounded ({outcome.EnumFraction})", outcome.EnumFraction?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a boolean for an enum is refused ({outcome.EnumBool})", outcome.EnumBool?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a fraction beyond fifteen significant digits is still refused ({outcome.WideFraction})", outcome.WideFraction?.StartsWith("times: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a boolean for an int is refused ({outcome.IntBool})", outcome.IntBool?.StartsWith("times: ", StringComparison.Ordinal) == true);
         })
         .SoBeHappy()
         .UnlessItFailed();
@@ -377,9 +422,50 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         .UnlessItFailed();
     }
 
-    private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
+    [UnitTest]
+    public void TreatScalarTokensFromBothReadersAlike()
+    {
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\"}");
+        System.Text.Json.JsonElement root = document.RootElement;
+        JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
+        Guid id = Guid.NewGuid();
+        DateTimeOffset at = new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
+        When.A<TestCoercionService>("reduces scalar JsonElements and JValues to CLR values before applying the scalar rules",
+            () => new TestCoercionService(),
+            (_) => new ScalarOutcome(
+                RefusalOf(Arguments(("widget", widget), ("times", 1L), ("kind", root.GetProperty("i").Clone())))?.ActualType,
+                Describe(Arguments(("widget", widget), ("times", root.GetProperty("s7").Clone()), ("kind", "gadget"))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", root.GetProperty("n7").Clone()))),
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", root.GetProperty("t").Clone()))),
+                Describe(Arguments(("widget", widget), ("times", root.GetProperty("e").Clone()), ("kind", "gadget"))),
+                Refusal(Arguments(("widget", widget), ("times", 1L), ("kind", root.GetProperty("f").Clone()))),
+                Identify(Arguments(("id", id.ToString()), ("at", at.ToString("O")), ("big", root.GetProperty("s42").Clone()), ("ratio", "1.5"), ("flag", "true"))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", "1,5"), ("flag", true))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", new JValue("1,5")), ("flag", true))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", "1,000"), ("ratio", 1.5d), ("flag", true)))))
+        .TheTest
+        .ShouldPass<ScalarOutcome>((because, _, outcome) =>
+        {
+            because.ItsTrue($"a refused JSON integer is reported as the long it was, not a double ({outcome.IntegerActualType})", outcome.IntegerActualType == typeof(long));
+            because.ItsTrue($"numeric text in a JsonElement becomes an int ({outcome.TextToInt})", outcome.TextToInt.Contains(" x7 ", StringComparison.Ordinal));
+            because.ItsTrue($"a JSON number becomes a string's invariant text ({outcome.NumberToString})", outcome.NumberToString.EndsWith("note=7", StringComparison.Ordinal));
+            because.ItsTrue($"a JSON boolean becomes a string ({outcome.BoolToString})", outcome.BoolToString.EndsWith("note=True", StringComparison.Ordinal));
+            because.ItsTrue($"an exponent-form whole number becomes an int ({outcome.ExponentToInt})", outcome.ExponentToInt.Contains(" x100 ", StringComparison.Ordinal));
+            because.ItsTrue($"a fractional JSON number for an enum is refused ({outcome.FractionToEnum})", outcome.FractionToEnum?.StartsWith("kind: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"text forms of Guid, DateTimeOffset, long, double and bool parse on the element path too ({outcome.TextForms})", outcome.TextForms == $"{id:D}|{at:O}|42|1.5|True");
+            because.ItsTrue($"a group separator in numeric text is refused rather than dropped ({outcome.GroupedDouble})", outcome.GroupedDouble?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"the same through a JValue ({outcome.GroupedToken})", outcome.GroupedToken?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"and for an integral target ({outcome.GroupedLong})", outcome.GroupedLong?.StartsWith("big: ", StringComparison.Ordinal) == true);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
 
-    private sealed record StrictOutcome(string? UndefinedNumber, string? UndefinedText, string? UndefinedToken, string? CombinedNames, string DefinedNumber, string DefinedName, string? FractionDouble, string? FractionToken, string WholeToken);
+    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong);
+
+    private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromDateToken, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
+
+    private sealed record StrictOutcome(string? UndefinedNumber, string? UndefinedText, string? UndefinedToken, string? CombinedNames, string DefinedNumber, string DefinedName, string? FractionDouble, string? FractionToken, string WholeToken, string? EnumFraction, string? EnumBool, string? WideFraction, string? IntBool);
 
     private sealed record MissingOutcome(string AbsentOptional, string ExplicitNullOptional, string ExplicitNullInt, string? MissingRequired, string? UnderSupplied);
 

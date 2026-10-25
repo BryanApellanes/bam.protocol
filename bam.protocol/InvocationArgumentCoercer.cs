@@ -23,11 +23,17 @@ namespace Bam.Protocol;
 /// <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/> with the invariant culture; anything else is
 /// round-tripped through JSON as a last resort. Every Newtonsoft conversion uses a serializer pinned to
 /// <see cref="TypeNameHandling.None"/>, so a <c>$type</c> in the payload is inert whatever the process-wide
-/// defaults say. Conversions are strict where silence would hide a caller error: a <c>string</c> parameter accepts
-/// text, primitives and dates (dates in round-trip <c>"O"</c> form) but not objects or <see cref="DBNull"/>; an enum
-/// parameter rejects values the enum does not define (flags enums excepted); an integral parameter rejects a number
-/// with a fractional part. Failure throws an <see cref="InvocationArgumentException"/> that
-/// names the parameter and both types.
+/// defaults say. A scalar token from either reader (a <see cref="JValue"/>, or a <see cref="JsonElement"/> holding a
+/// string, number or boolean) is reduced to its CLR value first, so both readers follow one set of scalar rules.
+/// Conversions are strict where silence would hide a caller error: a <c>string</c> parameter accepts text, primitives
+/// and dates (dates in round-trip <c>"O"</c> form) but not objects or <see cref="DBNull"/>; an enum parameter rejects
+/// values the enum does not define (flags enums excepted); an enum or integral parameter rejects a boolean and a
+/// number with a fractional part; numeric text is parsed without group separators. These guarantees hold at the
+/// <em>parameter</em> boundary. Members nested inside a POCO or array argument are bound by the serializers' own
+/// rules: an undefined enum number is stored as is, and a date-shaped string that the envelope reader already turned
+/// into a date is rendered in the serializer's default format rather than round-trip form until bam.protocol#67
+/// stops the reader from parsing dates. Failure throws an <see cref="InvocationArgumentException"/> that names the
+/// parameter and both types.
 /// </remarks>
 public static class InvocationArgumentCoercer
 {
@@ -87,52 +93,60 @@ public static class InvocationArgumentCoercer
             return value;
         }
 
+        // A scalar token from either reader becomes its CLR value here, so the rules below see one shape.
+        object scalar = Unwrap(value);
         try
         {
+            if (targetType.IsInstanceOfType(scalar))
+            {
+                return scalar;
+            }
+
             if (underlying.IsEnum)
             {
-                return CoerceEnum(parameterName, Unwrap(value), underlying);
+                RejectFraction(parameterName, scalar, targetType);
+                return CoerceEnum(parameterName, scalar, underlying);
             }
 
             if (IsIntegral(underlying))
             {
-                RejectFraction(parameterName, Unwrap(value), targetType);
+                RejectFraction(parameterName, scalar, targetType);
             }
 
-            if (value is JToken token)
+            if (scalar is JToken token)
             {
                 return token.ToObject(targetType, SafeSerializer);
             }
 
-            if (value is JsonElement element)
+            if (scalar is JsonElement element)
             {
                 return element.Deserialize(targetType, ElementOptions);
             }
 
             if (underlying == typeof(string))
             {
-                return CoerceToString(parameterName, value, targetType);
+                return CoerceToString(parameterName, scalar, targetType);
             }
 
-            if (value is string text)
+            if (scalar is string text)
             {
-                object? parsed = ParseText(text, underlying);
+                object? parsed = ParseText(parameterName, text, underlying, targetType);
                 if (parsed is not null)
                 {
                     return parsed;
                 }
             }
 
-            if (value is IConvertible && typeof(IConvertible).IsAssignableFrom(underlying))
+            if (scalar is IConvertible && typeof(IConvertible).IsAssignableFrom(underlying))
             {
-                return Convert.ChangeType(value, underlying, CultureInfo.InvariantCulture);
+                return Convert.ChangeType(scalar, underlying, CultureInfo.InvariantCulture);
             }
 
-            return JToken.FromObject(value, SafeSerializer).ToObject(targetType, SafeSerializer);
+            return JToken.FromObject(scalar, SafeSerializer).ToObject(targetType, SafeSerializer);
         }
         catch (Exception ex) when (ex is not InvocationArgumentException)
         {
-            throw new InvocationArgumentException(parameterName, value.GetType(), targetType, ex);
+            throw new InvocationArgumentException(parameterName, scalar.GetType(), targetType, ex);
         }
     }
 
@@ -146,7 +160,10 @@ public static class InvocationArgumentCoercer
         return null;
     }
 
-    /// <summary>Takes the CLR value out of a scalar token or element so the scalar rules see one shape.</summary>
+    /// <summary>
+    /// Takes the CLR value out of a scalar token or element so the scalar rules see one shape; objects, arrays and
+    /// anything that is not a token come back unchanged.
+    /// </summary>
     private static object Unwrap(object value)
     {
         if (value is JValue scalar && scalar.Value is not null)
@@ -161,7 +178,13 @@ public static class InvocationArgumentCoercer
                 case JsonValueKind.String:
                     return element.GetString()!;
                 case JsonValueKind.Number:
-                    return element.TryGetInt64(out long whole) ? whole : element.GetDouble();
+                    // Two statements on purpose: a conditional expression would widen the long to double before boxing.
+                    if (element.TryGetInt64(out long whole))
+                    {
+                        return whole;
+                    }
+
+                    return element.GetDouble();
                 case JsonValueKind.True:
                 case JsonValueKind.False:
                     return element.GetBoolean();
@@ -177,25 +200,33 @@ public static class InvocationArgumentCoercer
             || type == typeof(uint) || type == typeof(ulong) || type == typeof(ushort) || type == typeof(sbyte);
     }
 
+    /// <summary>
+    /// Refuses a boolean, a non-finite number and a number with a fractional part for an integral or enum target. The
+    /// test is made on the value's own type (no conversion to <see cref="decimal"/>, which would round to fifteen
+    /// significant digits first).
+    /// </summary>
     private static void RejectFraction(string parameterName, object value, Type targetType)
     {
-        decimal number;
+        bool whole;
         switch (value)
         {
-            case double d when !double.IsNaN(d) && !double.IsInfinity(d):
-                number = (decimal)d;
+            case bool:
+                whole = false;
                 break;
-            case float f when !float.IsNaN(f) && !float.IsInfinity(f):
-                number = (decimal)f;
+            case double d:
+                whole = double.IsFinite(d) && Math.Floor(d) == d;
+                break;
+            case float f:
+                whole = float.IsFinite(f) && MathF.Floor(f) == f;
                 break;
             case decimal m:
-                number = m;
+                whole = decimal.Truncate(m) == m;
                 break;
             default:
                 return;
         }
 
-        if (number != decimal.Truncate(number))
+        if (!whole)
         {
             throw new InvocationArgumentException(parameterName, value.GetType(), targetType);
         }
@@ -246,8 +277,34 @@ public static class InvocationArgumentCoercer
         }
     }
 
-    private static object? ParseText(string text, Type underlying)
+    /// <summary>
+    /// Parses the text forms of the BCL types that <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/>
+    /// does not handle, and numbers without group separators (<c>"1,5"</c> is refused rather than read as 15).
+    /// </summary>
+    private static object? ParseText(string parameterName, string text, Type underlying, Type targetType)
     {
+        if (IsIntegral(underlying))
+        {
+            decimal number = decimal.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+            RejectFraction(parameterName, number, targetType);
+            return Convert.ChangeType(number, underlying, CultureInfo.InvariantCulture);
+        }
+
+        if (underlying == typeof(double))
+        {
+            return double.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        if (underlying == typeof(float))
+        {
+            return float.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        if (underlying == typeof(decimal))
+        {
+            return decimal.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
         if (underlying == typeof(Guid))
         {
             return Guid.Parse(text);
