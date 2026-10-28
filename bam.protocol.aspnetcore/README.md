@@ -91,6 +91,82 @@ and the request proof run only where `RequireActorAccess` attached the filters. 
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
 and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
+## Invocation (`/invoke`)
+
+`BamClient<T>.InvokeAsync` posts a `MethodInvocationRequest` (`OperationIdentifier` + named `Arguments`) to
+`/invoke` and expects the method's result back as bare JSON. The native `bam.server` pipeline serves that
+endpoint with its own session security; this adapter serves it behind actor authentication instead, so one
+host can expose typed RPC and plain HTTP routes under the same tokens and proofs.
+
+```csharp
+ServiceRegistry dispatch = new ServiceRegistry();              // or a WebServiceRegistry to enforce [WebService]
+dispatch.For<LogEventService>().Use<LogEventService>();
+
+builder.Services.AddActorAuthentication(builder.Configuration);
+builder.Services.AddBamInvocation(dispatch, new BamInvocationOptions
+{
+    InvocableTypes = new[] { typeof(LogEventService) }         // the complete allow-list; required
+});                                                            // Pattern and MaxBodyBytes have defaults
+
+app.UseActorAuthentication();
+app.MapBamInvocation();                                        // POST /invoke, never anonymous
+```
+
+The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
+only against the allow-list the host writes as `BamInvocationOptions.InvocableTypes` (required, each type
+validated as held by the registry, frozen at `AddBamInvocation`; same full name, same assembly simple name; version,
+culture and token are ignored) and only to a public, non-overloaded, non-generic method that the named type
+declares itself. The bridge never derives the list from the registry: a `ServiceRegistry`'s type list is a
+construction cache that also holds the implementation behind an interface key and every constructor
+dependency it resolved, before or after `AddBamInvocation` (`UseSingleton<T>()` constructs at registration),
+so none of those is invocable unless the host lists it (listing a type the registry only constructed and cached
+opts it in; the validation checks presence, not how the type got there). Inherited methods are not reachable through a derived type's name, so `object` members,
+property accessors and anything inherited from a base (a logging helper, say) are unreachable; a base type's
+own public methods are invocable only under the base type's name, with the base type's own rules, and only
+when the base is on the allow-list. `OperationIdentifier.For` names the declaring type, so `BamClient<T>`
+already sends the base name for an inherited method. The resolver never loads or scans assemblies. Closed
+generic types cannot be named (their full names contain commas) and are not invocable. An identifier that
+does not resolve answers `461`, the native `CommandResolutionFailed` code.
+
+For an interface-keyed registration (`For<ILogEventService>().Use<LogEventService>()`) the identifier names
+the interface, and the interface's methods and attributes are what apply: `[RequiredAccess]` on the
+implementation is not consulted. Put the access attributes on the interface methods, or register the class.
+If both the interface and the class are registered, each key carries its own rules and the caller chooses the
+key, so keep their attributes consistent: the weaker key is the one that counts. The same holds for a class key
+whose registered implementation is a derived type (`For<LogEventService>().Use<AuditedLogEventService>()`): the
+key's methods and attributes are what apply, and the implementation's override is what runs. Members an interface
+inherits from a base interface are not reachable through the derived interface's name.
+
+Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
+on the method or the type that declares it (the method wins). Attributes are not inherited, unlike the native
+pipeline: an override without its own attribute takes its declaring type's level, and a derived type without
+`[RequiredAccess]` is `Denied` whatever its base declares. The same single rule covers `[RequireRequestProof]` and
+`[AnonymousAccess]`: a base's proof demand or anonymous grant does not reach an unattributed override, so a derived
+type that should keep the base's proof demand re-declares it on the override or at class level. The required
+access defaults to `Denied` when neither carries `[RequiredAccess]`, so a dispatchable
+service must declare its level. Static methods take no instance, so a `WebServiceRegistry` host's `[WebService]`
+check does not run for them (bam.protocol#70); their own attributes are the only gate. The caller's
+access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as
+`RequireActorAccess`. Methods marked `[AnonymousAccess]` are refused with `403`: `/invoke` is not an
+anonymous surface. `MapBamInvocation` refuses to map when `ActorAuth:Enabled` is false, because without the
+middleware no request to it can succeed, and the handler answers `401` before reading any of the body when no
+verified actor is present.
+
+| Status | Meaning |
+| --- | --- |
+| `200` | The result, as bare JSON (`null` for `void`/`Task`). `Task<T>` is awaited and unwrapped. |
+| `400` | The body is not an invocation envelope, or an argument cannot be converted to its parameter type (`InvocationArgumentException`, naming the parameter). |
+| `401` | No verified actor (`Authentication failed.`), or the request proof is missing or invalid. |
+| `403` | The actor's access is below the method's requirement, or the method allows anonymous access. |
+| `413` | The body exceeds `BamInvocationOptions.MaxBodyBytes` (default 1 MiB). |
+| `461` | The operation does not name a registered public method, or the registry would not supply the instance. |
+| `500` | The method threw. The caller sees only `Invocation failed.`; the exception is logged on the host. |
+
+A dispatched service learns who is calling through `IActorContext`, which `AddBamInvocation` registers in the
+dispatch registry (unless the host already did). It carries the verified `Actor`, the `KeyFingerprint` of the
+actor's ECC key and the `ClientIp`, scoped to the current invocation on the async flow, so a service that
+takes it in its constructor reads the identity the middleware verified and never anything the payload claimed.
+
 ## Admission: enrolling grants nothing by default
 
 The enrollment endpoints are anonymous and self-service, so enrolling proves only that a caller holds the
