@@ -271,6 +271,19 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         return request.Invoke<string>();
     }
 
+    private static InvocationArgumentException? MeasureRefusal(Dictionary<string, object?> arguments)
+    {
+        try
+        {
+            Measure(arguments);
+            return null;
+        }
+        catch (InvocationArgumentException ex)
+        {
+            return ex;
+        }
+    }
+
     private static string? IdentifyRefusal(Dictionary<string, object?> arguments)
     {
         try
@@ -434,7 +447,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
     [UnitTest]
     public void TreatScalarTokensFromBothReadersAlike()
     {
-        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890,\"tiny\":1e-30,\"small\":2.5e-28}");
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890,\"tiny\":1e-30,\"small\":2.5e-28,\"wide\":0.1234567890123456789012345678,\"frac\":26420351508990815.54344,\"money\":3517348747777.2610,\"whole\":3806610757692033037.0,\"half\":12345678901234567890.5}");
         System.Text.Json.JsonElement root = document.RootElement;
         JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
         Guid id = Guid.NewGuid();
@@ -462,7 +475,14 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                 Identify(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("tiny").Clone()), ("flag", true))),
                 Identify(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("small").Clone()), ("flag", true))),
                 RefusalOf(Arguments(("widget", widget), ("times", root.GetProperty("tiny").Clone()), ("kind", "gadget")))?.ActualType,
-                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(System.Numerics.BigInteger.Parse("18446744073709551615")))))))
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(System.Numerics.BigInteger.Parse("18446744073709551615"))))),
+                Measure(Arguments(("amount", root.GetProperty("wide").Clone()), ("count", 1L))),
+                MeasureRefusal(Arguments(("amount", 1L), ("count", root.GetProperty("frac").Clone())))?.ActualType,
+                Identify(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("wide").Clone()), ("flag", true))),
+                Measure(Arguments(("amount", root.GetProperty("money").Clone()), ("count", root.GetProperty("whole").Clone()))),
+                Measure(Arguments(("amount", root.GetProperty("half").Clone()), ("count", 1L))),
+                MeasureRefusal(Arguments(("amount", 1L), ("count", root.GetProperty("half").Clone())))?.ActualType,
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", root.GetProperty("wide").Clone())))))
         .TheTest
         .ShouldPass<ScalarOutcome>((because, _, outcome) =>
         {
@@ -487,12 +507,19 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             because.ItsTrue($"a JSON number decimal would round reaches a double parameter exactly ({outcome.SmallToDouble})", outcome.SmallToDouble.Contains("|2.5E-28|", StringComparison.Ordinal));
             because.ItsTrue($"a JSON number below decimal's floor is refused for an int as the double it is ({outcome.TinyToInt})", outcome.TinyToInt == typeof(double));
             because.ItsTrue($"a Newtonsoft BigInteger becomes a string's digits ({outcome.BigIntegerToString})", outcome.BigIntegerToString.EndsWith("note=18446744073709551615", StringComparison.Ordinal));
+            because.ItsTrue($"a 28-digit decimal reaches a decimal parameter exactly whatever (double)decimal does ({outcome.WideDecimal})", outcome.WideDecimal == "0.1234567890123456789012345678|1");
+            because.ItsTrue($"a fraction with a large mantissa is refused for a ulong as the decimal it is ({outcome.FractionForUlong})", outcome.FractionForUlong == typeof(decimal));
+            because.ItsTrue($"the same 28-digit number reaches a double parameter as the text's own nearest double ({outcome.WideDouble})", outcome.WideDouble.Contains("|0.12345678901234568|", StringComparison.Ordinal));
+            because.ItsTrue($"a money-shaped decimal and an N.0 integer bind exactly ({outcome.MoneyAndWhole})", outcome.MoneyAndWhole == "3517348747777.2610|3806610757692033037");
+            because.ItsTrue($"a 21-digit fraction reaches a decimal parameter exactly ({outcome.HalfDecimal})", outcome.HalfDecimal == "12345678901234567890.5|1");
+            because.ItsTrue($"and is refused for a ulong ({outcome.HalfForUlong})", outcome.HalfForUlong == typeof(decimal));
+            because.ItsTrue($"a string parameter receives a JSON number as written ({outcome.NumberAsWritten})", outcome.NumberAsWritten.EndsWith("note=0.1234567890123456789012345678", StringComparison.Ordinal));
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
 
-    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText, string ZeroExponent, string TinyToDouble, string SmallToDouble, Type? TinyToInt, string BigIntegerToString);
+    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText, string ZeroExponent, string TinyToDouble, string SmallToDouble, Type? TinyToInt, string BigIntegerToString, string WideDecimal, Type? FractionForUlong, string WideDouble, string MoneyAndWhole, string HalfDecimal, Type? HalfForUlong, string NumberAsWritten);
 
     private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromDateToken, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
 

@@ -30,7 +30,8 @@ namespace Bam.Protocol;
 /// values the enum does not define (flags enums excepted); a boolean is accepted only by a <c>bool</c> or
 /// <c>string</c> parameter and a <c>bool</c> parameter accepts only a boolean or text; an enum or integral parameter
 /// rejects a number with a fractional part; numeric text is parsed without group separators; a JSON number keeps
-/// its digits for a <c>decimal</c> or <c>ulong</c> parameter. These guarantees hold at the
+/// its digits for a <c>decimal</c>, enum or integral parameter, reaches a <c>double</c> or <c>float</c> parameter as
+/// the text's own nearest value, and reaches a <c>string</c> parameter as written. These guarantees hold at the
 /// <em>parameter</em> boundary. Members nested inside a POCO or array argument are bound by the serializers' own
 /// rules: an undefined enum number is stored as is, and a date-shaped string that the envelope reader already turned
 /// into a date is rendered in the serializer's default format rather than round-trip form until bam.protocol#67
@@ -96,7 +97,7 @@ public static class InvocationArgumentCoercer
         }
 
         // A scalar token from either reader becomes its CLR value here, so the rules below see one shape.
-        object scalar = Unwrap(value);
+        object scalar = Unwrap(value, underlying);
         try
         {
             if (targetType.IsInstanceOfType(scalar))
@@ -173,9 +174,10 @@ public static class InvocationArgumentCoercer
 
     /// <summary>
     /// Takes the CLR value out of a scalar token or element so the scalar rules see one shape; objects, arrays and
-    /// anything that is not a token come back unchanged.
+    /// anything that is not a token come back unchanged. A JSON number needs the target to pick its CLR shape: no
+    /// single numeric type keeps every digit for every target.
     /// </summary>
-    private static object Unwrap(object value)
+    private static object Unwrap(object value, Type underlying)
     {
         if (value is JValue scalar && scalar.Value is not null)
         {
@@ -189,16 +191,24 @@ public static class InvocationArgumentCoercer
                 case JsonValueKind.String:
                     return element.GetString()!;
                 case JsonValueKind.Number:
+                    if (underlying == typeof(string))
+                    {
+                        // A string parameter gets the number as it was written; no CLR numeric type keeps every spelling.
+                        return element.GetRawText();
+                    }
+
                     // Separate statements on purpose: a conditional expression would widen the long to double before boxing.
                     if (element.TryGetInt64(out long whole))
                     {
                         return whole;
                     }
 
-                    // decimal keeps the raw digits (and the whole ulong range), but only when it lost none: a value
-                    // below decimal's 1e-28 floor rounds inside TryGetDecimal, so decimal is kept only when it still
-                    // round-trips to the double the raw text produces; otherwise double carries the value.
-                    if (element.TryGetDecimal(out decimal exact) && element.TryGetDouble(out double nearest) && (double)exact == nearest)
+                    // decimal keeps the raw digits (and the whole ulong range) for the targets whose digits it protects;
+                    // every other target takes the double the raw text produces, because (double)decimal is not correctly
+                    // rounded. A magnitude below decimal's 1e-28 floor reads as 0m: that zero is kept only when the double
+                    // is zero too, so a tiny value falls to double and is refused for an integral or enum target.
+                    bool keepsDigits = underlying == typeof(decimal) || underlying.IsEnum || IsIntegral(underlying);
+                    if (keepsDigits && element.TryGetDecimal(out decimal exact) && (exact != 0m || element.GetDouble() == 0d))
                     {
                         return exact;
                     }
