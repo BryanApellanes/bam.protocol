@@ -30,6 +30,11 @@ public class TestCoercionService
     {
         return values.Sum();
     }
+
+    public string Measure(decimal amount, ulong count)
+    {
+        return $"{amount.ToString(System.Globalization.CultureInfo.InvariantCulture)}|{count}";
+    }
 }
 
 /// <summary>A type whose construction is the observable event a polymorphic <c>$type</c> would trigger.</summary>

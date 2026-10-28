@@ -262,6 +262,15 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         return request.Invoke<string>();
     }
 
+    private static string Measure(Dictionary<string, object?> arguments)
+    {
+        MethodInvocationRequest request = new MethodInvocationRequest(new TestCoercionService(), typeof(TestCoercionService).GetMethod("Measure")!)
+        {
+            Arguments = arguments
+        };
+        return request.Invoke<string>();
+    }
+
     private static string? IdentifyRefusal(Dictionary<string, object?> arguments)
     {
         try
@@ -425,7 +434,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
     [UnitTest]
     public void TreatScalarTokensFromBothReadersAlike()
     {
-        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\"}");
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890}");
         System.Text.Json.JsonElement root = document.RootElement;
         JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
         Guid id = Guid.NewGuid();
@@ -442,7 +451,13 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                 Identify(Arguments(("id", id.ToString()), ("at", at.ToString("O")), ("big", root.GetProperty("s42").Clone()), ("ratio", "1.5"), ("flag", "true"))),
                 IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", "1,5"), ("flag", true))),
                 IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", new JValue("1,5")), ("flag", true))),
-                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", "1,000"), ("ratio", 1.5d), ("flag", true)))))
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", "1,000"), ("ratio", 1.5d), ("flag", true))),
+                Measure(Arguments(("amount", root.GetProperty("dec").Clone()), ("count", root.GetProperty("ul").Clone()))),
+                Measure(Arguments(("amount", root.GetProperty("big").Clone()), ("count", 1L))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", 1.5d), ("flag", root.GetProperty("n7").Clone()))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("t").Clone()), ("flag", true))),
+                IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", true), ("ratio", 1.5d), ("flag", true))),
+                Refusal(Arguments(("widget", widget), ("times", "1e-30"), ("kind", "gadget")))))
         .TheTest
         .ShouldPass<ScalarOutcome>((because, _, outcome) =>
         {
@@ -456,12 +471,18 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             because.ItsTrue($"a group separator in numeric text is refused rather than dropped ({outcome.GroupedDouble})", outcome.GroupedDouble?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"the same through a JValue ({outcome.GroupedToken})", outcome.GroupedToken?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"and for an integral target ({outcome.GroupedLong})", outcome.GroupedLong?.StartsWith("big: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a JSON number keeps every digit for a decimal parameter and fills the ulong range ({outcome.ExactDigits})", outcome.ExactDigits == "123456789.123456789|18446744073709551615");
+            because.ItsTrue($"a whole number past long.MaxValue binds to decimal exactly ({outcome.ExactWide})", outcome.ExactWide == "12345678901234567890|1");
+            because.ItsTrue($"a JSON number for a bool is refused ({outcome.NumberToBool})", outcome.NumberToBool?.StartsWith("flag: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a JSON boolean for a double is refused ({outcome.BoolToDouble})", outcome.BoolToDouble?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"a CLR boolean for a long is refused ({outcome.BoolToLong})", outcome.BoolToLong?.StartsWith("big: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"numeric text that decimal rounds to zero is refused for an int ({outcome.TinyText})", outcome.TinyText?.StartsWith("times: ", StringComparison.Ordinal) == true);
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
 
-    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong);
+    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText);
 
     private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromDateToken, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
 

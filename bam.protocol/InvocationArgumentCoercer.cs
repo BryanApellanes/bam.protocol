@@ -102,6 +102,15 @@ public static class InvocationArgumentCoercer
                 return scalar;
             }
 
+            // A boolean never becomes a number or an enum, and a number never becomes a boolean; only text may cross.
+            bool crossesBoolean = scalar is bool
+                ? underlying != typeof(bool) && underlying != typeof(string)
+                : underlying == typeof(bool) && scalar is not string;
+            if (crossesBoolean)
+            {
+                throw new InvocationArgumentException(parameterName, scalar.GetType(), targetType);
+            }
+
             if (underlying.IsEnum)
             {
                 RejectFraction(parameterName, scalar, targetType);
@@ -178,10 +187,16 @@ public static class InvocationArgumentCoercer
                 case JsonValueKind.String:
                     return element.GetString()!;
                 case JsonValueKind.Number:
-                    // Two statements on purpose: a conditional expression would widen the long to double before boxing.
+                    // Separate statements on purpose: a conditional expression would widen the long to double before boxing.
                     if (element.TryGetInt64(out long whole))
                     {
                         return whole;
+                    }
+
+                    // decimal keeps the raw digits (and the whole ulong range); only a magnitude it cannot hold falls to double.
+                    if (element.TryGetDecimal(out decimal exact))
+                    {
+                        return exact;
                     }
 
                     return element.GetDouble();
@@ -201,18 +216,15 @@ public static class InvocationArgumentCoercer
     }
 
     /// <summary>
-    /// Refuses a boolean, a non-finite number and a number with a fractional part for an integral or enum target. The
-    /// test is made on the value's own type (no conversion to <see cref="decimal"/>, which would round to fifteen
-    /// significant digits first).
+    /// Refuses a non-finite number and a number with a fractional part for an integral or enum target. The test is
+    /// made on the value's own type (no conversion to <see cref="decimal"/>, which would round to fifteen significant
+    /// digits first). Booleans are refused before this runs.
     /// </summary>
     private static void RejectFraction(string parameterName, object value, Type targetType)
     {
         bool whole;
         switch (value)
         {
-            case bool:
-                whole = false;
-                break;
             case double d:
                 whole = double.IsFinite(d) && Math.Floor(d) == d;
                 break;
@@ -286,6 +298,12 @@ public static class InvocationArgumentCoercer
         if (IsIntegral(underlying))
         {
             decimal number = decimal.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
+            if (number == 0m && text.AsSpan().IndexOfAnyInRange('1', '9') >= 0)
+            {
+                // "1e-30" parses to zero because decimal rounds past 28 places; a non-zero text that reads as zero was rounded away.
+                throw new InvocationArgumentException(parameterName, typeof(string), targetType);
+            }
+
             RejectFraction(parameterName, number, targetType);
             return Convert.ChangeType(number, underlying, CultureInfo.InvariantCulture);
         }
