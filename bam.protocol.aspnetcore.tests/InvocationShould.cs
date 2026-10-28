@@ -22,10 +22,15 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
         registry.For<VDerived>().Use<VDerived>();
         registry.For<StrictBase>().Use<StrictBase>();
         registry.For<LaxDerived>().Use<LaxDerived>();
+        registry.For<ProofBase>().Use<ProofBase>();
+        registry.For<ProofDerived>().Use<ProofDerived>();
+        registry.For<AnonBase>().Use<AnonBase>();
+        registry.For<AnonDerived>().Use<AnonDerived>();
         return new RegisteredTypeInvocationTargetResolver(new BamInvocationDispatchRegistry(registry, new[]
         {
             typeof(TestInvocationService), typeof(TestInvocationService.Nested), typeof(UnattributedService), typeof(DerivedService),
-            typeof(IKeyedService), typeof(VBase), typeof(VDerived), typeof(StrictBase), typeof(LaxDerived)
+            typeof(IKeyedService), typeof(VBase), typeof(VDerived), typeof(StrictBase), typeof(LaxDerived),
+            typeof(ProofBase), typeof(ProofDerived), typeof(AnonBase), typeof(AnonDerived)
         }));
     }
 
@@ -52,7 +57,11 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
                     resolver.Resolve(Invocations.Operation<IKeyedService>("Ungranted")),
                     resolver.Resolve(Invocations.Operation<KeyedService>("Granted")),
                     resolver.Resolve(Invocations.Operation<VDerived>("V")),
-                    resolver.Resolve(Invocations.Operation<LaxDerived>("S")));
+                    resolver.Resolve(Invocations.Operation<LaxDerived>("S")),
+                    resolver.Resolve(Invocations.Operation<ProofBase>("P")),
+                    resolver.Resolve(Invocations.Operation<ProofDerived>("P")),
+                    resolver.Resolve(Invocations.Operation<AnonBase>("A")),
+                    resolver.Resolve(Invocations.Operation<AnonDerived>("A")));
             })
             .TheTest
             .ShouldPass<SurfaceOutcome>((because, outcome) =>
@@ -68,6 +77,10 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
                 because.ItsTrue("the implementation class is not reachable by its own name when only the interface is registered", outcome.ImplementationByName is null);
                 because.ItsTrue("an unattributed override takes its own type's level, not the overridden method's", outcome.OverrideUnderStricterType?.RequiredAccess == BamAccess.Write);
                 because.ItsTrue("an unattributed derived type is Denied whatever its base declares", outcome.UnattributedDerived?.RequiredAccess == BamAccess.Denied);
+                because.ItsTrue("a base's own proof demand is read", outcome.ProofOnBase?.ExplicitProof == true);
+                because.ItsTrue("a base's proof demand does not reach an unattributed override", outcome.ProofOnOverride is not null && outcome.ProofOnOverride.ExplicitProof is null);
+                because.ItsTrue("a base's own anonymous grant is read", outcome.AnonymousOnBase?.IsAnonymous == true);
+                because.ItsTrue("a base's anonymous grant does not reach an unattributed override", outcome.AnonymousOnOverride is not null && !outcome.AnonymousOnOverride.IsAnonymous);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -99,9 +112,10 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
 
                 string? emptyList = Refusal(() => new BamInvocationDispatchRegistry(registry, Array.Empty<Type>()));
                 string? unregisteredListing = Refusal(() => new BamInvocationDispatchRegistry(registry, new[] { typeof(UnregisteredService) }));
-                string? noOptions = Refusal(() => new Microsoft.Extensions.DependencyInjection.ServiceCollection().AddBamInvocation(registry));
+                string? noOptions = Refusal(() => new Microsoft.Extensions.DependencyInjection.ServiceCollection().AddBamInvocation(registry, new BamInvocationOptions()));
+                string? nullEntry = Refusal(() => new BamInvocationDispatchRegistry(registry, new Type?[] { typeof(IKeyedService), null }!));
 
-                return new FrozenOutcome(cacheHoldsConstructed, implementation, helper, implementationAfter, listedInterface, listedClass, emptyList, unregisteredListing, noOptions);
+                return new FrozenOutcome(cacheHoldsConstructed, implementation, helper, implementationAfter, listedInterface, listedClass, emptyList, unregisteredListing, noOptions, nullEntry);
             })
             .TheTest
             .ShouldPass<FrozenOutcome>((because, outcome) =>
@@ -114,6 +128,7 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
                 because.ItsTrue($"an empty list is refused ({outcome.EmptyList})", outcome.EmptyList?.Contains("At least one", StringComparison.Ordinal) == true);
                 because.ItsTrue($"listing a type the registry does not hold is refused ({outcome.UnregisteredListing})", outcome.UnregisteredListing?.Contains("UnregisteredService", StringComparison.Ordinal) == true);
                 because.ItsTrue($"AddBamInvocation without InvocableTypes is refused ({outcome.NoOptions})", outcome.NoOptions?.Contains("InvocableTypes", StringComparison.Ordinal) == true);
+                because.ItsTrue($"a null entry in the list is refused by the list's name ({outcome.NullEntry})", outcome.NullEntry?.Contains("null entry", StringComparison.Ordinal) == true && outcome.NullEntry.Contains("invocableTypes", StringComparison.Ordinal));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -228,9 +243,9 @@ public class RegisteredTypeInvocationTargetResolverShould : UnitTestMenuContaine
             .UnlessItFailed();
     }
 
-    private sealed record SurfaceOutcome(InvocationTarget? Own, InvocationTarget? InheritedFromUnregistered, InvocationTarget? InheritedFromRegistered, InvocationTarget? BaseByOwnName, InvocationTarget? Generic, InvocationTarget? Unattributed, InvocationTarget? InterfaceGranted, InvocationTarget? InterfaceUngranted, InvocationTarget? ImplementationByName, InvocationTarget? OverrideUnderStricterType, InvocationTarget? UnattributedDerived);
+    private sealed record SurfaceOutcome(InvocationTarget? Own, InvocationTarget? InheritedFromUnregistered, InvocationTarget? InheritedFromRegistered, InvocationTarget? BaseByOwnName, InvocationTarget? Generic, InvocationTarget? Unattributed, InvocationTarget? InterfaceGranted, InvocationTarget? InterfaceUngranted, InvocationTarget? ImplementationByName, InvocationTarget? OverrideUnderStricterType, InvocationTarget? UnattributedDerived, InvocationTarget? ProofOnBase, InvocationTarget? ProofOnOverride, InvocationTarget? AnonymousOnBase, InvocationTarget? AnonymousOnOverride);
 
-    private sealed record FrozenOutcome(bool CacheHoldsConstructed, InvocationTarget? Implementation, InvocationTarget? Helper, InvocationTarget? ImplementationAfter, InvocationTarget? ListedInterface, InvocationTarget? ListedClass, string? EmptyList, string? UnregisteredListing, string? NoOptions);
+    private sealed record FrozenOutcome(bool CacheHoldsConstructed, InvocationTarget? Implementation, InvocationTarget? Helper, InvocationTarget? ImplementationAfter, InvocationTarget? ListedInterface, InvocationTarget? ListedClass, string? EmptyList, string? UnregisteredListing, string? NoOptions, string? NullEntry);
 
     private sealed record ResolvedOutcome(InvocationTarget? Echo, InvocationTarget? Ping, InvocationTarget? Nested, InvocationTarget? Privileged, InvocationTarget? Open, InvocationTarget? FromFor);
 
@@ -579,11 +594,13 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 registry.For<NeedsHelper>().Use<NeedsHelper>();
                 registry.For<VBase>().Use<VBase>();
                 registry.For<VDerived>().Use<VDerived>();
+                registry.For<ProofBase>().Use<ProofBase>();
+                registry.For<ProofDerived>().Use<ProofDerived>();
                 return registry;
             },
             (registry) =>
             {
-                Type[] invocable = { typeof(WriteBase), typeof(DerivedOfWrite), typeof(NeedsHelper), typeof(VBase), typeof(VDerived) };
+                Type[] invocable = { typeof(WriteBase), typeof(DerivedOfWrite), typeof(NeedsHelper), typeof(VBase), typeof(VDerived), typeof(ProofBase), typeof(ProofDerived) };
                 BamInvocationHandler asExecute = Handler(BamAccess.Execute, registry: registry, invocable: invocable);
                 BamInvocationHandler asRead = Handler(BamAccess.Read, registry: registry, invocable: invocable);
                 return new ReachOutcome(
@@ -593,7 +610,9 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                     Run(asExecute, Request(Invocations.Envelope<NeedsHelper>("Do"), alice)),
                     Run(asRead, Request(Invocations.Envelope<Helper>("Leak"), alice)),
                     Run(asRead, Request(Invocations.Envelope<VDerived>("V"), alice)),
-                    Run(asRead, Request(Invocations.Envelope<VBase>("V"), alice)));
+                    Run(asRead, Request(Invocations.Envelope<VBase>("V"), alice)),
+                    Run(asRead, Request(Invocations.Envelope<ProofBase>("P"), alice)),
+                    Run(asRead, Request(Invocations.Envelope<ProofDerived>("P"), alice)));
             })
             .TheTest
             .ShouldPass<ReachOutcome>((because, outcome) =>
@@ -605,6 +624,8 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 because.ItsTrue($"the dependency the registry constructed and cached is still not invocable ({outcome.HelperLeak})", outcome.HelperLeak.StartsWith("461:", StringComparison.Ordinal));
                 because.ItsTrue($"an unattributed override under a Write type refuses a Read actor; the base method's Read is not inherited ({outcome.OverrideAsRead})", outcome.OverrideAsRead.StartsWith("403:", StringComparison.Ordinal));
                 because.ItsTrue($"the base's own Read method still serves a Read actor ({outcome.BaseAsRead})", outcome.BaseAsRead == "200:\"vbase\"");
+                because.ItsTrue($"a base method that demands proof refuses an unsigned body ({outcome.BaseDemandsProof})", outcome.BaseDemandsProof.StartsWith("401:", StringComparison.Ordinal));
+                because.ItsTrue($"its unattributed override does not inherit the demand and runs unsigned below the threshold ({outcome.OverrideWithoutProof})", outcome.OverrideWithoutProof == "200:\"proof-derived\"");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -690,7 +711,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
 
     private sealed record WireOutcome(string StjBody, string Poisoned, string PoisonedResponse, bool BodyRead, string Elided);
 
-    private sealed record ReachOutcome(string BaseViaDerived, string BaseByOwnName, string DerivedOwn, string NeedsHelper, string HelperLeak, string OverrideAsRead, string BaseAsRead);
+    private sealed record ReachOutcome(string BaseViaDerived, string BaseByOwnName, string DerivedOwn, string NeedsHelper, string HelperLeak, string OverrideAsRead, string BaseAsRead, string BaseDemandsProof, string OverrideWithoutProof);
 
     private sealed record FailureOutcome(string Response, bool Logged);
 

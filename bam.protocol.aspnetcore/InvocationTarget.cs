@@ -15,7 +15,10 @@ namespace Bam.Protocol.AspNetCore;
 /// <see cref="AnonymousAccessAttribute"/> that allows anonymous callers. Unlike the native resolver, attributes are
 /// read without inheritance: an override that carries no attribute takes its own declaring type's level, and a
 /// derived type without <see cref="RequiredAccessAttribute"/> is <see cref="BamAccess.Denied"/> whatever its base
-/// declares, so "the method or the type that declares it, else Denied" is the literal rule.
+/// declares, so "the method or the type that declares it, else Denied" is the literal rule. The same single rule
+/// covers <see cref="RequireRequestProofAttribute"/> and <see cref="AnonymousAccessAttribute"/>: a base's proof
+/// demand or anonymous grant does not reach an unattributed override, so a derived type that should keep the
+/// base's proof demand re-declares it.
 /// </remarks>
 /// <param name="DeclaringType">The allow-listed type the operation named (a class or an interface key in the dispatch registry), which declares <paramref name="Method"/>.</param>
 /// <param name="Method">The public method to invoke.</param>

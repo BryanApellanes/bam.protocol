@@ -114,12 +114,13 @@ app.MapBamInvocation();                                        // POST /invoke, 
 
 The operation identifier is caller-controlled text, so `RegisteredTypeInvocationTargetResolver` resolves it
 only against the allow-list the host writes as `BamInvocationOptions.InvocableTypes` (required, each type
-validated as registered, frozen at `AddBamInvocation`; same full name, same assembly simple name; version,
+validated as held by the registry, frozen at `AddBamInvocation`; same full name, same assembly simple name; version,
 culture and token are ignored) and only to a public, non-overloaded, non-generic method that the named type
 declares itself. The bridge never derives the list from the registry: a `ServiceRegistry`'s type list is a
 construction cache that also holds the implementation behind an interface key and every constructor
 dependency it resolved, before or after `AddBamInvocation` (`UseSingleton<T>()` constructs at registration),
-so none of those is invocable unless the host lists it. Inherited methods are not reachable through a derived type's name, so `object` members,
+so none of those is invocable unless the host lists it (listing a type the registry only constructed and cached
+opts it in; the validation checks presence, not how the type got there). Inherited methods are not reachable through a derived type's name, so `object` members,
 property accessors and anything inherited from a base (a logging helper, say) are unreachable; a base type's
 own public methods are invocable only under the base type's name, with the base type's own rules, and only
 when the base is on the allow-list. `OperationIdentifier.For` names the declaring type, so `BamClient<T>`
@@ -131,14 +132,18 @@ For an interface-keyed registration (`For<ILogEventService>().Use<LogEventServic
 the interface, and the interface's methods and attributes are what apply: `[RequiredAccess]` on the
 implementation is not consulted. Put the access attributes on the interface methods, or register the class.
 If both the interface and the class are registered, each key carries its own rules and the caller chooses the
-key, so keep their attributes consistent: the weaker key is the one that counts. Members an interface inherits
-from a base interface are not reachable through the derived interface's name.
+key, so keep their attributes consistent: the weaker key is the one that counts. The same holds for a class key
+whose registered implementation is a derived type (`For<LogEventService>().Use<AuditedLogEventService>()`): the
+key's methods and attributes are what apply, and the implementation's override is what runs. Members an interface
+inherits from a base interface are not reachable through the derived interface's name.
 
 Each method's own rules apply, read from `[RequiredAccess]`, `[RequireRequestProof]` and `[AnonymousAccess]`
 on the method or the type that declares it (the method wins). Attributes are not inherited, unlike the native
 pipeline: an override without its own attribute takes its declaring type's level, and a derived type without
-`[RequiredAccess]` is `Denied` whatever its base declares, so attribute the override or the derived type when it
-should differ. The required access defaults to `Denied` when neither carries `[RequiredAccess]`, so a dispatchable
+`[RequiredAccess]` is `Denied` whatever its base declares. The same single rule covers `[RequireRequestProof]` and
+`[AnonymousAccess]`: a base's proof demand or anonymous grant does not reach an unattributed override, so a derived
+type that should keep the base's proof demand re-declares it on the override or at class level. The required
+access defaults to `Denied` when neither carries `[RequiredAccess]`, so a dispatchable
 service must declare its level. Static methods take no instance, so a `WebServiceRegistry` host's `[WebService]`
 check does not run for them (bam.protocol#70); their own attributes are the only gate. The caller's
 access comes from `IActorAccessPolicy`; the request proof is demanded by the same threshold rule as

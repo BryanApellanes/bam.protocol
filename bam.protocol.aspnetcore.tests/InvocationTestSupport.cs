@@ -157,6 +157,46 @@ public class VDerived : VBase
     }
 }
 
+/// <summary>A Read base that demands proof on its virtual method; the Read derived type's unattributed override must not inherit the demand.</summary>
+public class ProofBase
+{
+    [RequiredAccess(BamAccess.Read)]
+    [RequireRequestProof]
+    public virtual string P()
+    {
+        return "proof-base";
+    }
+}
+
+[RequiredAccess(BamAccess.Read)]
+public class ProofDerived : ProofBase
+{
+    public override string P()
+    {
+        return "proof-derived";
+    }
+}
+
+/// <summary>A Read base whose virtual method is anonymous; the Read derived type's unattributed override must not inherit the grant.</summary>
+public class AnonBase
+{
+    [RequiredAccess(BamAccess.Read)]
+    [AnonymousAccess]
+    public virtual string A()
+    {
+        return "anon-base";
+    }
+}
+
+[RequiredAccess(BamAccess.Read)]
+public class AnonDerived : AnonBase
+{
+    public override string A()
+    {
+        return "anon-derived";
+    }
+}
+
 /// <summary>A Write base whose derived type carries no attribute at all; the override must be Denied, not Write.</summary>
 [RequiredAccess(BamAccess.Write)]
 public class StrictBase

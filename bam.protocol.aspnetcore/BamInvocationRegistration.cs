@@ -14,7 +14,10 @@ namespace Bam.Protocol.AspNetCore;
 /// <remarks>
 /// Host wiring, after <see cref="ActorAuthenticationRegistration.AddActorAuthentication(IServiceCollection, ActorAuthenticationOptions)"/>:
 /// <code>
-/// builder.Services.AddBamInvocation(webServiceRegistry);   // the registry whose types may be invoked
+/// builder.Services.AddBamInvocation(webServiceRegistry, new BamInvocationOptions
+/// {
+///     InvocableTypes = new[] { typeof(LogEventService) }    // the complete allow-list; required
+/// });
 /// app.UseActorAuthentication();
 /// app.MapBamInvocation();                                   // POST /invoke
 /// </code>
@@ -28,7 +31,7 @@ public static class BamInvocationRegistration
     /// </summary>
     /// <param name="services">The host's service collection.</param>
     /// <param name="dispatchRegistry">The registry holding the invocable types; pass a <c>WebServiceRegistry</c> to enforce <c>[WebService]</c>.</param>
-    /// <param name="options">Endpoint options; <see cref="BamInvocationOptions.InvocableTypes"/> is required.</param>
+    /// <param name="options">Endpoint options; <see cref="BamInvocationOptions.InvocableTypes"/> must be set.</param>
     /// <returns>The service collection, for chaining.</returns>
     /// <remarks>
     /// Also registers an <see cref="AmbientActorContext"/> as <see cref="IActorContext"/> in
@@ -40,12 +43,13 @@ public static class BamInvocationRegistration
     /// <exception cref="ArgumentException">
     /// <see cref="BamInvocationOptions.InvocableTypes"/> is null or empty, or lists a type that is not registered.
     /// </exception>
-    public static IServiceCollection AddBamInvocation(this IServiceCollection services, ServiceRegistry dispatchRegistry, BamInvocationOptions? options = null)
+    public static IServiceCollection AddBamInvocation(this IServiceCollection services, ServiceRegistry dispatchRegistry, BamInvocationOptions options)
     {
         Args.ThrowIfNull(services, nameof(services));
         Args.ThrowIfNull(dispatchRegistry, nameof(dispatchRegistry));
+        Args.ThrowIfNull(options, nameof(options));
 
-        BamInvocationOptions effective = options ?? new BamInvocationOptions();
+        BamInvocationOptions effective = options;
         if (effective.InvocableTypes is null || effective.InvocableTypes.Count == 0)
         {
             throw new ArgumentException("BamInvocationOptions.InvocableTypes must list every type the bridge may dispatch to; the allow-list is never derived from the registry.", nameof(options));
