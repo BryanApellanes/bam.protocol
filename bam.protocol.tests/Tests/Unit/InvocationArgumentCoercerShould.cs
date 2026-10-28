@@ -434,7 +434,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
     [UnitTest]
     public void TreatScalarTokensFromBothReadersAlike()
     {
-        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890}");
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890,\"tiny\":1e-30,\"small\":2.5e-28}");
         System.Text.Json.JsonElement root = document.RootElement;
         JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
         Guid id = Guid.NewGuid();
@@ -457,7 +457,12 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                 IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", 1.5d), ("flag", root.GetProperty("n7").Clone()))),
                 IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("t").Clone()), ("flag", true))),
                 IdentifyRefusal(Arguments(("id", id), ("at", at), ("big", true), ("ratio", 1.5d), ("flag", true))),
-                Refusal(Arguments(("widget", widget), ("times", "1e-30"), ("kind", "gadget")))))
+                Refusal(Arguments(("widget", widget), ("times", "1e-30"), ("kind", "gadget"))),
+                Describe(Arguments(("widget", widget), ("times", "0e5"), ("kind", "gadget"))),
+                Identify(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("tiny").Clone()), ("flag", true))),
+                Identify(Arguments(("id", id), ("at", at), ("big", 1L), ("ratio", root.GetProperty("small").Clone()), ("flag", true))),
+                RefusalOf(Arguments(("widget", widget), ("times", root.GetProperty("tiny").Clone()), ("kind", "gadget")))?.ActualType,
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", new JValue(System.Numerics.BigInteger.Parse("18446744073709551615")))))))
         .TheTest
         .ShouldPass<ScalarOutcome>((because, _, outcome) =>
         {
@@ -477,12 +482,17 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             because.ItsTrue($"a JSON boolean for a double is refused ({outcome.BoolToDouble})", outcome.BoolToDouble?.StartsWith("ratio: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"a CLR boolean for a long is refused ({outcome.BoolToLong})", outcome.BoolToLong?.StartsWith("big: ", StringComparison.Ordinal) == true);
             because.ItsTrue($"numeric text that decimal rounds to zero is refused for an int ({outcome.TinyText})", outcome.TinyText?.StartsWith("times: ", StringComparison.Ordinal) == true);
+            because.ItsTrue($"exponent-form zero text is a real zero ({outcome.ZeroExponent})", outcome.ZeroExponent.Contains(" x0 ", StringComparison.Ordinal));
+            because.ItsTrue($"a JSON number below decimal's floor reaches a double parameter exactly ({outcome.TinyToDouble})", outcome.TinyToDouble.Contains("|1E-30|", StringComparison.Ordinal));
+            because.ItsTrue($"a JSON number decimal would round reaches a double parameter exactly ({outcome.SmallToDouble})", outcome.SmallToDouble.Contains("|2.5E-28|", StringComparison.Ordinal));
+            because.ItsTrue($"a JSON number below decimal's floor is refused for an int as the double it is ({outcome.TinyToInt})", outcome.TinyToInt == typeof(double));
+            because.ItsTrue($"a Newtonsoft BigInteger becomes a string's digits ({outcome.BigIntegerToString})", outcome.BigIntegerToString.EndsWith("note=18446744073709551615", StringComparison.Ordinal));
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
 
-    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText);
+    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText, string ZeroExponent, string TinyToDouble, string SmallToDouble, Type? TinyToInt, string BigIntegerToString);
 
     private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromDateToken, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
 

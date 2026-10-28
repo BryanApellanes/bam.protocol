@@ -27,8 +27,10 @@ namespace Bam.Protocol;
 /// string, number or boolean) is reduced to its CLR value first, so both readers follow one set of scalar rules.
 /// Conversions are strict where silence would hide a caller error: a <c>string</c> parameter accepts text, primitives
 /// and dates (dates in round-trip <c>"O"</c> form) but not objects or <see cref="DBNull"/>; an enum parameter rejects
-/// values the enum does not define (flags enums excepted); an enum or integral parameter rejects a boolean and a
-/// number with a fractional part; numeric text is parsed without group separators. These guarantees hold at the
+/// values the enum does not define (flags enums excepted); a boolean is accepted only by a <c>bool</c> or
+/// <c>string</c> parameter and a <c>bool</c> parameter accepts only a boolean or text; an enum or integral parameter
+/// rejects a number with a fractional part; numeric text is parsed without group separators; a JSON number keeps
+/// its digits for a <c>decimal</c> or <c>ulong</c> parameter. These guarantees hold at the
 /// <em>parameter</em> boundary. Members nested inside a POCO or array argument are bound by the serializers' own
 /// rules: an undefined enum number is stored as is, and a date-shaped string that the envelope reader already turned
 /// into a date is rendered in the serializer's default format rather than round-trip form until bam.protocol#67
@@ -193,8 +195,10 @@ public static class InvocationArgumentCoercer
                         return whole;
                     }
 
-                    // decimal keeps the raw digits (and the whole ulong range); only a magnitude it cannot hold falls to double.
-                    if (element.TryGetDecimal(out decimal exact))
+                    // decimal keeps the raw digits (and the whole ulong range), but only when it lost none: a value
+                    // below decimal's 1e-28 floor rounds inside TryGetDecimal, so decimal is kept only when it still
+                    // round-trips to the double the raw text produces; otherwise double carries the value.
+                    if (element.TryGetDecimal(out decimal exact) && element.TryGetDouble(out double nearest) && (double)exact == nearest)
                     {
                         return exact;
                     }
@@ -284,6 +288,8 @@ public static class InvocationArgumentCoercer
                 return uri.OriginalString;
             case bool or char or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal:
                 return Convert.ToString(value, CultureInfo.InvariantCulture)!;
+            case System.Numerics.BigInteger bigInteger:
+                return bigInteger.ToString(CultureInfo.InvariantCulture);
             default:
                 throw new InvocationArgumentException(parameterName, value.GetType(), targetType);
         }
@@ -293,14 +299,18 @@ public static class InvocationArgumentCoercer
     /// Parses the text forms of the BCL types that <see cref="Convert.ChangeType(object, Type, IFormatProvider)"/>
     /// does not handle, and numbers without group separators (<c>"1,5"</c> is refused rather than read as 15).
     /// </summary>
+    private static readonly char[] ExponentMarkers = { 'e', 'E' };
+
     private static object? ParseText(string parameterName, string text, Type underlying, Type targetType)
     {
         if (IsIntegral(underlying))
         {
             decimal number = decimal.Parse(text, NumberStyles.Float, CultureInfo.InvariantCulture);
-            if (number == 0m && text.AsSpan().IndexOfAnyInRange('1', '9') >= 0)
+            int exponentAt = text.IndexOfAny(ExponentMarkers);
+            ReadOnlySpan<char> mantissa = exponentAt < 0 ? text.AsSpan() : text.AsSpan(0, exponentAt);
+            if (number == 0m && mantissa.IndexOfAnyInRange('1', '9') >= 0)
             {
-                // "1e-30" parses to zero because decimal rounds past 28 places; a non-zero text that reads as zero was rounded away.
+                // "1e-30" parses to zero because decimal rounds past 28 places; a non-zero mantissa that reads as zero was rounded away ("0e5" is a real zero).
                 throw new InvocationArgumentException(parameterName, typeof(string), targetType);
             }
 
