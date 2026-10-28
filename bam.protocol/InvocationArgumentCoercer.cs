@@ -29,9 +29,10 @@ namespace Bam.Protocol;
 /// and dates (dates in round-trip <c>"O"</c> form) but not objects or <see cref="DBNull"/>; an enum parameter rejects
 /// values the enum does not define (flags enums excepted); a boolean is accepted only by a <c>bool</c> or
 /// <c>string</c> parameter and a <c>bool</c> parameter accepts only a boolean or text; an enum or integral parameter
-/// rejects a number with a fractional part; numeric text is parsed without group separators; a JSON number keeps
-/// its digits for a <c>decimal</c>, enum or integral parameter, reaches a <c>double</c> or <c>float</c> parameter as
-/// the text's own nearest value, and reaches a <c>string</c> parameter as written. These guarantees hold at the
+/// rejects a number with a fractional part (a fractional part beyond <c>decimal</c>'s 28 places is rounded away
+/// before that check); numeric text is parsed without group separators; a JSON number keeps its digits for a
+/// <c>decimal</c>, enum or integral parameter, reaches a <c>double</c> or <c>float</c> parameter as the text's own
+/// nearest value, and reaches a <c>string</c> parameter as written. These guarantees hold at the
 /// <em>parameter</em> boundary. Members nested inside a POCO or array argument are bound by the serializers' own
 /// rules: an undefined enum number is stored as is, and a date-shaped string that the envelope reader already turned
 /// into a date is rendered in the serializer's default format rather than round-trip form until bam.protocol#67
@@ -195,6 +196,12 @@ public static class InvocationArgumentCoercer
                     {
                         // A string parameter gets the number as it was written; no CLR numeric type keeps every spelling.
                         return element.GetRawText();
+                    }
+
+                    if (underlying == typeof(float))
+                    {
+                        // The text's own nearest single; (float)double.Parse(text) rounds twice.
+                        return element.GetSingle();
                     }
 
                     // Separate statements on purpose: a conditional expression would widen the long to double before boxing.

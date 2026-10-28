@@ -271,6 +271,15 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
         return request.Invoke<string>();
     }
 
+    private static string Scale(Dictionary<string, object?> arguments)
+    {
+        MethodInvocationRequest request = new MethodInvocationRequest(new TestCoercionService(), typeof(TestCoercionService).GetMethod("Scale")!)
+        {
+            Arguments = arguments
+        };
+        return request.Invoke<string>();
+    }
+
     private static InvocationArgumentException? MeasureRefusal(Dictionary<string, object?> arguments)
     {
         try
@@ -447,7 +456,7 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
     [UnitTest]
     public void TreatScalarTokensFromBothReadersAlike()
     {
-        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890,\"tiny\":1e-30,\"small\":2.5e-28,\"wide\":0.1234567890123456789012345678,\"frac\":26420351508990815.54344,\"money\":3517348747777.2610,\"whole\":3806610757692033037.0,\"half\":12345678901234567890.5}");
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse("{\"i\":99,\"s7\":\"7\",\"n7\":7,\"t\":true,\"e\":1e2,\"f\":2.5,\"s42\":\"42\",\"dec\":123456789.123456789,\"ul\":18446744073709551615,\"big\":12345678901234567890,\"tiny\":1e-30,\"small\":2.5e-28,\"wide\":0.1234567890123456789012345678,\"frac\":26420351508990815.54344,\"money\":3517348747777.2610,\"whole\":3806610757692033037.0,\"half\":12345678901234567890.5,\"flt\":16777217.0000000001,\"edge\":3.4028235677973366E38}");
         System.Text.Json.JsonElement root = document.RootElement;
         JObject widget = JObject.Parse("{\"Name\":\"w\",\"Count\":1}");
         Guid id = Guid.NewGuid();
@@ -482,7 +491,9 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
                 Measure(Arguments(("amount", root.GetProperty("money").Clone()), ("count", root.GetProperty("whole").Clone()))),
                 Measure(Arguments(("amount", root.GetProperty("half").Clone()), ("count", 1L))),
                 MeasureRefusal(Arguments(("amount", 1L), ("count", root.GetProperty("half").Clone())))?.ActualType,
-                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", root.GetProperty("wide").Clone())))))
+                Describe(Arguments(("widget", widget), ("times", 1L), ("kind", "gadget"), ("note", root.GetProperty("wide").Clone()))),
+                Scale(Arguments(("factor", root.GetProperty("flt").Clone()))),
+                Scale(Arguments(("factor", root.GetProperty("edge").Clone())))))
         .TheTest
         .ShouldPass<ScalarOutcome>((because, _, outcome) =>
         {
@@ -514,12 +525,14 @@ public class InvocationArgumentCoercerShould : UnitTestMenuContainer
             because.ItsTrue($"a 21-digit fraction reaches a decimal parameter exactly ({outcome.HalfDecimal})", outcome.HalfDecimal == "12345678901234567890.5|1");
             because.ItsTrue($"and is refused for a ulong ({outcome.HalfForUlong})", outcome.HalfForUlong == typeof(decimal));
             because.ItsTrue($"a string parameter receives a JSON number as written ({outcome.NumberAsWritten})", outcome.NumberAsWritten.EndsWith("note=0.1234567890123456789012345678", StringComparison.Ordinal));
+            because.ItsTrue($"a float parameter takes the text's own nearest single, not a twice-rounded double ({outcome.FloatNearest})", outcome.FloatNearest == "16777218");
+            because.ItsTrue($"a float parameter at the top of its range binds instead of overflowing through double ({outcome.FloatEdge})", outcome.FloatEdge == "3.4028235E+38");
         })
         .SoBeHappy()
         .UnlessItFailed();
     }
 
-    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText, string ZeroExponent, string TinyToDouble, string SmallToDouble, Type? TinyToInt, string BigIntegerToString, string WideDecimal, Type? FractionForUlong, string WideDouble, string MoneyAndWhole, string HalfDecimal, Type? HalfForUlong, string NumberAsWritten);
+    private sealed record ScalarOutcome(Type? IntegerActualType, string TextToInt, string NumberToString, string BoolToString, string ExponentToInt, string? FractionToEnum, string TextForms, string? GroupedDouble, string? GroupedToken, string? GroupedLong, string ExactDigits, string ExactWide, string? NumberToBool, string? BoolToDouble, string? BoolToLong, string? TinyText, string ZeroExponent, string TinyToDouble, string SmallToDouble, Type? TinyToInt, string BigIntegerToString, string WideDecimal, Type? FractionForUlong, string WideDouble, string MoneyAndWhole, string HalfDecimal, Type? HalfForUlong, string NumberAsWritten, string FloatNearest, string FloatEdge);
 
     private sealed record StringOutcome(string FromDateTime, string FromDateTimeOffset, string FromDateToken, string FromNumber, string FromJValue, string? ObjectRefusal, string? DbNullRefusal, string? JObjectRefusal);
 

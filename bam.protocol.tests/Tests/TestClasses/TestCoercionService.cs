@@ -31,6 +31,11 @@ public class TestCoercionService
         return values.Sum();
     }
 
+    public string Scale(float factor)
+    {
+        return factor.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     public string Measure(decimal amount, ulong count)
     {
         return $"{amount.ToString(System.Globalization.CultureInfo.InvariantCulture)}|{count}";
