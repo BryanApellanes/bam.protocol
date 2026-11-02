@@ -80,7 +80,8 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
                     ReferenceEquals(provider.GetService<BamInvocationDispatchRegistry>()?.Registry, registry),
                     registry.Get<IActorContext>() is AmbientActorContext,
                     ReferenceEquals(provider.GetService<IActorContext>(), registry.Get<IActorContext>()),
-                    ReferenceEquals(preset.Get<IActorContext>(), own));
+                    ReferenceEquals(preset.Get<IActorContext>(), own),
+                    Refusal(() => services.AddBamInvocation(registry, Options())));
             })
             .TheTest
             .ShouldPass<RegistrationOutcome>((because, outcome) =>
@@ -92,6 +93,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
                 because.ItsTrue("IActorContext is registered in the dispatch registry for invoked services", outcome.AmbientInRegistry);
                 because.ItsTrue("the host container and the dispatch registry share one IActorContext", outcome.SharedAmbient);
                 because.ItsTrue("a host's own IActorContext registration is left alone", outcome.PresetKept);
+                because.ItsTrue($"a second AddBamInvocation on the same collection is refused rather than silently replacing the allow-list ({outcome.SecondAdd})", outcome.SecondAdd?.Contains("already called", StringComparison.Ordinal) == true);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -242,7 +244,7 @@ public class BamInvocationRegistrationShould : UnitTestMenuContainer
         }
     }
 
-    private sealed record RegistrationOutcome(bool Handler, bool Resolver, string? Pattern, long? MaxBodyBytes, bool SameRegistry, bool AmbientInRegistry, bool SharedAmbient, bool PresetKept);
+    private sealed record RegistrationOutcome(bool Handler, bool Resolver, string? Pattern, long? MaxBodyBytes, bool SameRegistry, bool AmbientInRegistry, bool SharedAmbient, bool PresetKept, string? SecondAdd);
 
     private sealed record MappingOutcome(bool? InvokeAllowsAnonymous, bool? CustomAllowsAnonymous, string? Methods, string? BridgeRefusal, string? AuthRefusal, string? DisabledRefusal);
 

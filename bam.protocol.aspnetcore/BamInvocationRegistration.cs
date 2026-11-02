@@ -43,11 +43,17 @@ public static class BamInvocationRegistration
     /// <exception cref="ArgumentException">
     /// <see cref="BamInvocationOptions.InvocableTypes"/> is null or empty, or lists a type that is not registered.
     /// </exception>
+    /// <exception cref="InvalidOperationException">The bridge was already added to <paramref name="services"/>.</exception>
     public static IServiceCollection AddBamInvocation(this IServiceCollection services, ServiceRegistry dispatchRegistry, BamInvocationOptions options)
     {
         Args.ThrowIfNull(services, nameof(services));
         Args.ThrowIfNull(dispatchRegistry, nameof(dispatchRegistry));
         Args.ThrowIfNull(options, nameof(options));
+
+        if (services.Any(descriptor => descriptor.ServiceType == typeof(BamInvocationDispatchRegistry)))
+        {
+            throw new InvalidOperationException("AddBamInvocation was already called on this service collection; the bridge has one dispatch registry and one allow-list, so register every invocable type in that single call.");
+        }
 
         BamInvocationOptions effective = options;
         if (effective.InvocableTypes is null || effective.InvocableTypes.Count == 0)

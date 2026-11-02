@@ -459,7 +459,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
     public void InvokeARegisteredMethodForAnAuthorizedActorAndReturnBareJson()
     {
         TestActor alice = new TestActor("alice");
-        When.A<BamInvocationHandler>("runs Echo, Add, Describe, EchoAsync, DoNothingAsync, Ping and WhoAmI",
+        When.A<BamInvocationHandler>("runs Echo, Add, Describe, EchoAsync, DoNothingAsync, Ping, WhoAmI and the ValueTask shapes",
             () => Handler(BamAccess.Execute),
             (handler) => new HappyOutcome(
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("Echo", Invocations.Args(("text", "hi"))), alice)),
@@ -468,7 +468,10 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("EchoAsync", Invocations.Args(("text", "there"))), alice)),
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("DoNothingAsync"), alice)),
                 Run(handler, Request(Invocations.Envelope<TestInvocationService>("Ping"), alice)),
-                Run(handler, Request(Invocations.Envelope<TestInvocationService>("WhoAmI"), alice))))
+                Run(handler, Request(Invocations.Envelope<TestInvocationService>("WhoAmI"), alice)),
+                Run(handler, Request(Invocations.Envelope<TestInvocationService>("Count"), alice)),
+                Run(handler, Request(Invocations.Envelope<TestInvocationService>("EchoValueAsync", Invocations.Args(("text", "vt"))), alice)),
+                Run(handler, Request(Invocations.Envelope<TestInvocationService>("NothingValue"), alice))))
             .TheTest
             .ShouldPass<HappyOutcome>((because, outcome) =>
             {
@@ -479,6 +482,9 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 because.ItsTrue($"a plain Task yields null ({outcome.DoNothing})", outcome.DoNothing == "200:null");
                 because.ItsTrue($"a static method needs no instance ({outcome.Ping})", outcome.Ping == "200:\"pong\"");
                 because.ItsTrue($"the service sees the verified actor and client IP through IActorContext ({outcome.WhoAmI})", outcome.WhoAmI == "200:\"alice@10.1.2.3\"");
+                because.ItsTrue($"a completed ValueTask<int> is unwrapped ({outcome.ValueCount})", outcome.ValueCount == "200:7");
+                because.ItsTrue($"an async ValueTask<string> is awaited and unwrapped ({outcome.ValueEcho})", outcome.ValueEcho == "200:\"ValueAsync: vt\"");
+                because.ItsTrue($"a plain ValueTask yields null ({outcome.ValueNothing})", outcome.ValueNothing == "200:null");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -684,7 +690,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
     [UnitTest]
     public void UnwrapTasksOfEveryShape()
     {
-        When.A<AmbientActorContext>("awaits Task, Task<T>, ValueTask-free results and plain values",
+        When.A<AmbientActorContext>("awaits Task and Task<T> results and passes plain values through",
             () => new AmbientActorContext(),
             (_) => new UnwrapOutcome(
                 BamInvocationHandler.UnwrapAsync(Task.FromResult(7)).GetAwaiter().GetResult(),
@@ -705,7 +711,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
-    private sealed record HappyOutcome(string Echo, string Add, string Describe, string EchoAsync, string DoNothing, string Ping, string WhoAmI);
+    private sealed record HappyOutcome(string Echo, string Add, string Describe, string EchoAsync, string DoNothing, string Ping, string WhoAmI, string ValueCount, string ValueEcho, string ValueNothing);
 
     private sealed record RefusalOutcome(string NotJson, string NoOperation, string BlankOperation, string Unregistered, string AssemblyLoad, string AnonymousOperation, string NoActor, string AnonymousActor, string Insufficient, string Privileged, string BadArgument, string Unattributed);
 

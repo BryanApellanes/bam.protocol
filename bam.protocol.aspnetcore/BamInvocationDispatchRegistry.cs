@@ -9,7 +9,7 @@ namespace Bam.Protocol.AspNetCore;
 /// </summary>
 /// <remarks>
 /// A host hands its dispatch registry and the list of invocable types to
-/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, ServiceRegistry, BamInvocationOptions?)"/>;
+/// <see cref="BamInvocationRegistration.AddBamInvocation(Microsoft.Extensions.DependencyInjection.IServiceCollection, ServiceRegistry, BamInvocationOptions)"/>;
 /// this wrapper gives them a distinct identity in the ASP.NET container so they never collide with any other
 /// <see cref="ServiceRegistry"/> the host registers. <see cref="InvocableTypes"/> is the complete allow-list and is
 /// never derived from the registry: <see cref="Bam.DependencyInjection.DependencyProvider.MappedTypes"/> is a

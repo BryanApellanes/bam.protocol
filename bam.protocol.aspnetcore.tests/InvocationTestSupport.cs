@@ -41,6 +41,22 @@ public class TestInvocationService
         await Task.Yield();
     }
 
+    public ValueTask<int> Count()
+    {
+        return new ValueTask<int>(7);
+    }
+
+    public async ValueTask<string> EchoValueAsync(string text)
+    {
+        await Task.Yield();
+        return "ValueAsync: " + text;
+    }
+
+    public ValueTask NothingValue()
+    {
+        return ValueTask.CompletedTask;
+    }
+
     public string WhoAmI()
     {
         return _actors.Actor.Handle + "@" + (_actors.ClientIp ?? "unknown");

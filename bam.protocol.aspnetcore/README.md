@@ -106,7 +106,7 @@ builder.Services.AddActorAuthentication(builder.Configuration);
 builder.Services.AddBamInvocation(dispatch, new BamInvocationOptions
 {
     InvocableTypes = new[] { typeof(LogEventService) }         // the complete allow-list; required
-});                                                            // Pattern and MaxBodyBytes have defaults
+});                                                            // Pattern and MaxBodyBytes have defaults; call once
 
 app.UseActorAuthentication();
 app.MapBamInvocation();                                        // POST /invoke, never anonymous
@@ -129,8 +129,9 @@ generic types cannot be named (their full names contain commas) and are not invo
 does not resolve answers `461`, the native `CommandResolutionFailed` code.
 
 For an interface-keyed registration (`For<ILogEventService>().Use<LogEventService>()`) the identifier names
-the interface, and the interface's methods and attributes are what apply: `[RequiredAccess]` on the
-implementation is not consulted. Put the access attributes on the interface methods, or register the class.
+the interface, and the interface's methods and attributes are what apply: attributes on the implementation
+(`[RequiredAccess]`, `[RequireRequestProof]`, `[AnonymousAccess]`) are not consulted, so a proof demand declared
+only on the implementing method does not apply. Put the access attributes on the interface methods, or register the class.
 If both the interface and the class are registered, each key carries its own rules and the caller chooses the
 key, so keep their attributes consistent: the weaker key is the one that counts. The same holds for a class key
 whose registered implementation is a derived type (`For<LogEventService>().Use<AuditedLogEventService>()`): the
@@ -154,8 +155,8 @@ verified actor is present.
 
 | Status | Meaning |
 | --- | --- |
-| `200` | The result, as bare JSON (`null` for `void`/`Task`). `Task<T>` is awaited and unwrapped. |
-| `400` | The body is not an invocation envelope, or an argument cannot be converted to its parameter type (`InvocationArgumentException`, naming the parameter). |
+| `200` | The result, as bare JSON (`null` for `void`/`Task`/`ValueTask`). `Task<T>` and `ValueTask<T>` are awaited and unwrapped. |
+| `400` | The body is not an invocation envelope, or an argument cannot be converted to its parameter type or was not supplied (`InvocationArgumentException`, naming the parameter). |
 | `401` | No verified actor (`Authentication failed.`), or the request proof is missing or invalid. |
 | `403` | The actor's access is below the method's requirement, or the method allows anonymous access. |
 | `413` | The body exceeds `BamInvocationOptions.MaxBodyBytes` (default 1 MiB). |

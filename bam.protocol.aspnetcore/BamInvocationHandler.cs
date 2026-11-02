@@ -198,7 +198,7 @@ public sealed class BamInvocationHandler
         }
         catch (InvocationArgumentException ex)
         {
-            _logger.LogInformation(ex, "Invocation rejected: argument '{Parameter}' on '{Operation}' could not be converted.", ex.ParamName, operation);
+            _logger.LogInformation(ex, "Invocation rejected: argument '{Parameter}' on '{Operation}' could not be converted or was not supplied.", ex.ParamName, operation);
             return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
         }
         catch (Exception ex)
@@ -242,6 +242,7 @@ public sealed class BamInvocationHandler
     /// <returns>The value to serialize.</returns>
     public static async Task<object?> UnwrapAsync(object? result)
     {
+        result = AsTask(result);
         if (result is not Task task)
         {
             return result;
@@ -259,6 +260,27 @@ public sealed class BamInvocationHandler
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Turns a <see cref="ValueTask"/> or <see cref="ValueTask{TResult}"/> into the equivalent <see cref="Task"/> so one
+    /// awaiting path serves both; anything else comes back unchanged.
+    /// </summary>
+    private static object? AsTask(object? result)
+    {
+        if (result is ValueTask plain)
+        {
+            return plain.AsTask();
+        }
+
+        Type? type = result?.GetType();
+        if (type is { IsGenericType: true } && type.GetGenericTypeDefinition() == typeof(ValueTask<>))
+        {
+            MethodInfo asTask = type.GetMethod(nameof(ValueTask.AsTask), Type.EmptyTypes)!;
+            return asTask.Invoke(result, null);
+        }
+
+        return result;
     }
 
     private async Task<string?> ReadBodyAsync(HttpRequest request)
