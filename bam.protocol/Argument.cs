@@ -24,7 +24,11 @@ public static class Argument
     /// </summary>
     /// <param name="methodInfo">The method info to get parameters from.</param>
     /// <param name="arguments">The argument values to match to parameters.</param>
-    /// <returns>A dictionary mapping parameter names to values.</returns>
+    /// <returns>
+    /// A dictionary mapping parameter names to values. A parameter with no supplied value takes its declared default;
+    /// one with neither is left out, so <c>MethodInvocationRequest.Invoke</c> reports it as missing instead of
+    /// passing <see cref="DBNull"/>.
+    /// </returns>
     public static Dictionary<string, object?> ForValues(MethodInfo methodInfo, params object[] arguments)
     {
         Args.ThrowIfNull(methodInfo, nameof(methodInfo));
@@ -33,7 +37,14 @@ public static class Argument
         for (int i = 0; i < parameters.Length; i++)
         {
             ParameterInfo parameterInfo = parameters[i];
-            result[parameterInfo.Name!] = i < arguments.Length ? arguments[i] : parameterInfo.DefaultValue;
+            if (i < arguments.Length)
+            {
+                result[parameterInfo.Name!] = arguments[i];
+            }
+            else if (parameterInfo.HasDefaultValue)
+            {
+                result[parameterInfo.Name!] = parameterInfo.DefaultValue;
+            }
         }
 
         return result;
