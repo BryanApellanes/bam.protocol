@@ -31,7 +31,7 @@ public interface IPublicKeySetRegistrar
     /// <exception cref="ArgumentException">The key set's handle is null, empty, or whitespace.</exception>
     /// <exception cref="PublicKeySetConflictException">A key set is already registered for the handle.</exception>
     /// <exception cref="PublicKeySetKeyMaterialConflictException">The key material is already registered under a different handle.</exception>
-    /// <exception cref="InvalidPublicKeySetException">The key material is not a parseable public key.</exception>
+    /// <exception cref="InvalidPublicKeySetException">The key material is not a parseable public key, or a slot holds a key of the wrong kind (the RSA slot must hold an RSA public key and the ECC slot an EC public key; a private key is refused).</exception>
     PublicKeySetData Register(PublicKeySetData publicKeySetData);
 
     /// <summary>
@@ -47,7 +47,7 @@ public interface IPublicKeySetRegistrar
     /// <returns>The updated key set.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="newKeySet"/> is null.</exception>
     /// <exception cref="ArgumentException">The key set's handle is null, empty, or whitespace.</exception>
-    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, the proof is invalid, or the proposed key material is not parseable.</exception>
+    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, the proof is invalid, or the proposed key material is not parseable or holds a key of the wrong kind for its slot (RSA public key in the RSA slot, EC public key in the ECC slot).</exception>
     PublicKeySetData Rotate(PublicKeySetData newKeySet, byte[] rotationSignature);
 
     /// <summary>

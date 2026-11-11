@@ -936,4 +936,135 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
     private sealed record CanonicalIdentityOutcome(bool StringUnequal, bool Rejected);
 
     private sealed record FingerprintStampOutcome(string? RsaFingerprint, bool EccFingerprintIsNull, bool ServerStamped);
+
+    [UnitTest]
+    public void RejectKeysOfTheWrongKindOnRegister()
+    {
+        RsaPublicPrivateKeyPair rsa = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair otherRsa = new RsaPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair ecc = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair otherEcc = new EccPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectKeysOfTheWrongKindOnRegister));
+
+        When.A<PublicKeySetRegistrar>("rejects registering a key set whose slots hold keys of the wrong kind",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                bool swapped = RegistrationIsRefused(registrar, "swapped", ecc.PublicKeyPem, rsa.PublicKeyPem);
+                bool twoRsa = RegistrationIsRefused(registrar, "two-rsa", rsa.PublicKeyPem, otherRsa.PublicKeyPem);
+                bool twoEcc = RegistrationIsRefused(registrar, "two-ecc", ecc.PublicKeyPem, otherEcc.PublicKeyPem);
+                bool privateRsa = RegistrationIsRefused(registrar, "private-rsa", PrivateRsaKeyPem(), ecc.PublicKeyPem);
+                bool privateEcc = RegistrationIsRefused(registrar, "private-ecc", rsa.PublicKeyPem, PrivateEccKeyPem());
+                bool eccInRsaSlotOnly = RegistrationIsRefused(registrar, "ecc-in-rsa-slot", ecc.PublicKeyPem, null);
+                bool rsaInEccSlotOnly = RegistrationIsRefused(registrar, "rsa-in-ecc-slot", null, rsa.PublicKeyPem);
+                int rowsAfterRefusals = repository.RetrieveAll<PublicKeySetData>().Count();
+
+                // the same keys in the right slots, and an ECC-only set, are still admitted
+                bool wellTypedRefused = RegistrationIsRefused(registrar, "well-typed", rsa.PublicKeyPem, ecc.PublicKeyPem);
+                bool eccOnlyRefused = RegistrationIsRefused(registrar, "ecc-only", null, otherEcc.PublicKeyPem);
+                return new SlotKindRegistrationOutcome(swapped, twoRsa, twoEcc, privateRsa, privateEcc, eccInRsaSlotOnly, rsaInEccSlotOnly, rowsAfterRefusals, wellTypedRefused, eccOnlyRefused);
+            })
+        .TheTest
+        .ShouldPass<SlotKindRegistrationOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("swapped slots are refused", outcome.SwappedRefused);
+            because.ItsTrue("an RSA key in the ECC slot is refused", outcome.TwoRsaRefused);
+            because.ItsTrue("an EC key in the RSA slot is refused", outcome.TwoEccRefused);
+            because.ItsTrue("an RSA private key is refused", outcome.PrivateRsaRefused);
+            because.ItsTrue("an EC private key is refused", outcome.PrivateEccRefused);
+            because.ItsTrue("an EC key alone in the RSA slot is refused", outcome.EccInRsaSlotOnlyRefused);
+            because.ItsTrue("an RSA key alone in the ECC slot is refused", outcome.RsaInEccSlotOnlyRefused);
+            because.ItsTrue($"no refused key set was persisted ({outcome.RowsAfterRefusals} rows)", outcome.RowsAfterRefusals == 0);
+            because.ItsTrue("the same keys in the right slots are admitted", !outcome.WellTypedRefused);
+            because.ItsTrue("an ECC-only key set is admitted", !outcome.EccOnlyRefused);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RejectKeysOfTheWrongKindOnRotate()
+    {
+        RsaPublicPrivateKeyPair current = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair rsa = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair otherRsa = new RsaPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair ecc = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair otherEcc = new EccPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(RejectKeysOfTheWrongKindOnRotate));
+
+        When.A<PublicKeySetRegistrar>("rejects rotating to a key set whose slots hold keys of the wrong kind",
+            () => CreateRegistrar(repository),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "rotator", PublicRsaKey = current.PublicKeyPem });
+
+                // each proposal carries a VALID proof by the current key, so only the slot check can refuse it
+                bool swapped = RotationIsRefused(registrar, current, ecc.PublicKeyPem, rsa.PublicKeyPem);
+                bool twoRsa = RotationIsRefused(registrar, current, rsa.PublicKeyPem, otherRsa.PublicKeyPem);
+                bool twoEcc = RotationIsRefused(registrar, current, ecc.PublicKeyPem, otherEcc.PublicKeyPem);
+                bool privateRsa = RotationIsRefused(registrar, current, PrivateRsaKeyPem(), ecc.PublicKeyPem);
+                bool privateEcc = RotationIsRefused(registrar, current, rsa.PublicKeyPem, PrivateEccKeyPem());
+                string resolvedAfterRefusals = registrar.Resolve("rotator")!.PublicRsaKey;
+
+                bool wellTypedRefused = RotationIsRefused(registrar, current, rsa.PublicKeyPem, ecc.PublicKeyPem);
+                string resolvedAfterRotation = registrar.Resolve("rotator")!.PublicRsaKey;
+                return new SlotKindRotationOutcome(swapped, twoRsa, twoEcc, privateRsa, privateEcc,
+                    resolvedAfterRefusals == current.PublicKeyPem, wellTypedRefused, resolvedAfterRotation == rsa.PublicKeyPem);
+            })
+        .TheTest
+        .ShouldPass<SlotKindRotationOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("swapped slots are refused", outcome.SwappedRefused);
+            because.ItsTrue("an RSA key in the ECC slot is refused", outcome.TwoRsaRefused);
+            because.ItsTrue("an EC key in the RSA slot is refused", outcome.TwoEccRefused);
+            because.ItsTrue("an RSA private key is refused", outcome.PrivateRsaRefused);
+            because.ItsTrue("an EC private key is refused", outcome.PrivateEccRefused);
+            because.ItsTrue("the handle keeps its current key after the refusals", outcome.CurrentKeyKept);
+            because.ItsTrue("the same keys in the right slots rotate", !outcome.WellTypedRefused);
+            because.ItsTrue("the handle resolves to the rotated key", outcome.RotatedKeyResolved);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private static bool RegistrationIsRefused(PublicKeySetRegistrar registrar, string handle, string? rsaSlot, string? eccSlot)
+    {
+        try
+        {
+            registrar.Register(new PublicKeySetData { KeySetHandle = handle, PublicRsaKey = rsaSlot!, PublicEccKey = eccSlot! });
+            return false;
+        }
+        catch (InvalidPublicKeySetException)
+        {
+            return true;
+        }
+    }
+
+    private static bool RotationIsRefused(PublicKeySetRegistrar registrar, RsaPublicPrivateKeyPair current, string rsaSlot, string eccSlot)
+    {
+        PublicKeySetData proposed = new PublicKeySetData { KeySetHandle = "rotator", PublicRsaKey = rsaSlot, PublicEccKey = eccSlot };
+        try
+        {
+            registrar.Rotate(proposed, SignRotation(current, current.PublicKeyPem, proposed));
+            return false;
+        }
+        catch (InvalidKeySetRotationException)
+        {
+            return true;
+        }
+    }
+
+    private static string PrivateRsaKeyPem()
+    {
+        return Rsa.GenerateKeyPair(RsaKeyLength._2048).Private.ToPem();
+    }
+
+    private static string PrivateEccKeyPem()
+    {
+        return EccPublicPrivateKeyPair.Generate().Private.ToPem();
+    }
+
+    private sealed record SlotKindRegistrationOutcome(bool SwappedRefused, bool TwoRsaRefused, bool TwoEccRefused, bool PrivateRsaRefused, bool PrivateEccRefused, bool EccInRsaSlotOnlyRefused, bool RsaInEccSlotOnlyRefused, int RowsAfterRefusals, bool WellTypedRefused, bool EccOnlyRefused);
+
+    private sealed record SlotKindRotationOutcome(bool SwappedRefused, bool TwoRsaRefused, bool TwoEccRefused, bool PrivateRsaRefused, bool PrivateEccRefused, bool CurrentKeyKept, bool WellTypedRefused, bool RotatedKeyResolved);
 }

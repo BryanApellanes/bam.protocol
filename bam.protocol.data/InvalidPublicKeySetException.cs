@@ -2,7 +2,8 @@ namespace Bam.Protocol.Data;
 
 /// <summary>
 /// Thrown when a key set presented for registration carries key material that is not a
-/// parseable public key.  Registering unparseable material would permanently brick a handle:
+/// parseable public key, or carries a key of the wrong kind for its slot (a swapped pair, two
+/// keys of one kind, or a private key; bam.protocol#55).  Registering such material would permanently brick a handle:
 /// first-registration-wins blocks re-registration, rotation requires a valid signature by the
 /// (unusable) registered key, and no revocation path exists yet (bam.protocol#8 review,
 /// condition C5; revocation tracked as bam.protocol#11).
