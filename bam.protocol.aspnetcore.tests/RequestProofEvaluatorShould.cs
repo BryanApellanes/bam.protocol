@@ -834,16 +834,55 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 Bam.DependencyInjection.ServiceRegistry bare = Bam.DependencyInjection.ServiceRegistry.Create();
                 Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator> bareLogger = ActorAuthenticationRegistration.LoggerFrom<RequestProofEvaluator>(bare);
 
+                // a registry that holds a Bam logger: the bridge targets it and the evaluator's outage reaches it
+                EventCollectingLogger bamLogger = new EventCollectingLogger();
+                Bam.DependencyInjection.ServiceRegistry withBamLogger = Bam.DependencyInjection.ServiceRegistry.Create();
+                withBamLogger.For<IRequestProofNonceStore>().UseSingleton<IRequestProofNonceStore>(new FixedClaimNonceStore(NonceClaimResult.Unavailable));
+                withBamLogger.For<Bam.Protocol.Data.IPublicKeySetResolver>().UseSingleton<Bam.Protocol.Data.IPublicKeySetResolver>(new FakeKeySetResolver());
+                withBamLogger.For<Bam.Encryption.INamedKeyStorage>().UseSingleton<Bam.Encryption.INamedKeyStorage>(new InMemoryNamedKeyStorage());
+                withBamLogger.For<Bam.Logging.ILogger>().UseSingleton<Bam.Logging.ILogger>(bamLogger);
+                bool targetsRegistryLogger = ActorAuthenticationRegistration.LoggerFrom<RequestProofEvaluator>(withBamLogger) is BamLoggingBridge<RequestProofEvaluator> toRegistry && ReferenceEquals(toRegistry.Target, bamLogger);
+                withBamLogger.AddActorAuthentication(options);
+                Prove(withBamLogger);
+                List<string> bamLoggerEntries = bamLogger.Entries.ToList();
+
+                // a registry that holds only the smaller ILog
+                RecordingLog onlyLog = new RecordingLog();
+                Bam.DependencyInjection.ServiceRegistry withLog = Bam.DependencyInjection.ServiceRegistry.Create();
+                withLog.For<Bam.Logging.ILog>().UseSingleton<Bam.Logging.ILog>(onlyLog);
+                bool targetsRegistryLog = ActorAuthenticationRegistration.LoggerFrom<RequestProofEvaluator>(withLog) is BamLoggingBridge<RequestProofEvaluator> toLog && ReferenceEquals(toLog.Target, onlyLog);
+
+                // a bridge with no target writes to the process default
+                EventCollectingLogger processDefault = new EventCollectingLogger();
+                Bam.Logging.Log.Default = processDefault;
+                List<string> defaultEntries;
+                try
+                {
+                    BamLoggingBridge<RequestProofEvaluator> toDefault = new BamLoggingBridge<RequestProofEvaluator>();
+                    Microsoft.Extensions.Logging.LoggerExtensions.LogError(toDefault, "no exception {Value}", "{1}");
+                    Microsoft.Extensions.Logging.LoggerExtensions.LogError(toDefault, new InvalidOperationException("down"), "with exception");
+                    Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(toDefault, "careful");
+                    Microsoft.Extensions.Logging.LoggerExtensions.LogInformation(toDefault, "fyi");
+                    defaultEntries = processDefault.Entries.ToList();
+                }
+                finally
+                {
+                    Bam.Logging.Log.Default = null;
+                }
+
                 RecordingLog log = new RecordingLog();
                 BamLoggingBridge<RequestProofEvaluator> bridge = new BamLoggingBridge<RequestProofEvaluator>(log);
                 Microsoft.Extensions.Logging.LoggerExtensions.LogError(bridge, new InvalidOperationException("down"), "store {Store} is {State}", "pg", "{unavailable}");
                 Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(bridge, "at the {Bound} limit", "per-key");
                 Microsoft.Extensions.Logging.LoggerExtensions.LogInformation(bridge, "started");
                 Microsoft.Extensions.Logging.LoggerExtensions.LogDebug(bridge, "noise");
+                Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(bridge, "value {Value}", "line one\r\nERROR forged entry\ttabbed\u0007");
+                bridge.Log<string>(Microsoft.Extensions.Logging.LogLevel.Warning, default, "state", null, (_, _) => null!);
                 RequestProofEvaluator bridged = Evaluators.Create(clock, nonces: new FixedClaimNonceStore(NonceClaimResult.Unavailable), logger: bridge);
                 bridged.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
 
-                return new RegistryLoggingOutcome(refused.Failure, factory.Categories.ToList(), factory.Errors.ToList(), bareLogger is BamLoggingBridge<RequestProofEvaluator> defaultBridge && defaultBridge.Target is null, log.Entries.ToList());
+                return new RegistryLoggingOutcome(refused.Failure, factory.Categories.ToList(), factory.Errors.ToList(), bareLogger is BamLoggingBridge<RequestProofEvaluator> defaultBridge && defaultBridge.Target is null, log.Entries.ToList(),
+                    targetsRegistryLogger, bamLoggerEntries, targetsRegistryLog, defaultEntries, BamLoggingBridge<RequestProofEvaluator>.Neutralise("clean") == "clean");
             })
             .TheTest
             .ShouldPass<RegistryLoggingOutcome>((because, outcome) =>
@@ -856,6 +895,16 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue("a warning as a warning", outcome.Bridged.Contains("Warning:RequestProofEvaluator: at the per-key limit"));
                 because.ItsTrue("information as information, and nothing below it", outcome.Bridged.Contains("Info:RequestProofEvaluator: started") && !outcome.Bridged.Any(entry => entry.Contains("noise", StringComparison.Ordinal)));
                 because.ItsTrue("an evaluator given the bridge logs its outage through it", outcome.Bridged.Any(entry => entry.StartsWith("Error[]:RequestProofEvaluator: Request proofs are being refused", StringComparison.Ordinal)));
+                because.ItsTrue($"control characters in a logged value are neutralised, so a line break cannot forge an entry ({string.Join(" | ", outcome.Bridged.Where(entry => entry.Contains("line one", StringComparison.Ordinal)))})", outcome.Bridged.Contains("Warning:RequestProofEvaluator: value line one\\r\\nERROR forged entry tabbed?"));
+                because.ItsTrue("nothing the bridge wrote contains a control character", !outcome.Bridged.Any(entry => entry.Any(char.IsControl)));
+                because.ItsTrue("a formatter that returns null writes an empty message, not an exception", outcome.Bridged.Contains("Warning:RequestProofEvaluator: "));
+                because.ItsTrue("text with no control characters is returned as is", outcome.CleanTextUntouched);
+                because.ItsTrue("a registry holding a Bam ILogger gets a bridge to that logger", outcome.TargetsRegistryLogger);
+                because.ItsTrue($"the evaluator's outage reaches that logger ({string.Join(" | ", outcome.RegistryLoggerEntries)})", outcome.RegistryLoggerEntries.Any(entry => entry.StartsWith("Error:", StringComparison.Ordinal) && entry.Contains("Request proofs are being refused", StringComparison.Ordinal) && entry.Contains(nameof(FixedClaimNonceStore), StringComparison.Ordinal)));
+                because.ItsTrue("a registry holding only a Bam ILog gets a bridge to that log", outcome.TargetsRegistryLog);
+                because.ItsTrue($"a bridge with no target writes to the process default log ({string.Join(" | ", outcome.DefaultEntries)})", outcome.DefaultEntries.Count == 4);
+                because.ItsTrue("an error without an exception is written once", outcome.DefaultEntries.Count(entry => entry.Contains("no exception {1}", StringComparison.Ordinal)) == 1);
+                because.ItsTrue("with its severity", outcome.DefaultEntries.Any(entry => entry.StartsWith("Error:", StringComparison.Ordinal) && entry.Contains("with exception", StringComparison.Ordinal)) && outcome.DefaultEntries.Any(entry => entry.StartsWith("Warning:", StringComparison.Ordinal) && entry.Contains("careful", StringComparison.Ordinal)) && outcome.DefaultEntries.Any(entry => entry.StartsWith("Information:", StringComparison.Ordinal) && entry.Contains("fyi", StringComparison.Ordinal)));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -902,6 +951,21 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 default:
                     return _seen.Add(scope + "|" + nonce) ? NonceClaimResult.Claimed : NonceClaimResult.AlreadyUsed;
             }
+        }
+    }
+
+    /// <summary>A real Bam <see cref="Bam.Logging.Logger"/> that commits nowhere and keeps each entry as it is added.</summary>
+    private sealed class EventCollectingLogger : Bam.Logging.Logger
+    {
+        internal EventCollectingLogger()
+        {
+            EntryAdded += (_, logEvent) => Entries.Add(logEvent.Severity + ":" + logEvent.Message);
+        }
+
+        internal List<string> Entries { get; } = new List<string>();
+
+        public override void CommitLogEvent(Bam.Logging.LogEvent logEvent)
+        {
         }
     }
 
@@ -985,7 +1049,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
 
     private sealed record DefaultAsyncOutcome(bool CompletedSynchronously, NonceClaimResult Result, bool CancelledBeforeTheClaim, NonceClaimResult First, NonceClaimResult Again);
 
-    private sealed record RegistryLoggingOutcome(RequestProofFailure Refused, List<string> Categories, List<string> FactoryErrors, bool BareGetsDefaultBridge, List<string> Bridged);
+    private sealed record RegistryLoggingOutcome(RequestProofFailure Refused, List<string> Categories, List<string> FactoryErrors, bool BareGetsDefaultBridge, List<string> Bridged, bool TargetsRegistryLogger, List<string> RegistryLoggerEntries, bool TargetsRegistryLog, List<string> DefaultEntries, bool CleanTextUntouched);
 }
 
 [UnitTestMenu("MemoryRequestProofNonceStore Should", Selector = "mrpns")]

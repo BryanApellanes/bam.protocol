@@ -8,8 +8,15 @@ namespace Bam.Protocol.AspNetCore;
 /// go to <see cref="Bam.Logging.ILog.Error(string, Exception?, object[])"/>, Warning to
 /// <see cref="Bam.Logging.ILog.Warning"/>, Information to <see cref="Bam.Logging.ILog.Info"/>; Debug and Trace are
 /// dropped. The already formatted message is passed as an argument, never as the message signature, so braces in it are
-/// not read as placeholders.
+/// not read as placeholders, and its control characters are replaced first (<see cref="Neutralise"/>), because Bam's
+/// sinks are line-oriented and a line break in a logged value would forge an entry.
 /// </summary>
+/// <remarks>
+/// A stop-gap. bamgateway has the fuller bridge (<c>BamLoggerProvider</c>: a provider, scopes, Critical as Fatal), and
+/// BryanApellanes/bam.logging#2 moves that one into bamtk. When it lands, this class and
+/// <see cref="ActorAuthenticationRegistration.LoggerFrom{T}"/> are to be retired in its favour. Until then the two
+/// neutralise control characters the same way.
+/// </remarks>
 /// <typeparam name="T">The category the entries are written under; it prefixes each message.</typeparam>
 public sealed class BamLoggingBridge<T> : ILogger<T>
 {
@@ -47,40 +54,58 @@ public sealed class BamLoggingBridge<T> : ILogger<T>
             return;
         }
 
-        string message = formatter(state, exception);
+        string message = Neutralise(formatter(state, exception) ?? string.Empty);
+        // One path whether or not a target was given: the process default is an ILog like any other.
+        Bam.Logging.ILog target = Target ?? Bam.Logging.Log.Default!;
         if (logLevel >= LogLevel.Error)
         {
-            if (Target is not null)
-            {
-                Target.Error(Signature, exception, Category, message);
-            }
-            else if (exception is not null)
-            {
-                Bam.Logging.Log.Error(Signature, exception, Category, message);
-            }
-            else
-            {
-                Bam.Logging.Log.Error(Signature, Category, message);
-            }
+            target.Error(Signature, exception, Category, message);
         }
         else if (logLevel == LogLevel.Warning)
         {
-            if (Target is not null)
-            {
-                Target.Warning(Signature, Category, message);
-            }
-            else
-            {
-                Bam.Logging.Log.Warn(Signature, Category, message);
-            }
-        }
-        else if (Target is not null)
-        {
-            Target.Info(Signature, Category, message);
+            target.Warning(Signature, Category, message);
         }
         else
         {
-            Bam.Logging.Log.Info(Signature, Category, message);
+            target.Info(Signature, Category, message);
         }
+    }
+
+    /// <summary>
+    /// Replaces control characters: CR and LF become the visible <c>\r</c> and <c>\n</c>, a tab becomes a space, any
+    /// other becomes <c>?</c>. The same rule as bamgateway's <c>BamLoggerProvider.Neutralise</c>.
+    /// </summary>
+    /// <param name="value">The text.</param>
+    /// <returns>The text with no control characters; the same instance when it had none.</returns>
+    public static string Neutralise(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        System.Text.StringBuilder? clean = null;
+        for (int index = 0; index < value.Length; index++)
+        {
+            char character = value[index];
+            if (!char.IsControl(character))
+            {
+                clean?.Append(character);
+                continue;
+            }
+            clean ??= new System.Text.StringBuilder(value.Length + 8).Append(value, 0, index);
+            switch (character)
+            {
+                case '\r':
+                    clean.Append("\\r");
+                    break;
+                case '\n':
+                    clean.Append("\\n");
+                    break;
+                case '\t':
+                    clean.Append(' ');
+                    break;
+                default:
+                    clean.Append('?');
+                    break;
+            }
+        }
+        return clean?.ToString() ?? value;
     }
 }

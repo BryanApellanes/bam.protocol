@@ -25,9 +25,11 @@ public static class ActorAuthenticationRegistration
     /// <summary>
     /// The logger a component gets on the <see cref="ServiceRegistry"/> path: one from the registry's
     /// <see cref="Microsoft.Extensions.Logging.ILoggerFactory"/> when the host registered one; otherwise a
-    /// <see cref="BamLoggingBridge{T}"/> to the registry's <see cref="Bam.Logging.ILogger"/> when it has one, and to the
-    /// process default <see cref="Bam.Logging.Log"/> when it has neither. So it is never null, and a host that
-    /// registers its logging before calling <c>AddActorAuthentication</c> gets its own.
+    /// <see cref="BamLoggingBridge{T}"/> to the registry's <see cref="Bam.Logging.ILogger"/> (or, failing that, its
+    /// <see cref="Bam.Logging.ILog"/>) when it has one, and to the process default <see cref="Bam.Logging.Log"/> when it
+    /// has none of these. So it is never null, and a host that registers its logging before calling
+    /// <c>AddActorAuthentication</c> gets its own. To be retired with <see cref="BamLoggingBridge{T}"/> when
+    /// BryanApellanes/bam.logging#2 lands.
     /// </summary>
     /// <typeparam name="T">The component the logger is for.</typeparam>
     /// <param name="registry">The host registry.</param>
@@ -43,6 +45,11 @@ public static class ActorAuthenticationRegistration
         if (registry.Contains<Bam.Logging.ILogger>())
         {
             return new BamLoggingBridge<T>(registry.Get<Bam.Logging.ILogger>());
+        }
+
+        if (registry.Contains<Bam.Logging.ILog>())
+        {
+            return new BamLoggingBridge<T>(registry.Get<Bam.Logging.ILog>());
         }
 
         return new BamLoggingBridge<T>();

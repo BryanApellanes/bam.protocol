@@ -78,6 +78,11 @@ public sealed class RequestProofEvaluator
     /// for a nonce-store outage, <see cref="RequestProofFailure.Capacity"/> for a store at its total limit,
     /// <see cref="RequestProofFailure.KeyQuota"/> for a signing key at its own limit.
     /// </returns>
+    /// <exception cref="OperationCanceledException">
+    /// The client aborted the request (<c>RequestAborted</c>) before or while the nonce store was asked. The nonce is
+    /// not spent in that case: a store checks the token before it writes, and the default
+    /// <see cref="IRequestProofNonceStore.TryClaimAsync"/> checks it before the claim.
+    /// </exception>
     public async Task<RequestProofResult> EvaluateAsync(HttpRequest request, string? eccPublicKeyPem)
     {
         ArgumentNullException.ThrowIfNull(request);
