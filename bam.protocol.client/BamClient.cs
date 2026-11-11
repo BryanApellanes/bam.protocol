@@ -1,6 +1,5 @@
 using System.Net.Sockets;
 using System.Text;
-using Amazon.Runtime.Internal;
 using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Common;

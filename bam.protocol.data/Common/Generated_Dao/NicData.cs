@@ -196,7 +196,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 	}
 
-    DeviceData _deviceDataOfDeviceDataId;
+    DeviceData? _deviceDataOfDeviceDataId;
 	public DeviceData DeviceDataOfDeviceDataId
 	{
 		get
@@ -231,7 +231,7 @@ namespace Bam.Protocol.Data.Common.Dao
 		}
 	}
 
-    MachineData _machineDataOfMachineDataId;
+    MachineData? _machineDataOfMachineDataId;
 	public MachineData MachineDataOfMachineDataId
 	{
 		get

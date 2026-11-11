@@ -76,7 +76,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Client.ClientKeySetData GetOneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
+		public Bam.Protocol.Data.Client.ClientKeySetData? GetOneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
 			var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -93,7 +93,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ClientKeySetDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Client.ClientKeySetData OneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
+		public Bam.Protocol.Data.Client.ClientKeySetData? OneClientKeySetDataWhere(WhereDelegate<ClientKeySetDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientKeySetData>();
             var data = (Bam.Protocol.Data.Client.ClientKeySetData)Bam.Protocol.Data.Client.Dao.ClientKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -201,7 +201,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Client.ClientSessionData GetOneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
+		public Bam.Protocol.Data.Client.ClientSessionData? GetOneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
 			var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -218,7 +218,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ClientSessionDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Client.ClientSessionData OneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
+		public Bam.Protocol.Data.Client.ClientSessionData? OneClientSessionDataWhere(WhereDelegate<ClientSessionDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionData>();
             var data = (Bam.Protocol.Data.Client.ClientSessionData)Bam.Protocol.Data.Client.Dao.ClientSessionData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -326,7 +326,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Client.ClientSessionKeyValue GetOneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
+		public Bam.Protocol.Data.Client.ClientSessionKeyValue? GetOneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
 			var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -343,7 +343,7 @@ namespace Bam.Protocol.Data.Client.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ClientSessionKeyValueColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Client.ClientSessionKeyValue OneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
+		public Bam.Protocol.Data.Client.ClientSessionKeyValue? OneClientSessionKeyValueWhere(WhereDelegate<ClientSessionKeyValueColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Client.ClientSessionKeyValue>();
             var data = (Bam.Protocol.Data.Client.ClientSessionKeyValue)Bam.Protocol.Data.Client.Dao.ClientSessionKeyValue.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;

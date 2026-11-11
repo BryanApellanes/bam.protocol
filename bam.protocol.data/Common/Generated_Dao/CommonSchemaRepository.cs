@@ -88,7 +88,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.ActorData GetOneActorDataWhere(WhereDelegate<ActorDataColumns> where)
+		public Bam.Protocol.Data.Common.ActorData? GetOneActorDataWhere(WhereDelegate<ActorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ActorData>();
 			var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -105,7 +105,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ActorDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.ActorData OneActorDataWhere(WhereDelegate<ActorDataColumns> where)
+		public Bam.Protocol.Data.Common.ActorData? OneActorDataWhere(WhereDelegate<ActorDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ActorData>();
             var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -213,7 +213,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.AgentData GetOneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
+		public Bam.Protocol.Data.Common.AgentData? GetOneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.AgentData>();
 			var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -230,7 +230,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between AgentDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.AgentData OneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
+		public Bam.Protocol.Data.Common.AgentData? OneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.AgentData>();
             var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -338,7 +338,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.DeviceData GetOneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
+		public Bam.Protocol.Data.Common.DeviceData? GetOneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.DeviceData>();
 			var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -355,7 +355,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between DeviceDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.DeviceData OneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
+		public Bam.Protocol.Data.Common.DeviceData? OneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.DeviceData>();
             var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -463,7 +463,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.HostAddressData GetOneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
+		public Bam.Protocol.Data.Common.HostAddressData? GetOneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.HostAddressData>();
 			var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -480,7 +480,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between HostAddressDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.HostAddressData OneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
+		public Bam.Protocol.Data.Common.HostAddressData? OneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.HostAddressData>();
             var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -588,7 +588,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.MachineData GetOneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
+		public Bam.Protocol.Data.Common.MachineData? GetOneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.MachineData>();
 			var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -605,7 +605,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between MachineDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.MachineData OneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
+		public Bam.Protocol.Data.Common.MachineData? OneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.MachineData>();
             var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -713,7 +713,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.NicData GetOneNicDataWhere(WhereDelegate<NicDataColumns> where)
+		public Bam.Protocol.Data.Common.NicData? GetOneNicDataWhere(WhereDelegate<NicDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.NicData>();
 			var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -730,7 +730,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between NicDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.NicData OneNicDataWhere(WhereDelegate<NicDataColumns> where)
+		public Bam.Protocol.Data.Common.NicData? OneNicDataWhere(WhereDelegate<NicDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.NicData>();
             var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -838,7 +838,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.ProcessDescriptorData GetOneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
+		public Bam.Protocol.Data.Common.ProcessDescriptorData? GetOneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ProcessDescriptorData>();
 			var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -855,7 +855,7 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ProcessDescriptorDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Common.ProcessDescriptorData OneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
+		public Bam.Protocol.Data.Common.ProcessDescriptorData? OneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ProcessDescriptorData>();
             var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;

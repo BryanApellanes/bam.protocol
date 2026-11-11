@@ -47,31 +47,31 @@ namespace Bam.Protocol.Data.Common.Wrappers
 		}
 
 
-        Bam.Protocol.Data.Common.DeviceData _deviceData;
+        Bam.Protocol.Data.Common.DeviceData? _deviceData;
 		public override Bam.Protocol.Data.Common.DeviceData DeviceData
 		{
 			get
 			{
 				if (_deviceData == null)
 				{
-					_deviceData = (Bam.Protocol.Data.Common.DeviceData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.DeviceData));
+					_deviceData = (Bam.Protocol.Data.Common.DeviceData?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.DeviceData));
 				}
-				return _deviceData;
+				return _deviceData!; // null when the child has no parent row; the overridden property is declared non-null
 			}
 			set
 			{
 				_deviceData = value;
 			}
-		}        Bam.Protocol.Data.Common.MachineData _machineData;
+		}        Bam.Protocol.Data.Common.MachineData? _machineData;
 		public override Bam.Protocol.Data.Common.MachineData MachineData
 		{
 			get
 			{
 				if (_machineData == null)
 				{
-					_machineData = (Bam.Protocol.Data.Common.MachineData)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.MachineData));
+					_machineData = (Bam.Protocol.Data.Common.MachineData?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.MachineData));
 				}
-				return _machineData;
+				return _machineData!; // null when the child has no parent row; the overridden property is declared non-null
 			}
 			set
 			{

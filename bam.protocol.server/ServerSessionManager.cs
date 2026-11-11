@@ -76,7 +76,7 @@ public class ServerSessionManager : IServerSessionManager
     /// <returns>True if the session was found and deleted; otherwise false.</returns>
     public bool EndSession(string sessionId)
     {
-        ServerSession session = Repository.OneServerSessionWhere(s => s.SessionId == sessionId);
+        ServerSession? session = Repository.OneServerSessionWhere(s => s.SessionId == sessionId);
         if (session == null)
         {
             return false;
@@ -97,7 +97,7 @@ public class ServerSessionManager : IServerSessionManager
             return null!;
         }
 
-        ServerSession session = Repository.OneServerSessionWhere(session=> session.SessionId == sessionId);
+        ServerSession? session = Repository.OneServerSessionWhere(session=> session.SessionId == sessionId);
         if (session == null)
         {
             return null!;

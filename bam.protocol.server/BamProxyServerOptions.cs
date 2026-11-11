@@ -13,7 +13,7 @@ namespace Bam.Protocol.Server
     /// </summary>
     public class BamProxyServerOptions : BamServerOptions
     {
-        private BamProxyServerCommunicationHandler _communicationHandler;
+        private BamProxyServerCommunicationHandler? _communicationHandler;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BamProxyServerOptions"/> class with a service registry and proxy types.

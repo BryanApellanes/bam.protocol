@@ -252,7 +252,7 @@ namespace Bam.Protocol.Data.Server.Dao
 		}
 	}
 
-    ServerSession _serverSessionOfServerSessionId;
+    ServerSession? _serverSessionOfServerSessionId;
 	public ServerSession ServerSessionOfServerSessionId
 	{
 		get

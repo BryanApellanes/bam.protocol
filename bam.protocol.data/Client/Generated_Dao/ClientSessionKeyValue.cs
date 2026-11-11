@@ -252,7 +252,7 @@ namespace Bam.Protocol.Data.Client.Dao
 		}
 	}
 
-    ClientSessionData _clientSessionDataOfClientSessionDataId;
+    ClientSessionData? _clientSessionDataOfClientSessionDataId;
 	public ClientSessionData ClientSessionDataOfClientSessionDataId
 	{
 		get

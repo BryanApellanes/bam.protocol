@@ -85,7 +85,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.AccountData GetOneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
+		public Bam.Protocol.Data.Server.AccountData? GetOneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.AccountData>();
 			var data = (Bam.Protocol.Data.Server.AccountData)Bam.Protocol.Data.Server.Dao.AccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -102,7 +102,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between AccountDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.AccountData OneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
+		public Bam.Protocol.Data.Server.AccountData? OneAccountDataWhere(WhereDelegate<AccountDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.AccountData>();
             var data = (Bam.Protocol.Data.Server.AccountData)Bam.Protocol.Data.Server.Dao.AccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -210,7 +210,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.InboxData GetOneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
+		public Bam.Protocol.Data.Server.InboxData? GetOneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.InboxData>();
 			var data = (Bam.Protocol.Data.Server.InboxData)Bam.Protocol.Data.Server.Dao.InboxData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -227,7 +227,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between InboxDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.InboxData OneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
+		public Bam.Protocol.Data.Server.InboxData? OneInboxDataWhere(WhereDelegate<InboxDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.InboxData>();
             var data = (Bam.Protocol.Data.Server.InboxData)Bam.Protocol.Data.Server.Dao.InboxData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -335,7 +335,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.OutboxData GetOneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
+		public Bam.Protocol.Data.Server.OutboxData? GetOneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.OutboxData>();
 			var data = (Bam.Protocol.Data.Server.OutboxData)Bam.Protocol.Data.Server.Dao.OutboxData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -352,7 +352,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between OutboxDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.OutboxData OneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
+		public Bam.Protocol.Data.Server.OutboxData? OneOutboxDataWhere(WhereDelegate<OutboxDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.OutboxData>();
             var data = (Bam.Protocol.Data.Server.OutboxData)Bam.Protocol.Data.Server.Dao.OutboxData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -460,7 +460,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.ServerAccountData GetOneServerAccountDataWhere(WhereDelegate<ServerAccountDataColumns> where)
+		public Bam.Protocol.Data.Server.ServerAccountData? GetOneServerAccountDataWhere(WhereDelegate<ServerAccountDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerAccountData>();
 			var data = (Bam.Protocol.Data.Server.ServerAccountData)Bam.Protocol.Data.Server.Dao.ServerAccountData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -477,7 +477,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ServerAccountDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.ServerAccountData OneServerAccountDataWhere(WhereDelegate<ServerAccountDataColumns> where)
+		public Bam.Protocol.Data.Server.ServerAccountData? OneServerAccountDataWhere(WhereDelegate<ServerAccountDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerAccountData>();
             var data = (Bam.Protocol.Data.Server.ServerAccountData)Bam.Protocol.Data.Server.Dao.ServerAccountData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -585,7 +585,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.ServerSession GetOneServerSessionWhere(WhereDelegate<ServerSessionColumns> where)
+		public Bam.Protocol.Data.Server.ServerSession? GetOneServerSessionWhere(WhereDelegate<ServerSessionColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSession>();
 			var data = (Bam.Protocol.Data.Server.ServerSession)Bam.Protocol.Data.Server.Dao.ServerSession.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -602,7 +602,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ServerSessionColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.ServerSession OneServerSessionWhere(WhereDelegate<ServerSessionColumns> where)
+		public Bam.Protocol.Data.Server.ServerSession? OneServerSessionWhere(WhereDelegate<ServerSessionColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSession>();
             var data = (Bam.Protocol.Data.Server.ServerSession)Bam.Protocol.Data.Server.Dao.ServerSession.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -710,7 +710,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Server.ServerSessionKeyValuePair GetOneServerSessionKeyValuePairWhere(WhereDelegate<ServerSessionKeyValuePairColumns> where)
+		public Bam.Protocol.Data.Server.ServerSessionKeyValuePair? GetOneServerSessionKeyValuePairWhere(WhereDelegate<ServerSessionKeyValuePairColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>();
 			var data = (Bam.Protocol.Data.Server.ServerSessionKeyValuePair)Bam.Protocol.Data.Server.Dao.ServerSessionKeyValuePair.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -727,7 +727,7 @@ namespace Bam.Protocol.Data.Server.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ServerSessionKeyValuePairColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Server.ServerSessionKeyValuePair OneServerSessionKeyValuePairWhere(WhereDelegate<ServerSessionKeyValuePairColumns> where)
+		public Bam.Protocol.Data.Server.ServerSessionKeyValuePair? OneServerSessionKeyValuePairWhere(WhereDelegate<ServerSessionKeyValuePairColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Server.ServerSessionKeyValuePair>();
             var data = (Bam.Protocol.Data.Server.ServerSessionKeyValuePair)Bam.Protocol.Data.Server.Dao.ServerSessionKeyValuePair.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
