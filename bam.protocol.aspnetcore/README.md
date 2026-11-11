@@ -65,7 +65,11 @@ replay ("the nonce was already used"). The statuses differ too: a bad or replaye
 full or cannot be reached is `503` with `Retry-After`; a signing key over its own limit is `429` with
 `Retry-After`. The wait is `ActorAuth:RequestProofRetryAfter`, and a client that retries must sign a new proof
 with a fresh nonce and timestamp. A host with its own error format reads `RequestProofResult.Failure`
-(`Invalid`, `Unavailable`, `Capacity`, `KeyQuota`) or calls `RequestProofRefusal.StatusCodeOf`. A host running more than one instance registers a shared store before
+(`Invalid`, `Unavailable`, `Capacity`, `KeyQuota`) or calls `RequestProofRefusal.StatusCodeOf`. The evaluator calls the store through `TryClaimAsync` with the request's `RequestAborted` token. Its default
+implementation runs `TryClaim`, so a store that never blocks implements only that; a store that does I/O overrides
+`TryClaimAsync`, uses its async API and passes the token on. On a `ServiceRegistry` host the evaluator logs through
+the registry's `ILoggerFactory` if there is one, otherwise through Bam's logging (`BamLoggingBridge`).
+A host running more than one instance registers a shared store before
 `AddActorAuthentication`, or a proof accepted by one instance can be replayed once at each of the others.
 
 ## Host wiring

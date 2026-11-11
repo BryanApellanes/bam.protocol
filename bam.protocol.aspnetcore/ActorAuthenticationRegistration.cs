@@ -23,7 +23,34 @@ namespace Bam.Protocol.AspNetCore;
 public static class ActorAuthenticationRegistration
 {
     /// <summary>
-    /// Registers the adapter into a bamtk <see cref="ServiceRegistry"/>.
+    /// The logger a component gets on the <see cref="ServiceRegistry"/> path: one from the registry's
+    /// <see cref="Microsoft.Extensions.Logging.ILoggerFactory"/> when the host registered one; otherwise a
+    /// <see cref="BamLoggingBridge{T}"/> to the registry's <see cref="Bam.Logging.ILogger"/> when it has one, and to the
+    /// process default <see cref="Bam.Logging.Log"/> when it has neither. So it is never null, and a host that
+    /// registers its logging before calling <c>AddActorAuthentication</c> gets its own.
+    /// </summary>
+    /// <typeparam name="T">The component the logger is for.</typeparam>
+    /// <param name="registry">The host registry.</param>
+    /// <returns>The logger.</returns>
+    public static Microsoft.Extensions.Logging.ILogger<T> LoggerFrom<T>(ServiceRegistry registry)
+    {
+        ArgumentNullException.ThrowIfNull(registry);
+        if (registry.Contains<Microsoft.Extensions.Logging.ILoggerFactory>())
+        {
+            return Microsoft.Extensions.Logging.LoggerFactoryExtensions.CreateLogger<T>(registry.Get<Microsoft.Extensions.Logging.ILoggerFactory>());
+        }
+
+        if (registry.Contains<Bam.Logging.ILogger>())
+        {
+            return new BamLoggingBridge<T>(registry.Get<Bam.Logging.ILogger>());
+        }
+
+        return new BamLoggingBridge<T>();
+    }
+
+    /// <summary>
+    /// Registers the adapter into a bamtk <see cref="ServiceRegistry"/>. The request-proof evaluator logs through
+    /// <see cref="LoggerFrom{T}"/>, so register the host's logging first.
     /// </summary>
     /// <param name="registry">The host registry.</param>
     /// <param name="options">The options; defaults to <see cref="ActorAuthenticationOptions"/> defaults.</param>
@@ -59,8 +86,9 @@ public static class ActorAuthenticationRegistration
             registry.For<IRequestProofNonceStore>().UseSingleton<IRequestProofNonceStore>(new MemoryRequestProofNonceStore(effective));
         }
 
-        registry.For<RequestProofEvaluator>().UseSingleton(new RequestProofEvaluator(proof, registry.Get<IRequestProofNonceStore>(), effective));
-        // The evaluator above logs nothing: a ServiceRegistry host has no ILoggerFactory to hand it.
+        // The evaluator logs a nonce-store outage and capacity refusals; give it somewhere to log on this path too
+        // (bam.protocol#59), or an outage of a shared store is a run of silent refusals.
+        registry.For<RequestProofEvaluator>().UseSingleton(new RequestProofEvaluator(proof, registry.Get<IRequestProofNonceStore>(), effective, null, LoggerFrom<RequestProofEvaluator>(registry)));
         if (!registry.Contains<IActorAdmission>())
         {
             registry.For<IActorAdmission>().UseSingleton<IActorAdmission>(new ConfiguredActorAdmission(effective));

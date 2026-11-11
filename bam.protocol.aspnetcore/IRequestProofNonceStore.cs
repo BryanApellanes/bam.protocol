@@ -26,6 +26,33 @@ public interface IRequestProofNonceStore
     /// request propagates.
     /// </remarks>
     NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now);
+
+    /// <summary>
+    /// The form <see cref="RequestProofEvaluator"/> calls: the same claim as <see cref="TryClaim"/>, without holding a
+    /// thread while a shared store waits on its backing storage, and able to stop when the caller goes away
+    /// (bam.protocol#59). The default implementation runs <see cref="TryClaim"/> and completes synchronously, so a store
+    /// written before this member existed, or one that never blocks (<see cref="MemoryRequestProofNonceStore"/>),
+    /// needs no change. A store that does I/O overrides it and passes <paramref name="cancellationToken"/> on.
+    /// </summary>
+    /// <param name="scope">Whose nonce this is: the fingerprint of the signing key.</param>
+    /// <param name="nonce">The nonce from the request.</param>
+    /// <param name="expiresAt">When the proof stops being acceptable anyway; the nonce need not be kept after it.</param>
+    /// <param name="now">The current time.</param>
+    /// <param name="cancellationToken">
+    /// The request's <c>RequestAborted</c> token. Cancellation by this token means the client is gone and propagates;
+    /// the evaluator treats every other failure, a store's own timeout included, as an outage and fails closed.
+    /// </param>
+    /// <returns>Whether the nonce was claimed, was already used, or could not be recorded.</returns>
+    /// <remarks>
+    /// The atomicity and retention rules of <see cref="TryClaim"/> apply unchanged. A store that has recorded the nonce
+    /// must not then report cancellation in place of <see cref="NonceClaimResult.Claimed"/> in a way that lets the same
+    /// nonce be claimed again: check the token before the write, not after it.
+    /// </remarks>
+    ValueTask<NonceClaimResult> TryClaimAsync(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<NonceClaimResult>(TryClaim(scope, nonce, expiresAt, now));
+    }
 }
 
 /// <summary>The outcome of <see cref="IRequestProofNonceStore.TryClaim"/>.</summary>

@@ -715,6 +715,277 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
     private sealed record FilterAnswer(int? Status, string RetryAfter, string? Handled);
 
     private sealed record RefusalStatusOutcome(FilterAnswer Down, FilterAnswer Reported, FilterAnswer StoreFull, FilterAnswer KeyFull, FilterAnswer Forged, FilterAnswer Replay, FilterAnswer Ok, FilterAnswer Defaults, FilterAnswer Tiny);
+
+    [UnitTest]
+    public void AwaitAnAsyncNonceStoreWithTheRequestsToken()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+
+        When.A<FixedClock>("verifies proofs against a store that only works asynchronously",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                AsyncOnlyNonceStore store = new AsyncOnlyNonceStore();
+                CapturingLogger<RequestProofEvaluator> logger = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofEvaluator evaluator = Evaluators.Create(clock, nonces: store, logger: logger);
+                int Errors() => logger.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error);
+
+                using CancellationTokenSource client = new CancellationTokenSource();
+                DefaultHttpContext first = Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now);
+                first.RequestAborted = client.Token;
+                RequestProofResult claimed = evaluator.EvaluateAsync(first.Request, pair.PublicPem).GetAwaiter().GetResult();
+                bool sawRequestToken = store.LastToken == client.Token;
+                RequestProofResult replay = evaluator.EvaluateAsync(first.Request, pair.PublicPem).GetAwaiter().GetResult();
+
+                store.Mode = AsyncOnlyNonceStore.Behaviour.TimesOut;
+                RequestProofResult timedOut = evaluator.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+                int errorsAfterTimeout = Errors();
+
+                store.Mode = AsyncOnlyNonceStore.Behaviour.ObservesToken;
+                DefaultHttpContext aborted = Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now);
+                aborted.RequestAborted = new CancellationToken(true);
+                bool abortPropagated = false;
+                try
+                {
+                    evaluator.EvaluateAsync(aborted.Request, pair.PublicPem).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    abortPropagated = true;
+                }
+
+                return new AsyncClaimOutcome(claimed.Success, sawRequestToken, store.AsyncCalls, store.SyncCalls, replay.Failure, timedOut.Success, timedOut.Failure, errorsAfterTimeout, abortPropagated, Errors());
+            })
+            .TheTest
+            .ShouldPass<AsyncClaimOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a proof verifies through the asynchronous claim", outcome.Claimed);
+                because.ItsTrue("the store was handed the request's RequestAborted token", outcome.SawRequestToken);
+                because.ItsTrue($"the evaluator never called the synchronous claim ({outcome.SyncCalls} sync, {outcome.AsyncCalls} async)", outcome.SyncCalls == 0 && outcome.AsyncCalls >= 3);
+                because.ItsTrue("a replay through the asynchronous claim is Invalid", outcome.Replay == RequestProofFailure.Invalid);
+                because.ItsTrue("the store's own timeout fails closed as Unavailable", !outcome.TimedOutSuccess && outcome.TimedOut == RequestProofFailure.Unavailable);
+                because.ItsTrue("and is logged", outcome.ErrorsAfterTimeout == 1);
+                because.ItsTrue("a client abort the store observes propagates", outcome.AbortPropagated);
+                because.ItsTrue("and is not logged as an outage", outcome.ErrorsAtEnd == 1);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void GiveAStoreWithOnlyTheSynchronousClaimAWorkingAsynchronousOne()
+    {
+        When.A<IRequestProofNonceStore>("claims through the default asynchronous member of a store that implements only TryClaim",
+            () => new FixedClaimNonceStore(NonceClaimResult.KeyFull),
+            (store) =>
+            {
+                ValueTask<NonceClaimResult> pending = store.TryClaimAsync("key", "nonce", Now.AddMinutes(5), Now, CancellationToken.None);
+                bool completedSynchronously = pending.IsCompletedSuccessfully;
+                NonceClaimResult result = pending.GetAwaiter().GetResult();
+                bool cancelledBeforeTheClaim = false;
+                try
+                {
+                    store.TryClaimAsync("key", "nonce", Now.AddMinutes(5), Now, new CancellationToken(true)).GetAwaiter().GetResult();
+                }
+                catch (OperationCanceledException)
+                {
+                    cancelledBeforeTheClaim = true;
+                }
+
+                IRequestProofNonceStore memory = new MemoryRequestProofNonceStore(new ActorAuthenticationOptions());
+                NonceClaimResult first = memory.TryClaimAsync("key", "n1", Now.AddMinutes(5), Now, CancellationToken.None).GetAwaiter().GetResult();
+                NonceClaimResult again = memory.TryClaimAsync("key", "n1", Now.AddMinutes(5), Now, CancellationToken.None).GetAwaiter().GetResult();
+                return new DefaultAsyncOutcome(completedSynchronously, result, cancelledBeforeTheClaim, first, again);
+            })
+            .TheTest
+            .ShouldPass<DefaultAsyncOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the default completes synchronously", outcome.CompletedSynchronously);
+                because.ItsTrue("with the synchronous claim's result", outcome.Result == NonceClaimResult.KeyFull);
+                because.ItsTrue("a token already cancelled stops it before the claim", outcome.CancelledBeforeTheClaim);
+                because.ItsTrue("the memory store claims through it", outcome.First == NonceClaimResult.Claimed);
+                because.ItsTrue("and sees the replay through it", outcome.Again == NonceClaimResult.AlreadyUsed);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void LogANonceStoreOutageOnTheServiceRegistryPath()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        ActorAuthenticationOptions options = new ActorAuthenticationOptions { ClientTokenAudience = "https://gateway.example" };
+
+        When.A<FixedClock>("registers into a ServiceRegistry with a failing nonce store, with and without a logger factory",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                RequestProofResult Prove(Bam.DependencyInjection.ServiceRegistry registry) => registry.Get<RequestProofEvaluator>().EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, DateTimeOffset.UtcNow).Request, pair.PublicPem).GetAwaiter().GetResult();
+
+                CapturingLoggerFactory factory = new CapturingLoggerFactory();
+                Bam.DependencyInjection.ServiceRegistry withFactory = Bam.DependencyInjection.ServiceRegistry.Create();
+                withFactory.For<IRequestProofNonceStore>().UseSingleton<IRequestProofNonceStore>(new FixedClaimNonceStore(NonceClaimResult.Unavailable));
+                withFactory.For<Bam.Protocol.Data.IPublicKeySetResolver>().UseSingleton<Bam.Protocol.Data.IPublicKeySetResolver>(new FakeKeySetResolver());
+                withFactory.For<Bam.Encryption.INamedKeyStorage>().UseSingleton<Bam.Encryption.INamedKeyStorage>(new InMemoryNamedKeyStorage());
+                withFactory.For<Microsoft.Extensions.Logging.ILoggerFactory>().UseSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(factory);
+                withFactory.AddActorAuthentication(options);
+                RequestProofResult refused = Prove(withFactory);
+
+                Bam.DependencyInjection.ServiceRegistry bare = Bam.DependencyInjection.ServiceRegistry.Create();
+                Microsoft.Extensions.Logging.ILogger<RequestProofEvaluator> bareLogger = ActorAuthenticationRegistration.LoggerFrom<RequestProofEvaluator>(bare);
+
+                RecordingLog log = new RecordingLog();
+                BamLoggingBridge<RequestProofEvaluator> bridge = new BamLoggingBridge<RequestProofEvaluator>(log);
+                Microsoft.Extensions.Logging.LoggerExtensions.LogError(bridge, new InvalidOperationException("down"), "store {Store} is {State}", "pg", "{unavailable}");
+                Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(bridge, "at the {Bound} limit", "per-key");
+                Microsoft.Extensions.Logging.LoggerExtensions.LogInformation(bridge, "started");
+                Microsoft.Extensions.Logging.LoggerExtensions.LogDebug(bridge, "noise");
+                RequestProofEvaluator bridged = Evaluators.Create(clock, nonces: new FixedClaimNonceStore(NonceClaimResult.Unavailable), logger: bridge);
+                bridged.EvaluateAsync(Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now).Request, pair.PublicPem).GetAwaiter().GetResult();
+
+                return new RegistryLoggingOutcome(refused.Failure, factory.Categories.ToList(), factory.Errors.ToList(), bareLogger is BamLoggingBridge<RequestProofEvaluator> defaultBridge && defaultBridge.Target is null, log.Entries.ToList());
+            })
+            .TheTest
+            .ShouldPass<RegistryLoggingOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the registry's evaluator refuses the proof as Unavailable", outcome.Refused == RequestProofFailure.Unavailable);
+                because.ItsTrue($"its logger came from the registry's factory ({string.Join(",", outcome.Categories)})", outcome.Categories.Any(category => category.Contains(nameof(RequestProofEvaluator), StringComparison.Ordinal)));
+                because.ItsTrue("the outage was logged as an error naming the store", outcome.FactoryErrors.Count == 1 && outcome.FactoryErrors[0].Contains(nameof(FixedClaimNonceStore), StringComparison.Ordinal));
+                because.ItsTrue("a registry with no logging gets a bridge to the default Bam log", outcome.BareGetsDefaultBridge);
+                because.ItsTrue($"the bridge writes an error with its exception ({string.Join(" | ", outcome.Bridged)})", outcome.Bridged.Contains("Error[down]:RequestProofEvaluator: store pg is {unavailable}"));
+                because.ItsTrue("a warning as a warning", outcome.Bridged.Contains("Warning:RequestProofEvaluator: at the per-key limit"));
+                because.ItsTrue("information as information, and nothing below it", outcome.Bridged.Contains("Info:RequestProofEvaluator: started") && !outcome.Bridged.Any(entry => entry.Contains("noise", StringComparison.Ordinal)));
+                because.ItsTrue("an evaluator given the bridge logs its outage through it", outcome.Bridged.Any(entry => entry.StartsWith("Error[]:RequestProofEvaluator: Request proofs are being refused", StringComparison.Ordinal)));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    /// <summary>A shared-store stand-in that answers only through <see cref="IRequestProofNonceStore.TryClaimAsync"/>.</summary>
+    private sealed class AsyncOnlyNonceStore : IRequestProofNonceStore
+    {
+        private readonly HashSet<string> _seen = new HashSet<string>(StringComparer.Ordinal);
+
+        internal enum Behaviour
+        {
+            Works,
+            TimesOut,
+            ObservesToken,
+        }
+
+        internal Behaviour Mode { get; set; } = Behaviour.Works;
+
+        internal int AsyncCalls { get; private set; }
+
+        internal int SyncCalls { get; private set; }
+
+        internal CancellationToken LastToken { get; private set; }
+
+        public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
+        {
+            SyncCalls++;
+            throw new NotSupportedException("This store only claims asynchronously.");
+        }
+
+        public async ValueTask<NonceClaimResult> TryClaimAsync(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now, CancellationToken cancellationToken)
+        {
+            AsyncCalls++;
+            LastToken = cancellationToken;
+            await Task.Yield();
+            switch (Mode)
+            {
+                case Behaviour.TimesOut:
+                    throw new OperationCanceledException("the store's command timed out");
+                case Behaviour.ObservesToken:
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return NonceClaimResult.Claimed;
+                default:
+                    return _seen.Add(scope + "|" + nonce) ? NonceClaimResult.Claimed : NonceClaimResult.AlreadyUsed;
+            }
+        }
+    }
+
+    /// <summary>A Bam log that keeps what it was given, formatted.</summary>
+    private sealed class RecordingLog : Bam.Logging.ILog
+    {
+        internal List<string> Entries { get; } = new List<string>();
+
+        public void Info(string messageSignature, params object[] args)
+        {
+            Entries.Add("Info:" + string.Format(System.Globalization.CultureInfo.InvariantCulture, messageSignature, args));
+        }
+
+        public void Warning(string messageSignature, params object[] args)
+        {
+            Entries.Add("Warning:" + string.Format(System.Globalization.CultureInfo.InvariantCulture, messageSignature, args));
+        }
+
+        public void Error(string messageSignature, params object[] args)
+        {
+            Entries.Add("Error[]:" + string.Format(System.Globalization.CultureInfo.InvariantCulture, messageSignature, args));
+        }
+
+        public void Error(string messageSignature, Exception? ex, params object[] args)
+        {
+            Entries.Add("Error[" + ex?.Message + "]:" + string.Format(System.Globalization.CultureInfo.InvariantCulture, messageSignature, args));
+        }
+    }
+
+    /// <summary>A logger factory that records the categories asked for and every error written.</summary>
+    private sealed class CapturingLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
+    {
+        internal List<string> Categories { get; } = new List<string>();
+
+        internal List<string> Errors { get; } = new List<string>();
+
+        public void AddProvider(Microsoft.Extensions.Logging.ILoggerProvider provider)
+        {
+        }
+
+        public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName)
+        {
+            Categories.Add(categoryName);
+            return new ErrorCollector(Errors);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class ErrorCollector : Microsoft.Extensions.Logging.ILogger
+        {
+            private readonly List<string> _errors;
+
+            internal ErrorCollector(List<string> errors)
+            {
+                _errors = errors;
+            }
+
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            {
+                return null;
+            }
+
+            public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel)
+            {
+                return true;
+            }
+
+            public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            {
+                if (logLevel >= Microsoft.Extensions.Logging.LogLevel.Error)
+                {
+                    _errors.Add(formatter(state, exception));
+                }
+            }
+        }
+    }
+
+    private sealed record AsyncClaimOutcome(bool Claimed, bool SawRequestToken, int AsyncCalls, int SyncCalls, RequestProofFailure Replay, bool TimedOutSuccess, RequestProofFailure TimedOut, int ErrorsAfterTimeout, bool AbortPropagated, int ErrorsAtEnd);
+
+    private sealed record DefaultAsyncOutcome(bool CompletedSynchronously, NonceClaimResult Result, bool CancelledBeforeTheClaim, NonceClaimResult First, NonceClaimResult Again);
+
+    private sealed record RegistryLoggingOutcome(RequestProofFailure Refused, List<string> Categories, List<string> FactoryErrors, bool BareGetsDefaultBridge, List<string> Bridged);
 }
 
 [UnitTestMenu("MemoryRequestProofNonceStore Should", Selector = "mrpns")]

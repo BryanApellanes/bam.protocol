@@ -149,7 +149,9 @@ public sealed class RequestProofEvaluator
         NonceClaimResult claim;
         try
         {
-            claim = _nonces.TryClaim(scope, nonce!, signedAt + _options.RequestProofMaxAge, now);
+            // Awaited with the request's own token, so a shared store neither holds a thread while it waits nor keeps
+            // working for a client that has gone (bam.protocol#59).
+            claim = await _nonces.TryClaimAsync(scope, nonce!, signedAt + _options.RequestProofMaxAge, now, request.HttpContext.RequestAborted).ConfigureAwait(false);
         }
         catch (Exception exception) when (!(exception is OperationCanceledException && request.HttpContext.RequestAborted.IsCancellationRequested))
         {
