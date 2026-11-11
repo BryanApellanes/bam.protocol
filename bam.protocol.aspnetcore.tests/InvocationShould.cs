@@ -423,7 +423,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
 
     private static readonly Type[] DefaultInvocable = { typeof(TestInvocationService), typeof(UnattributedService) };
 
-    private static BamInvocationHandler Handler(BamAccess held, ActorAuthenticationOptions? authentication = null, BamInvocationOptions? options = null, CapturingLogger<BamInvocationHandler>? logger = null, ServiceRegistry? registry = null, IEnumerable<Type>? invocable = null)
+    private static BamInvocationHandler Handler(BamAccess held, ActorAuthenticationOptions? authentication = null, BamInvocationOptions? options = null, CapturingLogger<BamInvocationHandler>? logger = null, ServiceRegistry? registry = null, IEnumerable<Type>? invocable = null, IRequestProofNonceStore? nonces = null)
     {
         BamInvocationDispatchRegistry targets = new BamInvocationDispatchRegistry(registry ?? Registry(), invocable ?? DefaultInvocable);
         ActorAuthenticationOptions effective = authentication ?? ProofAtWrite;
@@ -431,7 +431,7 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
             new RegisteredTypeInvocationTargetResolver(targets),
             targets,
             new FixedAccessPolicy(held),
-            Evaluators.Create(new FixedClock(Now), effective),
+            Evaluators.Create(new FixedClock(Now), effective, nonces),
             effective,
             options ?? new BamInvocationOptions(),
             logger);
@@ -724,4 +724,50 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
     private sealed record ProofOutcome(string Declared, string Undeclared, string Unproved, string Proved, string Forged);
 
     private sealed record UnwrapOutcome(object? Generic, object? Plain, object? Value, object? Null, object? Deferred);
+
+    [UnitTest]
+    public void Answer503WithRetryAfterWhenTheNonceStoreCannotTakeTheProof()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        TestActor alice = new TestActor("alice");
+        string body = Invocations.Envelope<TestInvocationService>("Echo", Invocations.Args(("text", "proved")));
+        ActorAuthenticationOptions proofAtExecute = new ActorAuthenticationOptions { ProofRequiredAtOrAbove = BamAccess.Execute, RequestProofRetryAfter = TimeSpan.FromSeconds(7) };
+
+        When.A<ActorAuthenticationOptions>("invokes a proof-requiring target while the nonce store is down, full and working",
+            () => proofAtExecute,
+            (options) =>
+            {
+                InvokeAnswer Invoke(IRequestProofNonceStore? nonces, EccKeyPair signer)
+                {
+                    BamInvocationHandler handler = Handler(BamAccess.Execute, authentication: options, nonces: nonces);
+                    DefaultHttpContext context = Request(body, alice, pair.PublicPem).Proved(signer, Now);
+                    return new InvokeAnswer(Run(handler, context), context.Response.Headers.RetryAfter.ToString());
+                }
+
+                return new StoreRefusalOutcome(
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.StoreFull), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.KeyFull), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.Unavailable), TestKeys.NewEcc()),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.AlreadyUsed), pair),
+                    Invoke(null, pair));
+            })
+            .TheTest
+            .ShouldPass<StoreRefusalOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"an unavailable store is 503 ({outcome.Unavailable.Response})", outcome.Unavailable.Response.StartsWith("503:", StringComparison.Ordinal));
+                because.ItsTrue($"with the configured Retry-After ({outcome.Unavailable.RetryAfter})", outcome.Unavailable.RetryAfter == "7");
+                because.ItsTrue($"a full store is 503 with Retry-After ({outcome.StoreFull.Response})", outcome.StoreFull.Response.StartsWith("503:", StringComparison.Ordinal) && outcome.StoreFull.RetryAfter == "7");
+                because.ItsTrue($"a key over its own quota is 429 with Retry-After ({outcome.KeyFull.Response})", outcome.KeyFull.Response.StartsWith("429:", StringComparison.Ordinal) && outcome.KeyFull.RetryAfter == "7");
+                because.ItsTrue($"a forged proof is 401 even while the store is down ({outcome.Forged.Response})", outcome.Forged.Response.StartsWith("401:", StringComparison.Ordinal) && outcome.Forged.RetryAfter.Length == 0);
+                because.ItsTrue($"a replay is 401 ({outcome.Replay.Response})", outcome.Replay.Response.StartsWith("401:", StringComparison.Ordinal) && outcome.Replay.RetryAfter.Length == 0);
+                because.ItsTrue($"a good proof runs the target ({outcome.Proved.Response})", outcome.Proved.Response == "200:\"Echo: proved\"" && outcome.Proved.RetryAfter.Length == 0);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record InvokeAnswer(string Response, string RetryAfter);
+
+    private sealed record StoreRefusalOutcome(InvokeAnswer Unavailable, InvokeAnswer StoreFull, InvokeAnswer KeyFull, InvokeAnswer Forged, InvokeAnswer Replay, InvokeAnswer Proved);
 }

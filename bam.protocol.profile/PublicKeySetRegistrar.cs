@@ -5,6 +5,7 @@ using Bam.Logging;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace Bam.Protocol.Profile;
 
@@ -106,6 +107,14 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 unparseable.Value.Item2);
         }
 
+        string? mistypedSlot = FindMistypedSlot(publicKeySetData);
+        if (mistypedSlot != null)
+        {
+            Log.Warn("Rejected key-set registration for handle '{0}': the {1} slot does not hold a public key of that kind.", handle, mistypedSlot);
+            throw new InvalidPublicKeySetException(handle,
+                $"The {mistypedSlot} slot of the key set presented for handle '{handle}' does not hold {DescribeExpectedKey(mistypedSlot)}.", null);
+        }
+
         lock (KeySetRegistrationLock.Sync)
         {
             // One lazy snapshot serves every scan-confirmation this admission needs
@@ -183,6 +192,14 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             throw new InvalidKeySetRotationException(handle,
                 $"The proposed {unparseable.Value.Item1} public key for handle '{handle}' is not a parseable public key.",
                 unparseable.Value.Item2);
+        }
+
+        string? mistypedSlot = FindMistypedSlot(newKeySet);
+        if (mistypedSlot != null)
+        {
+            Log.Warn("Rejected key-set rotation for handle '{0}': the proposed {1} slot does not hold a public key of that kind.", handle, mistypedSlot);
+            throw new InvalidKeySetRotationException(handle,
+                $"The proposed {mistypedSlot} slot for handle '{handle}' does not hold {DescribeExpectedKey(mistypedSlot)}; rotating to it would leave the handle without a usable key of that kind.");
         }
 
         lock (KeySetRegistrationLock.Sync)
@@ -370,6 +387,53 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             return rsaFailure;
         }
         return ParseFailure("ECC", keySet.PublicEccKey);
+    }
+
+    private const string RsaSlot = "RSA";
+    private const string EccSlot = "ECC";
+
+    /// <summary>
+    /// Returns the name of the first non-empty slot whose key is not a public key of the slot's
+    /// kind (<see cref="PublicKeySetData.PublicRsaKey"/> must hold an RSA public key,
+    /// <see cref="PublicKeySetData.PublicEccKey"/> an EC public key), or null when every present
+    /// slot holds the right kind.  A swapped pair, two keys of one kind, or a private key would
+    /// otherwise be admitted and leave the handle unusable: rotation proofs are verified against
+    /// the RSA slot and bearer tokens against the ECC slot (bam.protocol#55).  Empty slots are
+    /// left to the callers' own presence rules, so an ECC-only key set is still admitted.
+    /// Call only after <see cref="FindUnparseableKey"/> has passed.
+    /// </summary>
+    private static string? FindMistypedSlot(PublicKeySetData keySet)
+    {
+        if (!HoldsPublicKeyOrIsEmpty<RsaKeyParameters>(keySet.PublicRsaKey))
+        {
+            return RsaSlot;
+        }
+        if (!HoldsPublicKeyOrIsEmpty<ECPublicKeyParameters>(keySet.PublicEccKey))
+        {
+            return EccSlot;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Returns true when the PEM is empty or parses to a public (never private) key of
+    /// <typeparamref name="TKey"/>.
+    /// </summary>
+    private static bool HoldsPublicKeyOrIsEmpty<TKey>(string? pem) where TKey : AsymmetricKeyParameter
+    {
+        if (string.IsNullOrEmpty(pem))
+        {
+            return true;
+        }
+        return pem.PemToKey() is TKey { IsPrivate: false };
+    }
+
+    /// <summary>
+    /// Names the key a slot must hold, for rejection messages.
+    /// </summary>
+    private static string DescribeExpectedKey(string slot)
+    {
+        return slot == RsaSlot ? "an RSA public key" : "an EC public key";
     }
 
     /// <summary>
