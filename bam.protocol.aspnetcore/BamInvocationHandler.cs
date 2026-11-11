@@ -21,7 +21,9 @@ namespace Bam.Protocol.AspNetCore;
 /// only (461, the native <c>CommandResolutionFailed</c> code); anonymous-marked operations are refused (403, the
 /// endpoint is not an anonymous surface); the actor's access from <see cref="IActorAccessPolicy"/> must satisfy the target's
 /// <see cref="InvocationTarget.RequiredAccess"/> (403); the body proof is verified by the registered
-/// <see cref="RequestProofEvaluator"/> when <see cref="InvocationAccessRule.RequiresProof"/> says so (401); the
+/// <see cref="RequestProofEvaluator"/> when <see cref="InvocationAccessRule.RequiresProof"/> says so (401 for a bad
+/// proof; 503 with <c>Retry-After</c> when the nonce store is unavailable or full; 429 with <c>Retry-After</c> when
+/// the signing key is over its own nonce quota; see <see cref="RequestProofRefusal"/>); the
 /// instance comes from the dispatch registry inside an <see cref="AmbientActorContext"/> scope (461 when it
 /// refuses); a <see cref="Task"/> result is awaited and unwrapped; and the result is
 /// written as bare JSON with 200, which is what <c>BamClient&lt;T&gt;.InvokeAsync</c> deserializes. An
@@ -162,7 +164,7 @@ public sealed class BamInvocationHandler
             if (!proof.Success)
             {
                 _logger.LogWarning("Invocation refused: request proof failed for actor '{Handle}' on '{Operation}': {Reason}", actor.Handle, operation, proof.Reason);
-                return Results.Problem(detail: proof.Reason ?? "Request proof failed.", statusCode: StatusCodes.Status401Unauthorized);
+                return RequestProofRefusal.ToProblem(http, proof, _authentication);
             }
         }
 

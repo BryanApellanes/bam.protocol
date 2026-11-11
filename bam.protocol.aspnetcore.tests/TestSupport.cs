@@ -260,6 +260,22 @@ internal static class Evaluators
     }
 }
 
+/// <summary>A nonce store that answers every claim with one fixed result.</summary>
+internal sealed class FixedClaimNonceStore : IRequestProofNonceStore
+{
+    private readonly NonceClaimResult _result;
+
+    internal FixedClaimNonceStore(NonceClaimResult result)
+    {
+        _result = result;
+    }
+
+    public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
+    {
+        return _result;
+    }
+}
+
 /// <summary>A logger that keeps each formatted entry with its level.</summary>
 internal sealed class CapturingLogger<T> : Microsoft.Extensions.Logging.ILogger<T>
 {
