@@ -78,6 +78,11 @@ public sealed class RequestProofEvaluator
     /// for a nonce-store outage, <see cref="RequestProofFailure.Capacity"/> for a store at its total limit,
     /// <see cref="RequestProofFailure.KeyQuota"/> for a signing key at its own limit.
     /// </returns>
+    /// <exception cref="OperationCanceledException">
+    /// The client aborted the request (<c>RequestAborted</c>) before or while the nonce store was asked. The nonce is
+    /// not spent in that case: a store checks the token before it writes, and the default
+    /// <see cref="IRequestProofNonceStore.TryClaimAsync"/> checks it before the claim.
+    /// </exception>
     public async Task<RequestProofResult> EvaluateAsync(HttpRequest request, string? eccPublicKeyPem)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -149,7 +154,9 @@ public sealed class RequestProofEvaluator
         NonceClaimResult claim;
         try
         {
-            claim = _nonces.TryClaim(scope, nonce!, signedAt + _options.RequestProofMaxAge, now);
+            // Awaited with the request's own token, so a shared store neither holds a thread while it waits nor keeps
+            // working for a client that has gone (bam.protocol#59).
+            claim = await _nonces.TryClaimAsync(scope, nonce!, signedAt + _options.RequestProofMaxAge, now, request.HttpContext.RequestAborted).ConfigureAwait(false);
         }
         catch (Exception exception) when (!(exception is OperationCanceledException && request.HttpContext.RequestAborted.IsCancellationRequested))
         {
