@@ -31,6 +31,7 @@ public interface IProfileRepository
     /// <param name="publicKeySetData">The key set to register.</param>
     /// <returns>The persisted key set.</returns>
     /// <exception cref="PublicKeySetConflictException">A key set is already registered for the handle.</exception>
+    /// <exception cref="InvalidPublicKeySetException">The key material is not a parseable public key, or a slot holds a key of the wrong kind (the RSA slot must hold an RSA public key and the ECC slot an EC public key; a private key is refused).</exception>
     PublicKeySetData SavePublicKeySet(PublicKeySetData publicKeySetData);
 
     /// <summary>
@@ -44,7 +45,7 @@ public interface IProfileRepository
     /// <param name="newKeySet">The key set to rotate to, carrying the handle being rotated.</param>
     /// <param name="rotationSignature">The raw signature bytes proving possession of the current key.</param>
     /// <returns>The updated key set.</returns>
-    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, or the proof is invalid.</exception>
+    /// <exception cref="InvalidKeySetRotationException">No key set is registered for the handle, the proof is invalid, or the proposed key material is not parseable or holds a key of the wrong kind for its slot.</exception>
     PublicKeySetData RotatePublicKeySet(PublicKeySetData newKeySet, byte[] rotationSignature);
 
     /// <summary>
