@@ -91,20 +91,22 @@ public sealed record ActorAuthenticationOptions
 
     /// <summary>
     /// How long a client is told to wait, in the <c>Retry-After</c> header, when a request proof is refused with 503
-    /// because the nonce store is unavailable or at capacity (<see cref="RequestProofRefusal"/>). Sent as whole
-    /// seconds, at least one. Defaults to 30 seconds.
+    /// (the nonce store is unavailable or full) or 429 (the signing key is over its own nonce quota); see
+    /// <see cref="RequestProofRefusal"/>. Sent as whole seconds, rounded up. Must be positive and at most
+    /// <see cref="RequestProofEvaluator.MaximumRetryAfter"/> (one hour); anything else refuses start-up, which also
+    /// catches a bare number in configuration being read as days. Defaults to 30 seconds.
     /// </summary>
     public TimeSpan RequestProofRetryAfter { get; init; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// The most unexpired request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds in all. When it is
-    /// full, new proofs are refused (401) rather than an unexpired nonce evicted. Defaults to 200,000.
+    /// full, new proofs are refused (503 with <c>Retry-After</c>) rather than an unexpired nonce evicted. Defaults to 200,000.
     /// </summary>
     public int RequestProofNonceCapacity { get; init; } = 200_000;
 
     /// <summary>
     /// The most unexpired request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds for one signing key.
-    /// A key at this limit has its new proofs refused until its nonces expire; other keys are unaffected, so one
+    /// A key at this limit has its new proofs refused (429 with <c>Retry-After</c>) until its nonces expire; other keys are unaffected, so one
     /// actor cannot lock everyone else out. Defaults to 10,000, about 33 signed requests a second sustained over the
     /// default window; at most <see cref="RequestProofNonceCapacity"/>.
     /// </summary>

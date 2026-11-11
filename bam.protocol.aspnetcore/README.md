@@ -61,7 +61,11 @@ Used nonces live in `IRequestProofNonceStore`. The default, `MemoryRequestProofN
 all, in one process. At either limit it refuses new proofs rather than forget an unexpired nonce, which could
 then be replayed; the per-key limit means one busy or hostile key locks out only itself. A capacity refusal is
 reported as such ("cannot record another proof for this key right now") and logged at Warning, distinct from a
-replay ("the nonce was already used"). A host running more than one instance registers a shared store before
+replay ("the nonce was already used"). The statuses differ too: a bad or replayed proof is `401`; a store that is
+full or cannot be reached is `503` with `Retry-After`; a signing key over its own limit is `429` with
+`Retry-After`. The wait is `ActorAuth:RequestProofRetryAfter`, and a client that retries must sign a new proof
+with a fresh nonce and timestamp. A host with its own error format reads `RequestProofResult.Failure`
+(`Invalid`, `Unavailable`, `Capacity`, `KeyQuota`) or calls `RequestProofRefusal.StatusCodeOf`. A host running more than one instance registers a shared store before
 `AddActorAuthentication`, or a proof accepted by one instance can be replayed once at each of the others.
 
 ## Host wiring
@@ -160,8 +164,10 @@ verified actor is present.
 | `401` | No verified actor (`Authentication failed.`), or the request proof is missing or invalid. |
 | `403` | The actor's access is below the method's requirement, or the method allows anonymous access. |
 | `413` | The body exceeds `BamInvocationOptions.MaxBodyBytes` (default 1 MiB). |
+| `429` | The request proof is valid but the signing key is over `ActorAuth:RequestProofNoncesPerKey`. Carries `Retry-After`. |
 | `461` | The operation does not name a registered public method, or the registry would not supply the instance. |
 | `500` | The method threw. The caller sees only `Invocation failed.`; the exception is logged on the host. |
+| `503` | The request proof is valid but the nonce store is unavailable or full, so the host cannot accept it now. Carries `Retry-After`. |
 
 A dispatched service learns who is calling through `IActorContext`, which `AddBamInvocation` registers in the
 dispatch registry (unless the host already did). It carries the verified `Actor`, the `KeyFingerprint` of the
@@ -229,8 +235,9 @@ Every authentication failure, from the middleware and from `/actor/token`, answe
 | `AdmittedHandles` | empty | `handle` or `handle@fingerprint` entries admitted when `OpenEnrollment` is off (exact match) |
 | `AllowedBodySignatureAlgorithms` | `SHA256WITHECDSA` | Algorithms the request-proof signature may name |
 | `RequestProofMaxAge` | `00:05:00` | How far a proof's timestamp may be from the host's clock |
-| `RequestProofNonceCapacity` | `200000` | Unexpired nonces `MemoryRequestProofNonceStore` holds in all before refusing new proofs |
-| `RequestProofNoncesPerKey` | `10000` | Unexpired nonces it holds for one signing key before refusing that key's new proofs |
+| `RequestProofNonceCapacity` | `200000` | Unexpired nonces `MemoryRequestProofNonceStore` holds in all before refusing new proofs (503) |
+| `RequestProofNoncesPerKey` | `10000` | Unexpired nonces it holds for one signing key before refusing that key's new proofs (429) |
+| `RequestProofRetryAfter` | `00:00:30` | The `Retry-After` sent with those 503 and 429 refusals; positive, at most one hour |
 | `ClientTokenAudience` | none (required when `Enabled`) | `aud` required in client-signed tokens |
 | `AllowMissingClientTokenAudience` | `false` | Explicit opt-out that lets an enabled host start without `ClientTokenAudience` |
 

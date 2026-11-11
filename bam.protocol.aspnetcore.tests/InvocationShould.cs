@@ -745,11 +745,11 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 }
 
                 return new StoreRefusalOutcome(
-                    Invoke(new OneAnswerNonceStore(NonceClaimResult.Unavailable), pair),
-                    Invoke(new OneAnswerNonceStore(NonceClaimResult.StoreFull), pair),
-                    Invoke(new OneAnswerNonceStore(NonceClaimResult.KeyFull), pair),
-                    Invoke(new OneAnswerNonceStore(NonceClaimResult.Unavailable), TestKeys.NewEcc()),
-                    Invoke(new OneAnswerNonceStore(NonceClaimResult.AlreadyUsed), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.StoreFull), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.KeyFull), pair),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.Unavailable), TestKeys.NewEcc()),
+                    Invoke(new FixedClaimNonceStore(NonceClaimResult.AlreadyUsed), pair),
                     Invoke(null, pair));
             })
             .TheTest
@@ -758,29 +758,13 @@ public class BamInvocationHandlerShould : UnitTestMenuContainer
                 because.ItsTrue($"an unavailable store is 503 ({outcome.Unavailable.Response})", outcome.Unavailable.Response.StartsWith("503:", StringComparison.Ordinal));
                 because.ItsTrue($"with the configured Retry-After ({outcome.Unavailable.RetryAfter})", outcome.Unavailable.RetryAfter == "7");
                 because.ItsTrue($"a full store is 503 with Retry-After ({outcome.StoreFull.Response})", outcome.StoreFull.Response.StartsWith("503:", StringComparison.Ordinal) && outcome.StoreFull.RetryAfter == "7");
-                because.ItsTrue($"a full key is 503 with Retry-After ({outcome.KeyFull.Response})", outcome.KeyFull.Response.StartsWith("503:", StringComparison.Ordinal) && outcome.KeyFull.RetryAfter == "7");
+                because.ItsTrue($"a key over its own quota is 429 with Retry-After ({outcome.KeyFull.Response})", outcome.KeyFull.Response.StartsWith("429:", StringComparison.Ordinal) && outcome.KeyFull.RetryAfter == "7");
                 because.ItsTrue($"a forged proof is 401 even while the store is down ({outcome.Forged.Response})", outcome.Forged.Response.StartsWith("401:", StringComparison.Ordinal) && outcome.Forged.RetryAfter.Length == 0);
                 because.ItsTrue($"a replay is 401 ({outcome.Replay.Response})", outcome.Replay.Response.StartsWith("401:", StringComparison.Ordinal) && outcome.Replay.RetryAfter.Length == 0);
                 because.ItsTrue($"a good proof runs the target ({outcome.Proved.Response})", outcome.Proved.Response == "200:\"Echo: proved\"" && outcome.Proved.RetryAfter.Length == 0);
             })
             .SoBeHappy()
             .UnlessItFailed();
-    }
-
-    /// <summary>A nonce store that gives every claim the same answer.</summary>
-    private sealed class OneAnswerNonceStore : IRequestProofNonceStore
-    {
-        private readonly NonceClaimResult _answer;
-
-        internal OneAnswerNonceStore(NonceClaimResult answer)
-        {
-            _answer = answer;
-        }
-
-        public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
-        {
-            return _answer;
-        }
     }
 
     private sealed record InvokeAnswer(string Response, string RetryAfter);

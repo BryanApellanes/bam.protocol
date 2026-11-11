@@ -50,13 +50,34 @@ public sealed record RequestProofResult
     /// Gets what kind of failure this is, so a host can answer an outage or a capacity refusal differently from a
     /// bad proof without reading <see cref="Reason"/>. <see cref="RequestProofFailure.None"/> on success.
     /// </summary>
-    public RequestProofFailure Failure { get; init; }
+    /// <remarks>
+    /// Tied to <see cref="Success"/>: a success always reads <see cref="RequestProofFailure.None"/>, and a failure built
+    /// without a kind reads <see cref="RequestProofFailure.Invalid"/>, so "no failure kind" can never stand in for "verified".
+    /// </remarks>
+    public RequestProofFailure Failure
+    {
+        get
+        {
+            if (Success)
+            {
+                return RequestProofFailure.None;
+            }
+
+            return _failure == RequestProofFailure.None ? RequestProofFailure.Invalid : _failure;
+        }
+        init => _failure = value;
+    }
+
+    private readonly RequestProofFailure _failure;
 
     /// <summary>
-    /// Gets whether the refusal is the host's condition, not the caller's proof: the same request may succeed if
-    /// sent again later. True for <see cref="RequestProofFailure.Unavailable"/> and <see cref="RequestProofFailure.Capacity"/>.
+    /// Gets whether the refusal is about the host's state or the caller's rate, not the proof: the caller may try
+    /// again later. True for <see cref="RequestProofFailure.Unavailable"/>, <see cref="RequestProofFailure.Capacity"/>
+    /// and <see cref="RequestProofFailure.KeyQuota"/>. The retry must carry a newly signed proof, with a fresh
+    /// nonce and timestamp: a store that failed after writing may already hold the old nonce, and the old timestamp
+    /// may have left the window by then.
     /// </summary>
-    public bool IsRetryable => Failure == RequestProofFailure.Unavailable || Failure == RequestProofFailure.Capacity;
+    public bool IsRetryable => Failure == RequestProofFailure.Unavailable || Failure == RequestProofFailure.Capacity || Failure == RequestProofFailure.KeyQuota;
 
     /// <summary>Creates a failed outcome for a proof that is missing, malformed, forged, stale or replayed.</summary>
     /// <param name="reason">Why the proof failed.</param>
@@ -101,8 +122,14 @@ public enum RequestProofFailure
     Unavailable = 2,
 
     /// <summary>
-    /// The nonce store is at its total or per-key limit and cannot record another nonce. Load, not an attack on this
-    /// request; a host answers 503.
+    /// The nonce store is at its total limit and cannot record another nonce for anyone. Load on the host, not an
+    /// attack on this request; a host answers 503.
     /// </summary>
     Capacity = 3,
+
+    /// <summary>
+    /// The signing key holds as many unexpired nonces as one key may. Only this caller is refused, for its own rate;
+    /// the host is healthy, so a host answers 429, not a 5xx that a health check or an alert would count against it.
+    /// </summary>
+    KeyQuota = 4,
 }

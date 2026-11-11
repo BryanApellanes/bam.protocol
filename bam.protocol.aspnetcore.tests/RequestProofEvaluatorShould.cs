@@ -617,7 +617,11 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 RequestProofResult storeFull = Prove(With(NonceClaimResult.StoreFull), Signed());
                 RequestProofResult keyFull = Prove(With(NonceClaimResult.KeyFull), Signed());
                 RequestProofResult alreadyUsed = Prove(With(NonceClaimResult.AlreadyUsed), Signed());
-                RequestProofResult unknown = Prove(With((NonceClaimResult)99), Signed());
+                CapturingLogger<RequestProofEvaluator> unknownLog = new CapturingLogger<RequestProofEvaluator>();
+                RequestProofResult unknown = Prove(Evaluators.Create(clock, nonces: new FixedClaimNonceStore((NonceClaimResult)99), logger: unknownLog), Signed());
+                string unknownLogged = string.Join("|", unknownLog.Entries.Where(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error).Select(entry => entry.Value));
+                RequestProofResult handBuilt = new RequestProofResult { Success = false };
+                RequestProofResult contradictory = new RequestProofResult { Success = true, Failure = RequestProofFailure.Capacity };
                 bool noneRefused;
                 try
                 {
@@ -629,7 +633,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                     noneRefused = true;
                 }
 
-                return new FailureKindOutcome(verified, replay, unsigned, forged, stale, noKey, thrown, timedOut, unavailable, storeFull, keyFull, alreadyUsed, unknown, noneRefused);
+                return new FailureKindOutcome(verified, replay, unsigned, forged, stale, noKey, thrown, timedOut, unavailable, storeFull, keyFull, alreadyUsed, unknown, noneRefused, unknownLog.Entries.Count(entry => entry.Key == Microsoft.Extensions.Logging.LogLevel.Error), handBuilt.Failure, contradictory.Failure, contradictory.IsRetryable);
             })
             .TheTest
             .ShouldPass<FailureKindOutcome>((because, outcome) =>
@@ -645,10 +649,13 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue("a store that times out is Unavailable", outcome.TimedOut.Failure == RequestProofFailure.Unavailable);
                 because.ItsTrue("a store that reports Unavailable is Unavailable", outcome.Unavailable.Failure == RequestProofFailure.Unavailable && outcome.Unavailable.IsRetryable);
                 because.ItsTrue("a full store is Capacity", outcome.StoreFull.Failure == RequestProofFailure.Capacity && outcome.StoreFull.IsRetryable);
-                because.ItsTrue("a full key is Capacity", outcome.KeyFull.Failure == RequestProofFailure.Capacity && outcome.KeyFull.IsRetryable);
+                because.ItsTrue("a full key is KeyQuota, not Capacity", outcome.KeyFull.Failure == RequestProofFailure.KeyQuota && outcome.KeyFull.IsRetryable);
                 because.ItsTrue("a store that reports AlreadyUsed is Invalid", outcome.AlreadyUsed.Failure == RequestProofFailure.Invalid);
                 because.ItsTrue("a claim result the evaluator doesn't know fails closed as Unavailable", !outcome.Unknown.Success && outcome.Unknown.Failure == RequestProofFailure.Unavailable);
+                because.ItsTrue("the unknown result is logged as an error once", outcome.UnknownErrors == 1);
                 because.ItsTrue("a failed outcome cannot be built with no kind", outcome.NoneRefused);
+                because.ItsTrue("a failure built by hand without a kind reads Invalid, never None", outcome.HandBuilt == RequestProofFailure.Invalid);
+                because.ItsTrue("a success reads None whatever kind it was given", outcome.Contradictory == RequestProofFailure.None && !outcome.ContradictoryRetryable);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -681,7 +688,7 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 FilterAnswer replay = Run(new FixedClaimNonceStore(NonceClaimResult.AlreadyUsed), pair, options);
                 FilterAnswer ok = Run(null, pair, options);
                 FilterAnswer defaults = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, new ActorAuthenticationOptions());
-                FilterAnswer tiny = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, new ActorAuthenticationOptions { RequestProofRetryAfter = TimeSpan.Zero });
+                FilterAnswer tiny = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, new ActorAuthenticationOptions { RequestProofRetryAfter = TimeSpan.FromMilliseconds(200) });
                 return new RefusalStatusOutcome(down, reported, storeFull, keyFull, forged, replay, ok, defaults, tiny);
             })
             .TheTest
@@ -691,35 +698,19 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
                 because.ItsTrue($"with Retry-After rounded up to whole seconds ({outcome.Down.RetryAfter})", outcome.Down.RetryAfter == "13");
                 because.ItsTrue("a store that reports Unavailable is 503 with Retry-After", outcome.Reported.Status == 503 && outcome.Reported.RetryAfter == "13");
                 because.ItsTrue("a full store is 503 with Retry-After", outcome.StoreFull.Status == 503 && outcome.StoreFull.RetryAfter == "13");
-                because.ItsTrue("a full key is 503 with Retry-After", outcome.KeyFull.Status == 503 && outcome.KeyFull.RetryAfter == "13");
+                because.ItsTrue($"a key over its own quota is 429, not a 5xx, with Retry-After ({outcome.KeyFull.Status})", outcome.KeyFull.Status == 429 && outcome.KeyFull.RetryAfter == "13");
                 because.ItsTrue($"a bad signature is 401 even while the store is down ({outcome.Forged.Status})", outcome.Forged.Status == 401);
                 because.ItsTrue("a 401 carries no Retry-After", outcome.Forged.RetryAfter.Length == 0 && outcome.Replay.RetryAfter.Length == 0);
                 because.ItsTrue("a replay is 401", outcome.Replay.Status == 401);
                 because.ItsTrue("a good proof reaches the handler with no Retry-After", outcome.Ok.Handled == "handled" && outcome.Ok.RetryAfter.Length == 0);
                 because.ItsTrue($"the default Retry-After is 30 seconds ({outcome.Defaults.RetryAfter})", outcome.Defaults.RetryAfter == "30");
-                because.ItsTrue($"Retry-After is never below one second ({outcome.Tiny.RetryAfter})", outcome.Tiny.RetryAfter == "1");
+                because.ItsTrue($"a sub-second Retry-After is sent as one second ({outcome.Tiny.RetryAfter})", outcome.Tiny.RetryAfter == "1");
             })
             .SoBeHappy()
             .UnlessItFailed();
     }
 
-    /// <summary>A nonce store that answers every claim with one fixed result.</summary>
-    private sealed class FixedClaimNonceStore : IRequestProofNonceStore
-    {
-        private readonly NonceClaimResult _result;
-
-        internal FixedClaimNonceStore(NonceClaimResult result)
-        {
-            _result = result;
-        }
-
-        public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
-        {
-            return _result;
-        }
-    }
-
-    private sealed record FailureKindOutcome(RequestProofResult Verified, RequestProofResult Replay, RequestProofResult Unsigned, RequestProofResult Forged, RequestProofResult Stale, RequestProofResult NoKey, RequestProofResult Thrown, RequestProofResult TimedOut, RequestProofResult Unavailable, RequestProofResult StoreFull, RequestProofResult KeyFull, RequestProofResult AlreadyUsed, RequestProofResult Unknown, bool NoneRefused);
+    private sealed record FailureKindOutcome(RequestProofResult Verified, RequestProofResult Replay, RequestProofResult Unsigned, RequestProofResult Forged, RequestProofResult Stale, RequestProofResult NoKey, RequestProofResult Thrown, RequestProofResult TimedOut, RequestProofResult Unavailable, RequestProofResult StoreFull, RequestProofResult KeyFull, RequestProofResult AlreadyUsed, RequestProofResult Unknown, bool NoneRefused, int UnknownErrors, RequestProofFailure HandBuilt, RequestProofFailure Contradictory, bool ContradictoryRetryable);
 
     private sealed record FilterAnswer(int? Status, string RetryAfter, string? Handled);
 
@@ -941,6 +932,42 @@ public class ClientTokenAudienceShould : UnitTestMenuContainer
     }
 
     private sealed record MaxAgeOutcome(string? Zero, string? TwoDays, string? OneDay, string? Both);
+
+    [UnitTest]
+    public void RefuseToStartWithAnOutOfRangeRequestProofRetryAfter()
+    {
+        When.A<string>("verifies prerequisites with a zero, a negative, a thirty-day, a one-hour and a default RequestProofRetryAfter",
+            () => "https://gateway.example",
+            (audience) =>
+            {
+                ActorAuthenticationOptions With(TimeSpan retryAfter) => new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = audience, RequestProofRetryAfter = retryAfter };
+                // what the configuration binder makes of "RequestProofRetryAfter": 30
+                TimeSpan bareThirty = (TimeSpan)System.ComponentModel.TypeDescriptor.GetConverter(typeof(TimeSpan)).ConvertFromInvariantString("30")!;
+                return new RetryAfterOutcome(
+                    StartupFailure(With(TimeSpan.Zero)),
+                    StartupFailure(With(TimeSpan.FromSeconds(-5))),
+                    bareThirty,
+                    StartupFailure(With(bareThirty)),
+                    StartupFailure(With(TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1))),
+                    StartupFailure(With(TimeSpan.FromHours(1))),
+                    StartupFailure(new ActorAuthenticationOptions { Enabled = true, Mode = ActorAuthenticationMode.ClientSignedOnly, ClientTokenAudience = audience }));
+            })
+            .TheTest
+            .ShouldPass<RetryAfterOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a zero retry-after refuses start-up and names the setting", outcome.Zero?.Contains("RequestProofRetryAfter", StringComparison.Ordinal) == true);
+                because.ItsTrue("a negative retry-after refuses start-up", outcome.Negative?.Contains("RequestProofRetryAfter", StringComparison.Ordinal) == true);
+                because.ItsTrue($"a bare 30 in configuration means thirty days ({outcome.BareThirty})", outcome.BareThirty == TimeSpan.FromDays(30));
+                because.ItsTrue("the thirty-day value refuses start-up", outcome.BareThirtyFailure?.Contains("RequestProofRetryAfter", StringComparison.Ordinal) == true);
+                because.ItsTrue("one second over an hour refuses start-up", outcome.OverAnHour?.Contains("RequestProofRetryAfter", StringComparison.Ordinal) == true);
+                because.ItsTrue("exactly one hour starts", outcome.OneHour is null);
+                because.ItsTrue("the default starts", outcome.Default is null);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private sealed record RetryAfterOutcome(string? Zero, string? Negative, TimeSpan BareThirty, string? BareThirtyFailure, string? OverAnHour, string? OneHour, string? Default);
 
     private static string? StartupFailure(ActorAuthenticationOptions options)
     {

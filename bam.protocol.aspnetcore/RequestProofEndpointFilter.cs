@@ -11,8 +11,8 @@ namespace Bam.Protocol.AspNetCore;
 /// require it. When required, <see cref="RequestProofEvaluator"/> checks the request's signed canonical
 /// form (method, path and query, timestamp, single-use nonce, raw body digest) against the actor's
 /// registered ECC key. A proof that fails is answered 401; a proof the host could not check or record (a
-/// nonce-store outage, or the store at capacity) is answered 503 with <c>Retry-After</c>
-/// (<see cref="RequestProofRefusal"/>).
+/// nonce-store outage, or the store full) is answered 503 with <c>Retry-After</c>; a signing key over its own
+/// nonce quota is answered 429 with <c>Retry-After</c> (<see cref="RequestProofRefusal"/>).
 /// </summary>
 public sealed class RequestProofEndpointFilter : IEndpointFilter
 {
@@ -54,7 +54,8 @@ public sealed class RequestProofEndpointFilter : IEndpointFilter
         RequestProofResult result = await _evaluator.EvaluateAsync(http.Request, http.GetActorEccPublicKeyPem()).ConfigureAwait(false);
         if (!result.Success)
         {
-            // 401 for a bad proof; 503 with Retry-After when the nonce store is down or full (bam.protocol#58).
+            // 401 for a bad proof; 503 with Retry-After when the nonce store is down or full; 429 with Retry-After
+            // when the key is over its own quota (bam.protocol#58).
             return RequestProofRefusal.ToProblem(http, result, _options);
         }
 

@@ -22,6 +22,9 @@ public sealed class RequestProofEvaluator
     /// <summary>The longest <see cref="ActorAuthenticationOptions.RequestProofMaxAge"/> accepted.</summary>
     public static readonly TimeSpan MaximumMaxAge = TimeSpan.FromDays(1);
 
+    /// <summary>The longest <see cref="ActorAuthenticationOptions.RequestProofRetryAfter"/> accepted.</summary>
+    public static readonly TimeSpan MaximumRetryAfter = TimeSpan.FromHours(1);
+
     private readonly IRequestProof _proof;
     private readonly IRequestProofNonceStore _nonces;
     private readonly ActorAuthenticationOptions _options;
@@ -36,7 +39,10 @@ public sealed class RequestProofEvaluator
     /// <param name="options">Carries <see cref="ActorAuthenticationOptions.RequestProofMaxAge"/>.</param>
     /// <param name="clock">The time source; the system clock when null.</param>
     /// <param name="logger">Receives a warning when the nonce store refuses a proof for capacity; optional.</param>
-    /// <exception cref="InvalidOperationException">The maximum age is not positive or exceeds <see cref="MaximumMaxAge"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The maximum age is not positive or exceeds <see cref="MaximumMaxAge"/>, or the retry-after is not positive or
+    /// exceeds <see cref="MaximumRetryAfter"/>.
+    /// </exception>
     public RequestProofEvaluator(IRequestProof proof, IRequestProofNonceStore nonces, ActorAuthenticationOptions options, TimeProvider? clock = null, ILogger<RequestProofEvaluator>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(proof);
@@ -45,6 +51,11 @@ public sealed class RequestProofEvaluator
         if (options.RequestProofMaxAge <= TimeSpan.Zero || options.RequestProofMaxAge > MaximumMaxAge)
         {
             throw new InvalidOperationException("ActorAuth:RequestProofMaxAge must be positive and at most one day.");
+        }
+
+        if (options.RequestProofRetryAfter <= TimeSpan.Zero || options.RequestProofRetryAfter > MaximumRetryAfter)
+        {
+            throw new InvalidOperationException("ActorAuth:RequestProofRetryAfter must be positive and at most one hour (write it as hh:mm:ss; a bare number is read as days).");
         }
 
         _proof = proof;
@@ -64,7 +75,8 @@ public sealed class RequestProofEvaluator
     /// <returns>
     /// Success, or a failure with a reason that names no handle or key and a <see cref="RequestProofResult.Failure"/>
     /// kind: <see cref="RequestProofFailure.Invalid"/> for the proof itself, <see cref="RequestProofFailure.Unavailable"/>
-    /// for a nonce-store outage, <see cref="RequestProofFailure.Capacity"/> for a store at its limit.
+    /// for a nonce-store outage, <see cref="RequestProofFailure.Capacity"/> for a store at its total limit,
+    /// <see cref="RequestProofFailure.KeyQuota"/> for a signing key at its own limit.
     /// </returns>
     public async Task<RequestProofResult> EvaluateAsync(HttpRequest request, string? eccPublicKeyPem)
     {
@@ -158,13 +170,14 @@ public sealed class RequestProofEvaluator
                 return RequestProofResult.Failed(UnavailableReason, RequestProofFailure.Unavailable);
             case NonceClaimResult.KeyFull:
                 WarnAtCapacity(scope, "per-key (ActorAuth:RequestProofNoncesPerKey)", now);
-                return RequestProofResult.Failed(CapacityReason, RequestProofFailure.Capacity);
+                return RequestProofResult.Failed(CapacityReason, RequestProofFailure.KeyQuota);
             case NonceClaimResult.StoreFull:
                 WarnAtCapacity(scope, "total (ActorAuth:RequestProofNonceCapacity)", now);
                 return RequestProofResult.Failed(CapacityReason, RequestProofFailure.Capacity);
             default:
-                // A value this evaluator does not know cannot be read as "claimed": fail closed, as for an outage.
-                ErrorUnavailable(now, null);
+                // A value this evaluator does not know cannot be read as "claimed": fail closed, as for an outage. The
+                // logged exception names the value, for whoever debugs a store built against a newer enum.
+                ErrorUnavailable(now, new InvalidOperationException($"The nonce store answered with a claim result this host does not know ({(int)claim})."));
                 return RequestProofResult.Failed(UnavailableReason, RequestProofFailure.Unavailable);
         }
     }
