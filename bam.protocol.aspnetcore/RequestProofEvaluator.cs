@@ -61,7 +61,11 @@ public sealed class RequestProofEvaluator
     /// </summary>
     /// <param name="request">The request carrying the body and the proof headers.</param>
     /// <param name="eccPublicKeyPem">The actor's registered ECC public key, or null when it has none.</param>
-    /// <returns>Success, or a failure with a reason that names no handle or key.</returns>
+    /// <returns>
+    /// Success, or a failure with a reason that names no handle or key and a <see cref="RequestProofResult.Failure"/>
+    /// kind: <see cref="RequestProofFailure.Invalid"/> for the proof itself, <see cref="RequestProofFailure.Unavailable"/>
+    /// for a nonce-store outage, <see cref="RequestProofFailure.Capacity"/> for a store at its limit.
+    /// </returns>
     public async Task<RequestProofResult> EvaluateAsync(HttpRequest request, string? eccPublicKeyPem)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -140,7 +144,7 @@ public sealed class RequestProofEvaluator
             // A store that cannot say whether the nonce is new must not let the proof through: fail closed. That includes a
             // store's own timeout surfacing as OperationCanceledException; only the client aborting the request propagates.
             ErrorUnavailable(now, exception);
-            return RequestProofResult.Failed(UnavailableReason);
+            return RequestProofResult.Failed(UnavailableReason, RequestProofFailure.Unavailable);
         }
 
         switch (claim)
@@ -151,17 +155,23 @@ public sealed class RequestProofEvaluator
                 return RequestProofResult.Failed("Request proof failed: the nonce was already used.");
             case NonceClaimResult.Unavailable:
                 ErrorUnavailable(now, null);
-                return RequestProofResult.Failed(UnavailableReason);
+                return RequestProofResult.Failed(UnavailableReason, RequestProofFailure.Unavailable);
             case NonceClaimResult.KeyFull:
                 WarnAtCapacity(scope, "per-key (ActorAuth:RequestProofNoncesPerKey)", now);
-                return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
-            default:
+                return RequestProofResult.Failed(CapacityReason, RequestProofFailure.Capacity);
+            case NonceClaimResult.StoreFull:
                 WarnAtCapacity(scope, "total (ActorAuth:RequestProofNonceCapacity)", now);
-                return RequestProofResult.Failed("Request proof refused: the host cannot record another proof for this key right now; retry later.");
+                return RequestProofResult.Failed(CapacityReason, RequestProofFailure.Capacity);
+            default:
+                // A value this evaluator does not know cannot be read as "claimed": fail closed, as for an outage.
+                ErrorUnavailable(now, null);
+                return RequestProofResult.Failed(UnavailableReason, RequestProofFailure.Unavailable);
         }
     }
 
     private const string UnavailableReason = "Request proof refused: the host cannot verify this proof right now; retry later.";
+
+    private const string CapacityReason = "Request proof refused: the host cannot record another proof for this key right now; retry later.";
 
     /// <summary>
     /// Logs, at Error and at most once a minute, that the nonce store could not record a nonce, so an outage of a shared

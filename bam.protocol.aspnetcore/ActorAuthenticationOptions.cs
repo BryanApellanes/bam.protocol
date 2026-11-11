@@ -90,6 +90,13 @@ public sealed record ActorAuthenticationOptions
     public TimeSpan RequestProofMaxAge { get; init; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// How long a client is told to wait, in the <c>Retry-After</c> header, when a request proof is refused with 503
+    /// because the nonce store is unavailable or at capacity (<see cref="RequestProofRefusal"/>). Sent as whole
+    /// seconds, at least one. Defaults to 30 seconds.
+    /// </summary>
+    public TimeSpan RequestProofRetryAfter { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
     /// The most unexpired request-proof nonces <see cref="MemoryRequestProofNonceStore"/> holds in all. When it is
     /// full, new proofs are refused (401) rather than an unexpired nonce evicted. Defaults to 200,000.
     /// </summary>

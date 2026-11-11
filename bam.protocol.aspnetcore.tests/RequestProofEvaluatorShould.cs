@@ -587,6 +587,143 @@ public class RequestProofEvaluatorShould : UnitTestMenuContainer
     private sealed record NonceOrderOutcome(bool Forged, bool GenuineAfter);
 
     private sealed record ComposeOutcome(string Canonical, bool PathBreak, bool QueryBreak, bool SixteenOk, bool TooLong, bool Punctuation);
+
+    [UnitTest]
+    public void NameTheKindOfEveryRefusal()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        EccKeyPair other = TestKeys.NewEcc();
+
+        When.A<FixedClock>("verifies proofs that fail for each reason the evaluator knows",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                RequestProofResult Prove(RequestProofEvaluator evaluator, DefaultHttpContext context) => evaluator.EvaluateAsync(context.Request, pair.PublicPem).GetAwaiter().GetResult();
+                DefaultHttpContext Signed() => Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now);
+                RequestProofEvaluator With(NonceClaimResult claim) => Evaluators.Create(clock, nonces: new FixedClaimNonceStore(claim));
+
+                RequestProofEvaluator real = Evaluators.Create(clock);
+                DefaultHttpContext replayed = Signed();
+                RequestProofResult verified = Prove(real, replayed);
+                RequestProofResult replay = Prove(real, replayed);
+                RequestProofResult unsigned = Prove(real, Requests.WithEndpoint().At("GET", "/x"));
+                RequestProofResult forged = Prove(real, Requests.WithEndpoint().At("GET", "/x").Proved(other, clock.Now));
+                RequestProofResult stale = Prove(real, Requests.WithEndpoint().At("GET", "/x").Proved(pair, clock.Now - TimeSpan.FromHours(1)));
+                RequestProofResult noKey = real.EvaluateAsync(Signed().Request, null).GetAwaiter().GetResult();
+
+                RequestProofResult thrown = Prove(Evaluators.Create(clock, nonces: new UnavailableNonceStore(UnavailableNonceStore.Failure.Throws)), Signed());
+                RequestProofResult timedOut = Prove(Evaluators.Create(clock, nonces: new UnavailableNonceStore(UnavailableNonceStore.Failure.TimesOut)), Signed());
+                RequestProofResult unavailable = Prove(With(NonceClaimResult.Unavailable), Signed());
+                RequestProofResult storeFull = Prove(With(NonceClaimResult.StoreFull), Signed());
+                RequestProofResult keyFull = Prove(With(NonceClaimResult.KeyFull), Signed());
+                RequestProofResult alreadyUsed = Prove(With(NonceClaimResult.AlreadyUsed), Signed());
+                RequestProofResult unknown = Prove(With((NonceClaimResult)99), Signed());
+                bool noneRefused;
+                try
+                {
+                    RequestProofResult.Failed("x", RequestProofFailure.None);
+                    noneRefused = false;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    noneRefused = true;
+                }
+
+                return new FailureKindOutcome(verified, replay, unsigned, forged, stale, noKey, thrown, timedOut, unavailable, storeFull, keyFull, alreadyUsed, unknown, noneRefused);
+            })
+            .TheTest
+            .ShouldPass<FailureKindOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a verified proof has no failure kind", outcome.Verified.Success && outcome.Verified.Failure == RequestProofFailure.None && !outcome.Verified.IsRetryable);
+                because.ItsTrue("a replay is Invalid", outcome.Replay.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("a missing signature is Invalid", outcome.Unsigned.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("a signature by another key is Invalid", outcome.Forged.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("a stale timestamp is Invalid", outcome.Stale.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("a caller with no ECC key is Invalid", outcome.NoKey.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("an Invalid refusal is not retryable", !outcome.Forged.IsRetryable && !outcome.Replay.IsRetryable);
+                because.ItsTrue("a store that throws is Unavailable", outcome.Thrown.Failure == RequestProofFailure.Unavailable);
+                because.ItsTrue("a store that times out is Unavailable", outcome.TimedOut.Failure == RequestProofFailure.Unavailable);
+                because.ItsTrue("a store that reports Unavailable is Unavailable", outcome.Unavailable.Failure == RequestProofFailure.Unavailable && outcome.Unavailable.IsRetryable);
+                because.ItsTrue("a full store is Capacity", outcome.StoreFull.Failure == RequestProofFailure.Capacity && outcome.StoreFull.IsRetryable);
+                because.ItsTrue("a full key is Capacity", outcome.KeyFull.Failure == RequestProofFailure.Capacity && outcome.KeyFull.IsRetryable);
+                because.ItsTrue("a store that reports AlreadyUsed is Invalid", outcome.AlreadyUsed.Failure == RequestProofFailure.Invalid);
+                because.ItsTrue("a claim result the evaluator doesn't know fails closed as Unavailable", !outcome.Unknown.Success && outcome.Unknown.Failure == RequestProofFailure.Unavailable);
+                because.ItsTrue("a failed outcome cannot be built with no kind", outcome.NoneRefused);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void Answer503WithRetryAfterWhenTheHostCannotCheckOrRecordAProof()
+    {
+        EccKeyPair pair = TestKeys.NewEcc();
+        ActorAuthenticationOptions options = new ActorAuthenticationOptions { RequestProofRetryAfter = TimeSpan.FromSeconds(12.2) };
+
+        When.A<FixedClock>("runs the endpoint filter over stores that are down, full and working",
+            () => new FixedClock(Now),
+            (clock) =>
+            {
+                FilterAnswer Run(IRequestProofNonceStore? nonces, EccKeyPair signer, ActorAuthenticationOptions effective)
+                {
+                    RequestProofEndpointFilter filter = new RequestProofEndpointFilter(Evaluators.Create(clock, effective, nonces), effective);
+                    DefaultHttpContext context = Requests.WithEndpoint(new RequireRequestProofAttribute()).At("POST", "/x").WithBody("{}").Proved(signer, clock.Now);
+                    context.SetActor(new ActorData { Handle = "alice", Name = "alice" }, pair.PublicPem);
+                    object? result = filter.InvokeAsync(new DefaultEndpointFilterInvocationContext(context), _ => ValueTask.FromResult<object?>("handled")).AsTask().GetAwaiter().GetResult();
+                    return new FilterAnswer((result as IStatusCodeHttpResult)?.StatusCode, context.Response.Headers.RetryAfter.ToString(), result as string);
+                }
+
+                FilterAnswer down = Run(new UnavailableNonceStore(UnavailableNonceStore.Failure.Throws), pair, options);
+                FilterAnswer reported = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, options);
+                FilterAnswer storeFull = Run(new FixedClaimNonceStore(NonceClaimResult.StoreFull), pair, options);
+                FilterAnswer keyFull = Run(new FixedClaimNonceStore(NonceClaimResult.KeyFull), pair, options);
+                FilterAnswer forged = Run(new UnavailableNonceStore(UnavailableNonceStore.Failure.Throws), TestKeys.NewEcc(), options);
+                FilterAnswer replay = Run(new FixedClaimNonceStore(NonceClaimResult.AlreadyUsed), pair, options);
+                FilterAnswer ok = Run(null, pair, options);
+                FilterAnswer defaults = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, new ActorAuthenticationOptions());
+                FilterAnswer tiny = Run(new FixedClaimNonceStore(NonceClaimResult.Unavailable), pair, new ActorAuthenticationOptions { RequestProofRetryAfter = TimeSpan.Zero });
+                return new RefusalStatusOutcome(down, reported, storeFull, keyFull, forged, replay, ok, defaults, tiny);
+            })
+            .TheTest
+            .ShouldPass<RefusalStatusOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"a store that throws is 503 ({outcome.Down.Status})", outcome.Down.Status == 503);
+                because.ItsTrue($"with Retry-After rounded up to whole seconds ({outcome.Down.RetryAfter})", outcome.Down.RetryAfter == "13");
+                because.ItsTrue("a store that reports Unavailable is 503 with Retry-After", outcome.Reported.Status == 503 && outcome.Reported.RetryAfter == "13");
+                because.ItsTrue("a full store is 503 with Retry-After", outcome.StoreFull.Status == 503 && outcome.StoreFull.RetryAfter == "13");
+                because.ItsTrue("a full key is 503 with Retry-After", outcome.KeyFull.Status == 503 && outcome.KeyFull.RetryAfter == "13");
+                because.ItsTrue($"a bad signature is 401 even while the store is down ({outcome.Forged.Status})", outcome.Forged.Status == 401);
+                because.ItsTrue("a 401 carries no Retry-After", outcome.Forged.RetryAfter.Length == 0 && outcome.Replay.RetryAfter.Length == 0);
+                because.ItsTrue("a replay is 401", outcome.Replay.Status == 401);
+                because.ItsTrue("a good proof reaches the handler with no Retry-After", outcome.Ok.Handled == "handled" && outcome.Ok.RetryAfter.Length == 0);
+                because.ItsTrue($"the default Retry-After is 30 seconds ({outcome.Defaults.RetryAfter})", outcome.Defaults.RetryAfter == "30");
+                because.ItsTrue($"Retry-After is never below one second ({outcome.Tiny.RetryAfter})", outcome.Tiny.RetryAfter == "1");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    /// <summary>A nonce store that answers every claim with one fixed result.</summary>
+    private sealed class FixedClaimNonceStore : IRequestProofNonceStore
+    {
+        private readonly NonceClaimResult _result;
+
+        internal FixedClaimNonceStore(NonceClaimResult result)
+        {
+            _result = result;
+        }
+
+        public NonceClaimResult TryClaim(string scope, string nonce, DateTimeOffset expiresAt, DateTimeOffset now)
+        {
+            return _result;
+        }
+    }
+
+    private sealed record FailureKindOutcome(RequestProofResult Verified, RequestProofResult Replay, RequestProofResult Unsigned, RequestProofResult Forged, RequestProofResult Stale, RequestProofResult NoKey, RequestProofResult Thrown, RequestProofResult TimedOut, RequestProofResult Unavailable, RequestProofResult StoreFull, RequestProofResult KeyFull, RequestProofResult AlreadyUsed, RequestProofResult Unknown, bool NoneRefused);
+
+    private sealed record FilterAnswer(int? Status, string RetryAfter, string? Handled);
+
+    private sealed record RefusalStatusOutcome(FilterAnswer Down, FilterAnswer Reported, FilterAnswer StoreFull, FilterAnswer KeyFull, FilterAnswer Forged, FilterAnswer Replay, FilterAnswer Ok, FilterAnswer Defaults, FilterAnswer Tiny);
 }
 
 [UnitTestMenu("MemoryRequestProofNonceStore Should", Selector = "mrpns")]

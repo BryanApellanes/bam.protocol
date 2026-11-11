@@ -10,7 +10,9 @@ namespace Bam.Protocol.AspNetCore;
 /// <see cref="RequireRequestProofAttribute"/> forces or waives it; anonymous-marked endpoints never
 /// require it. When required, <see cref="RequestProofEvaluator"/> checks the request's signed canonical
 /// form (method, path and query, timestamp, single-use nonce, raw body digest) against the actor's
-/// registered ECC key.
+/// registered ECC key. A proof that fails is answered 401; a proof the host could not check or record (a
+/// nonce-store outage, or the store at capacity) is answered 503 with <c>Retry-After</c>
+/// (<see cref="RequestProofRefusal"/>).
 /// </summary>
 public sealed class RequestProofEndpointFilter : IEndpointFilter
 {
@@ -52,14 +54,10 @@ public sealed class RequestProofEndpointFilter : IEndpointFilter
         RequestProofResult result = await _evaluator.EvaluateAsync(http.Request, http.GetActorEccPublicKeyPem()).ConfigureAwait(false);
         if (!result.Success)
         {
-            return Unauthorized(result.Reason ?? "Request proof failed.");
+            // 401 for a bad proof; 503 with Retry-After when the nonce store is down or full (bam.protocol#58).
+            return RequestProofRefusal.ToProblem(http, result, _options);
         }
 
         return await next(context).ConfigureAwait(false);
-    }
-
-    private static IResult Unauthorized(string reason)
-    {
-        return Results.Problem(detail: reason, statusCode: StatusCodes.Status401Unauthorized);
     }
 }

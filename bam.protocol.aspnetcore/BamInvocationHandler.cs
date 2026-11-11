@@ -162,7 +162,7 @@ public sealed class BamInvocationHandler
             if (!proof.Success)
             {
                 _logger.LogWarning("Invocation refused: request proof failed for actor '{Handle}' on '{Operation}': {Reason}", actor.Handle, operation, proof.Reason);
-                return Results.Problem(detail: proof.Reason ?? "Request proof failed.", statusCode: StatusCodes.Status401Unauthorized);
+                return RequestProofRefusal.ToProblem(http, proof, _authentication);
             }
         }
 
