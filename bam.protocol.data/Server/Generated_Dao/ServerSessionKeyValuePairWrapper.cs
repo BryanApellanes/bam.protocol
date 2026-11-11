@@ -48,7 +48,7 @@ namespace Bam.Protocol.Data.Server.Wrappers
 
 
         Bam.Protocol.Data.Server.ServerSession? _serverSession;
-		public override Bam.Protocol.Data.Server.ServerSession ServerSession
+		public override Bam.Protocol.Data.Server.ServerSession? ServerSession
 		{
 			get
 			{
@@ -56,8 +56,8 @@ namespace Bam.Protocol.Data.Server.Wrappers
 				{
 					_serverSession = (Bam.Protocol.Data.Server.ServerSession?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Server.ServerSession));
 				}
-				// null when the child has no parent row; the overridden property is not declared nullable
-				return _serverSession!;
+				// null when the child has no parent row
+				return _serverSession;
 			}
 			set
 			{

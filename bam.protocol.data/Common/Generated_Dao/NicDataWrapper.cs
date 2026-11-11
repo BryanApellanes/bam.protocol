@@ -48,7 +48,7 @@ namespace Bam.Protocol.Data.Common.Wrappers
 
 
         Bam.Protocol.Data.Common.DeviceData? _deviceData;
-		public override Bam.Protocol.Data.Common.DeviceData DeviceData
+		public override Bam.Protocol.Data.Common.DeviceData? DeviceData
 		{
 			get
 			{
@@ -56,15 +56,15 @@ namespace Bam.Protocol.Data.Common.Wrappers
 				{
 					_deviceData = (Bam.Protocol.Data.Common.DeviceData?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.DeviceData));
 				}
-				// null when the child has no parent row; the overridden property is not declared nullable
-				return _deviceData!;
+				// null when the child has no parent row
+				return _deviceData;
 			}
 			set
 			{
 				_deviceData = value;
 			}
 		}        Bam.Protocol.Data.Common.MachineData? _machineData;
-		public override Bam.Protocol.Data.Common.MachineData MachineData
+		public override Bam.Protocol.Data.Common.MachineData? MachineData
 		{
 			get
 			{
@@ -72,8 +72,8 @@ namespace Bam.Protocol.Data.Common.Wrappers
 				{
 					_machineData = (Bam.Protocol.Data.Common.MachineData?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Common.MachineData));
 				}
-				// null when the child has no parent row; the overridden property is not declared nullable
-				return _machineData!;
+				// null when the child has no parent row
+				return _machineData;
 			}
 			set
 			{

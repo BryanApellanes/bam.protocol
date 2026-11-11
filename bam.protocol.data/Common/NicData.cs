@@ -15,13 +15,13 @@ namespace Bam.Protocol.Data.Common
         public virtual ulong DeviceDataId { get; set; }
 
         [JsonIgnore]
-        public virtual DeviceData DeviceData { get; set; } = null!;
+        public virtual DeviceData? DeviceData { get; set; }
 
         public virtual ulong MachineDataId { get; set; }
 
         public string Description { get; set; } = null!;
         [JsonIgnore]
-        public virtual MachineData MachineData { get; set; } = null!;
+        public virtual MachineData? MachineData { get; set; }
 
         [CompositeKey]
         public string AddressFamily { get; set; } = null!;

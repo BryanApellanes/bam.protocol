@@ -107,11 +107,11 @@ public class KeySetRevocation : IKeySetRevocation
             PublicKeySetData tombstoned = Repository.Update(active);
             if (successorFingerprint == null)
             {
-                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); no successor bound — handle is openly re-registrable.", keySetHandle, tombstoned.RevokedBy ?? string.Empty);
+                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); no successor bound — handle is openly re-registrable.", keySetHandle, tombstoned.RevokedBy ?? "(unknown)");
             }
             else
             {
-                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); bound successor {2}.", keySetHandle, tombstoned.RevokedBy ?? string.Empty, successorFingerprint);
+                Log.Info("Revoked key set for handle '{0}' (authorized by admin key {1}); bound successor {2}.", keySetHandle, tombstoned.RevokedBy ?? "(unknown)", successorFingerprint);
             }
             return tombstoned;
         }
