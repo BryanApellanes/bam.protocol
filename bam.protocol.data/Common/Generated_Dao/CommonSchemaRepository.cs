@@ -88,11 +88,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.ActorData? GetOneActorDataWhere(WhereDelegate<ActorDataColumns> where)
+		public Bam.Protocol.Data.Common.ActorData GetOneActorDataWhere(WhereDelegate<ActorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ActorData>();
-			var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.ActorData)Bam.Protocol.Data.Common.Dao.ActorData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ActorData>(data, this);
         }
 
@@ -213,11 +212,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.AgentData? GetOneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
+		public Bam.Protocol.Data.Common.AgentData GetOneAgentDataWhere(WhereDelegate<AgentDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.AgentData>();
-			var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.AgentData)Bam.Protocol.Data.Common.Dao.AgentData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.AgentData>(data, this);
         }
 
@@ -338,11 +336,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.DeviceData? GetOneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
+		public Bam.Protocol.Data.Common.DeviceData GetOneDeviceDataWhere(WhereDelegate<DeviceDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.DeviceData>();
-			var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.DeviceData)Bam.Protocol.Data.Common.Dao.DeviceData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.DeviceData>(data, this);
         }
 
@@ -463,11 +460,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.HostAddressData? GetOneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
+		public Bam.Protocol.Data.Common.HostAddressData GetOneHostAddressDataWhere(WhereDelegate<HostAddressDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.HostAddressData>();
-			var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.HostAddressData)Bam.Protocol.Data.Common.Dao.HostAddressData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.HostAddressData>(data, this);
         }
 
@@ -588,11 +584,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.MachineData? GetOneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
+		public Bam.Protocol.Data.Common.MachineData GetOneMachineDataWhere(WhereDelegate<MachineDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.MachineData>();
-			var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.MachineData)Bam.Protocol.Data.Common.Dao.MachineData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.MachineData>(data, this);
         }
 
@@ -713,11 +708,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.NicData? GetOneNicDataWhere(WhereDelegate<NicDataColumns> where)
+		public Bam.Protocol.Data.Common.NicData GetOneNicDataWhere(WhereDelegate<NicDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.NicData>();
-			var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.NicData)Bam.Protocol.Data.Common.Dao.NicData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.NicData>(data, this);
         }
 
@@ -838,11 +832,10 @@ namespace Bam.Protocol.Data.Common.Dao.Repository
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public Bam.Protocol.Data.Common.ProcessDescriptorData? GetOneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
+		public Bam.Protocol.Data.Common.ProcessDescriptorData GetOneProcessDescriptorDataWhere(WhereDelegate<ProcessDescriptorDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Common.ProcessDescriptorData>();
-			var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Common.ProcessDescriptorData)Bam.Protocol.Data.Common.Dao.ProcessDescriptorData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Common.ProcessDescriptorData>(data, this);
         }
 

@@ -56,7 +56,8 @@ namespace Bam.Protocol.Data.Client.Wrappers
 				{
 					_clientSessionData = (Bam.Protocol.Data.Client.ClientSessionData?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Client.ClientSessionData));
 				}
-				return _clientSessionData!; // null when the child has no parent row; the overridden property is declared non-null
+				// null when the child has no parent row; the overridden property is not declared nullable
+				return _clientSessionData!;
 			}
 			set
 			{
