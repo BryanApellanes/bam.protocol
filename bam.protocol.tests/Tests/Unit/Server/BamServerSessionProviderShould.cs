@@ -63,17 +63,17 @@ public class BamServerSessionProviderShould : UnitTestMenuContainer
         .When<IServerSessionState>("Sets a value", (state, reg) =>
         {
             ServerSessionSchemaRepository repository = reg.Get<ServerSessionSchemaRepository>();
-            ServerSession session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
-            session.KeyValues.Count.Equals(2).ShouldBeEqualTo(true);
+            ServerSession? session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
+            (session?.KeyValues.Count == 2).ShouldBeEqualTo(true);
 
             state[newKey] = newValue;
         })
         .It.ShouldPass(because =>
         {
             ServerSessionSchemaRepository repository = because.TestCaseRegistry.Get<ServerSessionSchemaRepository>();
-            ServerSession session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
+            ServerSession? session = repository.OneServerSessionWhere(x=> x.SessionId == testSessionId);
             
-            because.ItsTrue("there were 3 key value pairs", session.KeyValues.Count == 3);
+            because.ItsTrue("there were 3 key value pairs", session?.KeyValues.Count == 3);
 
             ServerSessionManager manager = because.TestCaseRegistry.Get<ServerSessionManager>();
             IServerSessionState state = manager.GetSession(mockRequest);

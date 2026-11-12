@@ -5,7 +5,7 @@ namespace Bam.Protocol.Data.Server;
 public class ServerSessionKeyValuePair : CompositeKeyAuditRepoData
 {
     public virtual ulong ServerSessionId { get; set; }
-    public virtual ServerSession ServerSession { get; set; } = null!;
+    public virtual ServerSession? ServerSession { get; set; }
 
     [CompositeKey]
     public new string Key { get; set; } = null!;

@@ -112,7 +112,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 	}
 
-    GroupData _groupDataOfGroupDataId;
+    GroupData? _groupDataOfGroupDataId;
 	public GroupData GroupDataOfGroupDataId
 	{
 		get
@@ -147,7 +147,7 @@ namespace Bam.Protocol.Data.Profile.Dao
 		}
 	}
 
-    PersonData _personDataOfPersonDataId;
+    PersonData? _personDataOfPersonDataId;
 	public PersonData PersonDataOfPersonDataId
 	{
 		get

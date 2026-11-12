@@ -47,15 +47,16 @@ namespace Bam.Protocol.Data.Server.Wrappers
 		}
 
 
-        Bam.Protocol.Data.Server.ServerSession _serverSession;
-		public override Bam.Protocol.Data.Server.ServerSession ServerSession
+        Bam.Protocol.Data.Server.ServerSession? _serverSession;
+		public override Bam.Protocol.Data.Server.ServerSession? ServerSession
 		{
 			get
 			{
 				if (_serverSession == null)
 				{
-					_serverSession = (Bam.Protocol.Data.Server.ServerSession)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Server.ServerSession));
+					_serverSession = (Bam.Protocol.Data.Server.ServerSession?)DaoRepository.GetParentPropertyOfChild(this, typeof(Bam.Protocol.Data.Server.ServerSession));
 				}
+				// null when the child has no parent row
 				return _serverSession;
 			}
 			set

@@ -115,7 +115,7 @@ public class AccountManagerShould : UnitTestMenuContainer
         .ShouldPass(because =>
         {
             ServerSessionSchemaRepository r = because.TheResult.As<ServerSessionSchemaRepository>();
-            ServerAccountData saved = r.OneServerAccountDataWhere(c => c.ProfileHandle == "profile1");
+            ServerAccountData? saved = r.OneServerAccountDataWhere(c => c.ProfileHandle == "profile1");
             because.ItsTrue("ServerAccountData was persisted", saved != null);
             because.ItsTrue("ProfileHandle is correct", saved?.ProfileHandle == "profile1");
             because.ItsTrue("Issuer is correct", saved?.Issuer == "my.server.com");

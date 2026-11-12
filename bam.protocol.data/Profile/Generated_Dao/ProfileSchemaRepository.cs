@@ -130,8 +130,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.AdditionalProperty GetOneAdditionalPropertyWhere(WhereDelegate<AdditionalPropertyColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AdditionalProperty>();
-			var data = (Bam.Protocol.Data.Profile.AdditionalProperty)Bam.Protocol.Data.Profile.Dao.AdditionalProperty.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.AdditionalProperty)Bam.Protocol.Data.Profile.Dao.AdditionalProperty.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.AdditionalProperty>(data, this);
         }
 
@@ -144,7 +143,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between AdditionalPropertyColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.AdditionalProperty OneAdditionalPropertyWhere(WhereDelegate<AdditionalPropertyColumns> where)
+		public Bam.Protocol.Data.Profile.AdditionalProperty? OneAdditionalPropertyWhere(WhereDelegate<AdditionalPropertyColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AdditionalProperty>();
             var data = (Bam.Protocol.Data.Profile.AdditionalProperty)Bam.Protocol.Data.Profile.Dao.AdditionalProperty.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -255,8 +254,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.AgentAdditionalProperties GetOneAgentAdditionalPropertiesWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AgentAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.AgentAdditionalProperties)Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.AgentAdditionalProperties)Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.AgentAdditionalProperties>(data, this);
         }
 
@@ -269,7 +267,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between AgentAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.AgentAdditionalProperties OneAgentAdditionalPropertiesWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.AgentAdditionalProperties? OneAgentAdditionalPropertiesWhere(WhereDelegate<AgentAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AgentAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.AgentAdditionalProperties)Bam.Protocol.Data.Profile.Dao.AgentAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -380,8 +378,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.AgentCertificateData GetOneAgentCertificateDataWhere(WhereDelegate<AgentCertificateDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AgentCertificateData>();
-			var data = (Bam.Protocol.Data.Profile.AgentCertificateData)Bam.Protocol.Data.Profile.Dao.AgentCertificateData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.AgentCertificateData)Bam.Protocol.Data.Profile.Dao.AgentCertificateData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.AgentCertificateData>(data, this);
         }
 
@@ -394,7 +391,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between AgentCertificateDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.AgentCertificateData OneAgentCertificateDataWhere(WhereDelegate<AgentCertificateDataColumns> where)
+		public Bam.Protocol.Data.Profile.AgentCertificateData? OneAgentCertificateDataWhere(WhereDelegate<AgentCertificateDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.AgentCertificateData>();
             var data = (Bam.Protocol.Data.Profile.AgentCertificateData)Bam.Protocol.Data.Profile.Dao.AgentCertificateData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -505,8 +502,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.CertificateData GetOneCertificateDataWhere(WhereDelegate<CertificateDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.CertificateData>();
-			var data = (Bam.Protocol.Data.Profile.CertificateData)Bam.Protocol.Data.Profile.Dao.CertificateData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.CertificateData)Bam.Protocol.Data.Profile.Dao.CertificateData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.CertificateData>(data, this);
         }
 
@@ -519,7 +515,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between CertificateDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.CertificateData OneCertificateDataWhere(WhereDelegate<CertificateDataColumns> where)
+		public Bam.Protocol.Data.Profile.CertificateData? OneCertificateDataWhere(WhereDelegate<CertificateDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.CertificateData>();
             var data = (Bam.Protocol.Data.Profile.CertificateData)Bam.Protocol.Data.Profile.Dao.CertificateData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -630,8 +626,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.DeviceAdditionalProperties GetOneDeviceAdditionalPropertiesWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.DeviceAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.DeviceAdditionalProperties)Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.DeviceAdditionalProperties)Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.DeviceAdditionalProperties>(data, this);
         }
 
@@ -644,7 +639,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between DeviceAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.DeviceAdditionalProperties OneDeviceAdditionalPropertiesWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.DeviceAdditionalProperties? OneDeviceAdditionalPropertiesWhere(WhereDelegate<DeviceAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.DeviceAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.DeviceAdditionalProperties)Bam.Protocol.Data.Profile.Dao.DeviceAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -755,8 +750,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.DeviceCertificateData GetOneDeviceCertificateDataWhere(WhereDelegate<DeviceCertificateDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.DeviceCertificateData>();
-			var data = (Bam.Protocol.Data.Profile.DeviceCertificateData)Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.DeviceCertificateData)Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.DeviceCertificateData>(data, this);
         }
 
@@ -769,7 +763,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between DeviceCertificateDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.DeviceCertificateData OneDeviceCertificateDataWhere(WhereDelegate<DeviceCertificateDataColumns> where)
+		public Bam.Protocol.Data.Profile.DeviceCertificateData? OneDeviceCertificateDataWhere(WhereDelegate<DeviceCertificateDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.DeviceCertificateData>();
             var data = (Bam.Protocol.Data.Profile.DeviceCertificateData)Bam.Protocol.Data.Profile.Dao.DeviceCertificateData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -880,8 +874,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.GroupAdditionalProperties GetOneGroupAdditionalPropertiesWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.GroupAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.GroupAdditionalProperties)Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.GroupAdditionalProperties)Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.GroupAdditionalProperties>(data, this);
         }
 
@@ -894,7 +887,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between GroupAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.GroupAdditionalProperties OneGroupAdditionalPropertiesWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.GroupAdditionalProperties? OneGroupAdditionalPropertiesWhere(WhereDelegate<GroupAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.GroupAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.GroupAdditionalProperties)Bam.Protocol.Data.Profile.Dao.GroupAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1005,8 +998,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.GroupData GetOneGroupDataWhere(WhereDelegate<GroupDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.GroupData>();
-			var data = (Bam.Protocol.Data.Profile.GroupData)Bam.Protocol.Data.Profile.Dao.GroupData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.GroupData)Bam.Protocol.Data.Profile.Dao.GroupData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.GroupData>(data, this);
         }
 
@@ -1019,7 +1011,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between GroupDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.GroupData OneGroupDataWhere(WhereDelegate<GroupDataColumns> where)
+		public Bam.Protocol.Data.Profile.GroupData? OneGroupDataWhere(WhereDelegate<GroupDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.GroupData>();
             var data = (Bam.Protocol.Data.Profile.GroupData)Bam.Protocol.Data.Profile.Dao.GroupData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1130,8 +1122,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.MailingAddressData GetOneMailingAddressDataWhere(WhereDelegate<MailingAddressDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.MailingAddressData>();
-			var data = (Bam.Protocol.Data.Profile.MailingAddressData)Bam.Protocol.Data.Profile.Dao.MailingAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.MailingAddressData)Bam.Protocol.Data.Profile.Dao.MailingAddressData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.MailingAddressData>(data, this);
         }
 
@@ -1144,7 +1135,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between MailingAddressDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.MailingAddressData OneMailingAddressDataWhere(WhereDelegate<MailingAddressDataColumns> where)
+		public Bam.Protocol.Data.Profile.MailingAddressData? OneMailingAddressDataWhere(WhereDelegate<MailingAddressDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.MailingAddressData>();
             var data = (Bam.Protocol.Data.Profile.MailingAddressData)Bam.Protocol.Data.Profile.Dao.MailingAddressData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1255,8 +1246,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.OrganizationAdditionalProperties GetOneOrganizationAdditionalPropertiesWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.OrganizationAdditionalProperties)Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.OrganizationAdditionalProperties)Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.OrganizationAdditionalProperties>(data, this);
         }
 
@@ -1269,7 +1259,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between OrganizationAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.OrganizationAdditionalProperties OneOrganizationAdditionalPropertiesWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.OrganizationAdditionalProperties? OneOrganizationAdditionalPropertiesWhere(WhereDelegate<OrganizationAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.OrganizationAdditionalProperties)Bam.Protocol.Data.Profile.Dao.OrganizationAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1380,8 +1370,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.OrganizationCertificateData GetOneOrganizationCertificateDataWhere(WhereDelegate<OrganizationCertificateDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationCertificateData>();
-			var data = (Bam.Protocol.Data.Profile.OrganizationCertificateData)Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.OrganizationCertificateData)Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.OrganizationCertificateData>(data, this);
         }
 
@@ -1394,7 +1383,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between OrganizationCertificateDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.OrganizationCertificateData OneOrganizationCertificateDataWhere(WhereDelegate<OrganizationCertificateDataColumns> where)
+		public Bam.Protocol.Data.Profile.OrganizationCertificateData? OneOrganizationCertificateDataWhere(WhereDelegate<OrganizationCertificateDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationCertificateData>();
             var data = (Bam.Protocol.Data.Profile.OrganizationCertificateData)Bam.Protocol.Data.Profile.Dao.OrganizationCertificateData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1505,8 +1494,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.OrganizationData GetOneOrganizationDataWhere(WhereDelegate<OrganizationDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationData>();
-			var data = (Bam.Protocol.Data.Profile.OrganizationData)Bam.Protocol.Data.Profile.Dao.OrganizationData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.OrganizationData)Bam.Protocol.Data.Profile.Dao.OrganizationData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.OrganizationData>(data, this);
         }
 
@@ -1519,7 +1507,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between OrganizationDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.OrganizationData OneOrganizationDataWhere(WhereDelegate<OrganizationDataColumns> where)
+		public Bam.Protocol.Data.Profile.OrganizationData? OneOrganizationDataWhere(WhereDelegate<OrganizationDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationData>();
             var data = (Bam.Protocol.Data.Profile.OrganizationData)Bam.Protocol.Data.Profile.Dao.OrganizationData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1630,8 +1618,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.OrganizationMailingAddress GetOneOrganizationMailingAddressWhere(WhereDelegate<OrganizationMailingAddressColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationMailingAddress>();
-			var data = (Bam.Protocol.Data.Profile.OrganizationMailingAddress)Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.OrganizationMailingAddress)Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.OrganizationMailingAddress>(data, this);
         }
 
@@ -1644,7 +1631,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between OrganizationMailingAddressColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.OrganizationMailingAddress OneOrganizationMailingAddressWhere(WhereDelegate<OrganizationMailingAddressColumns> where)
+		public Bam.Protocol.Data.Profile.OrganizationMailingAddress? OneOrganizationMailingAddressWhere(WhereDelegate<OrganizationMailingAddressColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.OrganizationMailingAddress>();
             var data = (Bam.Protocol.Data.Profile.OrganizationMailingAddress)Bam.Protocol.Data.Profile.Dao.OrganizationMailingAddress.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1755,8 +1742,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.PersonAdditionalProperties GetOnePersonAdditionalPropertiesWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.PersonAdditionalProperties)Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.PersonAdditionalProperties)Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.PersonAdditionalProperties>(data, this);
         }
 
@@ -1769,7 +1755,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between PersonAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.PersonAdditionalProperties OnePersonAdditionalPropertiesWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.PersonAdditionalProperties? OnePersonAdditionalPropertiesWhere(WhereDelegate<PersonAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.PersonAdditionalProperties)Bam.Protocol.Data.Profile.Dao.PersonAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -1880,8 +1866,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.PersonCertificateData GetOnePersonCertificateDataWhere(WhereDelegate<PersonCertificateDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonCertificateData>();
-			var data = (Bam.Protocol.Data.Profile.PersonCertificateData)Bam.Protocol.Data.Profile.Dao.PersonCertificateData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.PersonCertificateData)Bam.Protocol.Data.Profile.Dao.PersonCertificateData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.PersonCertificateData>(data, this);
         }
 
@@ -1894,7 +1879,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between PersonCertificateDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.PersonCertificateData OnePersonCertificateDataWhere(WhereDelegate<PersonCertificateDataColumns> where)
+		public Bam.Protocol.Data.Profile.PersonCertificateData? OnePersonCertificateDataWhere(WhereDelegate<PersonCertificateDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonCertificateData>();
             var data = (Bam.Protocol.Data.Profile.PersonCertificateData)Bam.Protocol.Data.Profile.Dao.PersonCertificateData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -2005,8 +1990,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.PersonData GetOnePersonDataWhere(WhereDelegate<PersonDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonData>();
-			var data = (Bam.Protocol.Data.Profile.PersonData)Bam.Protocol.Data.Profile.Dao.PersonData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.PersonData)Bam.Protocol.Data.Profile.Dao.PersonData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.PersonData>(data, this);
         }
 
@@ -2019,7 +2003,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between PersonDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.PersonData OnePersonDataWhere(WhereDelegate<PersonDataColumns> where)
+		public Bam.Protocol.Data.Profile.PersonData? OnePersonDataWhere(WhereDelegate<PersonDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonData>();
             var data = (Bam.Protocol.Data.Profile.PersonData)Bam.Protocol.Data.Profile.Dao.PersonData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -2130,8 +2114,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.PersonMailingAddressData GetOnePersonMailingAddressDataWhere(WhereDelegate<PersonMailingAddressDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonMailingAddressData>();
-			var data = (Bam.Protocol.Data.Profile.PersonMailingAddressData)Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.PersonMailingAddressData)Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.PersonMailingAddressData>(data, this);
         }
 
@@ -2144,7 +2127,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between PersonMailingAddressDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.PersonMailingAddressData OnePersonMailingAddressDataWhere(WhereDelegate<PersonMailingAddressDataColumns> where)
+		public Bam.Protocol.Data.Profile.PersonMailingAddressData? OnePersonMailingAddressDataWhere(WhereDelegate<PersonMailingAddressDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PersonMailingAddressData>();
             var data = (Bam.Protocol.Data.Profile.PersonMailingAddressData)Bam.Protocol.Data.Profile.Dao.PersonMailingAddressData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -2255,8 +2238,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.ProfileAdditionalProperties GetOneProfileAdditionalPropertiesWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileAdditionalProperties>();
-			var data = (Bam.Protocol.Data.Profile.ProfileAdditionalProperties)Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.ProfileAdditionalProperties)Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileAdditionalProperties>(data, this);
         }
 
@@ -2269,7 +2251,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ProfileAdditionalPropertiesColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.ProfileAdditionalProperties OneProfileAdditionalPropertiesWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where)
+		public Bam.Protocol.Data.Profile.ProfileAdditionalProperties? OneProfileAdditionalPropertiesWhere(WhereDelegate<ProfileAdditionalPropertiesColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileAdditionalProperties>();
             var data = (Bam.Protocol.Data.Profile.ProfileAdditionalProperties)Bam.Protocol.Data.Profile.Dao.ProfileAdditionalProperties.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -2380,8 +2362,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.ProfileData GetOneProfileDataWhere(WhereDelegate<ProfileDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileData>();
-			var data = (Bam.Protocol.Data.Profile.ProfileData)Bam.Protocol.Data.Profile.Dao.ProfileData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.ProfileData)Bam.Protocol.Data.Profile.Dao.ProfileData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.ProfileData>(data, this);
         }
 
@@ -2394,7 +2375,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between ProfileDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.ProfileData OneProfileDataWhere(WhereDelegate<ProfileDataColumns> where)
+		public Bam.Protocol.Data.Profile.ProfileData? OneProfileDataWhere(WhereDelegate<ProfileDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.ProfileData>();
             var data = (Bam.Protocol.Data.Profile.ProfileData)Bam.Protocol.Data.Profile.Dao.ProfileData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
@@ -2505,8 +2486,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		public Bam.Protocol.Data.Profile.PublicKeySetData GetOnePublicKeySetDataWhere(WhereDelegate<PublicKeySetDataColumns> where)
 		{
 			Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PublicKeySetData>();
-			var data = (Bam.Protocol.Data.Profile.PublicKeySetData)Bam.Protocol.Data.Profile.Dao.PublicKeySetData.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = (Bam.Protocol.Data.Profile.PublicKeySetData)Bam.Protocol.Data.Profile.Dao.PublicKeySetData.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<Bam.Protocol.Data.Profile.PublicKeySetData>(data, this);
         }
 
@@ -2519,7 +2499,7 @@ namespace Bam.Protocol.Data.Profile.Dao.Repository
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between PublicKeySetDataColumns and other values
 		/// </param>
-		public Bam.Protocol.Data.Profile.PublicKeySetData OnePublicKeySetDataWhere(WhereDelegate<PublicKeySetDataColumns> where)
+		public Bam.Protocol.Data.Profile.PublicKeySetData? OnePublicKeySetDataWhere(WhereDelegate<PublicKeySetDataColumns> where)
         {
             Type wrapperType = GetWrapperType<Bam.Protocol.Data.Profile.PublicKeySetData>();
             var data = (Bam.Protocol.Data.Profile.PublicKeySetData)Bam.Protocol.Data.Profile.Dao.PublicKeySetData.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;

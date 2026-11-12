@@ -10,12 +10,12 @@ public interface INic
     ulong DeviceDataId { get; set; }
 
     [JsonIgnore]
-    DeviceData DeviceData { get; set; }
+    DeviceData? DeviceData { get; set; }
     
     ulong MachineDataId { get; set; }
     
     [JsonIgnore]
-    MachineData MachineData { get; set; }
+    MachineData? MachineData { get; set; }
     string AddressFamily { get; set; }
     string Address { get; set; }
     string MacAddress { get; set; }
