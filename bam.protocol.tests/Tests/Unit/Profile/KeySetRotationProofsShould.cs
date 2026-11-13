@@ -168,6 +168,52 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void LeaveOnlyTheProposedKeysWhenARotationDropsASlot()
+    {
+        RsaPublicPrivateKeyPair rsa = new RsaPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair ecc = new EccPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair ecc2 = new EccPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair rsa2 = new RsaPublicPrivateKeyPair();
+        EccPublicPrivateKeyPair ecc3 = new EccPublicPrivateKeyPair();
+        ObjectDataRepository repository = CreateObjectDataRepository(nameof(LeaveOnlyTheProposedKeysWhenARotationDropsASlot));
+
+        // bam.protocol#90: Update used to skip null properties (bam.data.objects#9), so a dropped slot
+        // kept the retired key and the handle still resolved to it.
+        When.A<PublicKeySetRegistrar>("drops the retired key from the slot the proposed set leaves empty",
+            () => new PublicKeySetRegistrar(repository, KeySetRotationProofChain.Default()),
+            (registrar) =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "dropper", PublicRsaKey = rsa.PublicKeyPem, PublicEccKey = ecc.PublicKeyPem });
+                PublicKeySetData toEccOnly = new PublicKeySetData { KeySetHandle = "dropper", PublicEccKey = ecc2.PublicKeyPem };
+                registrar.Rotate(toEccOnly, RsaSign(rsa, registrar.Resolve("dropper")!, toEccOnly));
+                PublicKeySetData afterDrop = new PublicKeySetRegistrar(repository, KeySetRotationProofChain.Default()).Resolve("dropper")!;
+                bool rsaDropped = string.IsNullOrEmpty(afterDrop.PublicRsaKey) && afterDrop.PublicEccKey == ecc2.PublicKeyPem;
+
+                // the retired RSA key no longer anchors a rotation of the handle
+                PublicKeySetData hijack = new PublicKeySetData { KeySetHandle = "dropper", PublicEccKey = ecc3.PublicKeyPem };
+                bool retiredRsaRefused = RotationRefused(registrar, hijack, RsaSign(rsa, afterDrop, hijack));
+
+                PublicKeySetData toRsaOnly = new PublicKeySetData { KeySetHandle = "dropper", PublicRsaKey = rsa2.PublicKeyPem };
+                registrar.Rotate(toRsaOnly, EcdsaSign(ecc2, registrar.Resolve("dropper")!, toRsaOnly));
+                PublicKeySetData afterSwap = new PublicKeySetRegistrar(repository, KeySetRotationProofChain.Default()).Resolve("dropper")!;
+                bool eccDropped = string.IsNullOrEmpty(afterSwap.PublicEccKey) && afterSwap.PublicRsaKey == rsa2.PublicKeyPem;
+
+                int activeRows = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "dropper" && p.RevokedUtc == null).Count();
+                return new SlotDropOutcome(rsaDropped, retiredRsaRefused, eccDropped, activeRows);
+            })
+        .TheTest
+        .ShouldPass<SlotDropOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("RSA+ECC to ECC-only leaves only the proposed ECC key", outcome.RsaDropped);
+            because.ItsTrue("the retired RSA key can't rotate the handle any more", outcome.RetiredRsaRefused);
+            because.ItsTrue("ECC-only to RSA-only leaves only the proposed RSA key", outcome.EccDropped);
+            because.ItsTrue("the handle keeps exactly one active row", outcome.ActiveRows == 1);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    [UnitTest]
     public void RetireTheKeysARotationMovesAwayFrom()
     {
         RsaPublicPrivateKeyPair rsaA = new RsaPublicPrivateKeyPair();
@@ -500,4 +546,6 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
     private sealed record ChainOutcome(bool NoAnchorFails, bool Accepted, string? ProofName, int BystanderCalls, int ProofCount, bool AllFailedSucceeded, bool MessageNamesEach, bool CanRotate, bool BystanderOnlyCanRotate);
 
     private sealed record RegistrationOutcome(bool IsChain, List<string> DefaultNames, bool HostProofSeen);
+
+    private sealed record SlotDropOutcome(bool RsaDropped, bool RetiredRsaRefused, bool EccDropped, int ActiveRows);
 }

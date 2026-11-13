@@ -48,6 +48,11 @@ public static class KeySetRotationPayload
     /// The context field that opens every rotation payload not anchored on an RSA key.  It keeps
     /// a signature the anchoring key made for some other purpose (a request proof, a host's own
     /// message) from ever reading as a rotation proof (bam.protocol#88 review, R1).
+    /// <para>
+    /// The payload layout that follows the tag is frozen for this tag version: any change to it
+    /// (bam.protocol#15's nonce and expiry, for example) ships under a new version, so a proof
+    /// made for one layout never verifies against another.
+    /// </para>
     /// </summary>
     public const string ContextTag = "bam.keyset-rotation.v1";
 
