@@ -178,11 +178,11 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             throw new ArgumentException("A key set handle is required.", nameof(newKeySet));
         }
 
-        if (string.IsNullOrEmpty(newKeySet.PublicRsaKey))
+        if (string.IsNullOrEmpty(newKeySet.PublicRsaKey) && string.IsNullOrEmpty(newKeySet.PublicEccKey))
         {
-            Log.Warn("Rejected key-set rotation for handle '{0}': proposed RSA public key is empty.", handle);
+            Log.Warn("Rejected key-set rotation for handle '{0}': proposed key set has no public key.", handle);
             throw new InvalidKeySetRotationException(handle,
-                $"A rotation for handle '{handle}' must specify a non-empty RSA public key; rotating to an empty RSA key would leave the handle permanently unrotatable.");
+                $"A rotation for handle '{handle}' must specify at least one public key.");
         }
 
         ValueTuple<string, Exception>? unparseable = FindUnparseableKey(newKeySet);
@@ -200,6 +200,16 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             Log.Warn("Rejected key-set rotation for handle '{0}': the proposed {1} slot does not hold a public key of that kind.", handle, mistypedSlot);
             throw new InvalidKeySetRotationException(handle,
                 $"The proposed {mistypedSlot} slot for handle '{handle}' does not hold {DescribeExpectedKey(mistypedSlot)}; rotating to it would leave the handle without a usable key of that kind.");
+        }
+
+        // A key set no trusted proof can rotate away from would strand the handle: only an admin
+        // revocation could ever replace it.  Before bam.protocol#72 the only proof was RSA, so this
+        // was "the RSA key must be non-empty"; the verifier now answers from the proofs it trusts.
+        if (!RotationVerifier.CanRotateFrom(newKeySet))
+        {
+            Log.Warn("Rejected key-set rotation for handle '{0}': no trusted rotation proof could rotate away from the proposed key set.", handle);
+            throw new InvalidKeySetRotationException(handle,
+                $"No trusted rotation proof could later rotate away from the proposed key set for handle '{handle}'; rotating to it would leave the handle permanently unrotatable.");
         }
 
         lock (KeySetRegistrationLock.Sync)
@@ -252,9 +262,24 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                 throw new PublicKeySetKeyMaterialConflictException(handle, materialClaim.KeySetHandle);
             }
 
+            // Retire the keys this rotation moves away from (bam.protocol#72): a revoked tombstone
+            // holding only the retired keys puts them on the existing material blocklist, so a
+            // key someone rotated away from (often a lost or replaced device) can't come back as
+            // this or any other identity.  Keys the proposed set keeps are left off the tombstone,
+            // or the next rotation that keeps them would be refused.  The tombstone is written
+            // before the row moves: a crash between the two leaves the old key both active and
+            // blocklisted, which still resolves, and a retry writes a second, harmless tombstone.
+            string proofName = (verification as KeySetRotationVerification)?.ProofName ?? "unnamed";
+            PublicKeySetData? tombstone = RetiredMaterialTombstone(current, newKeySet, proofName);
+            if (tombstone != null)
+            {
+                Repository.Create(tombstone);
+            }
+
             current.PublicRsaKey = newKeySet.PublicRsaKey;
             current.PublicEccKey = newKeySet.PublicEccKey;
             KeyMaterialIdentity.StampFingerprints(current);
+            Log.Info("Rotated key set for handle '{0}' with proof '{1}'.", handle, proofName);
             return Repository.Update(current);
         }
     }
@@ -342,8 +367,10 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// </summary>
     private static PublicKeySetData? FindGoverningTombstone(string handle, Func<List<PublicKeySetData>> snapshot)
     {
+        // A rotation tombstone (bam.protocol#72) only blocklists retired keys; it never governs
+        // re-registration, or its empty successor binding could open a handle an admin bound.
         return snapshot()
-            .Where(keySet => keySet.KeySetHandle == handle && keySet.RevokedUtc != null)
+            .Where(keySet => keySet.KeySetHandle == handle && keySet.RevokedUtc != null && !PublicKeySetData.IsRotationTombstone(keySet))
             .OrderByDescending(keySet => keySet.RevokedUtc)
             .ThenByDescending(keySet => keySet.Id)
             .FirstOrDefault();
@@ -358,6 +385,43 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// caller influence which duplicate wins resolution (bam.protocol#8 review C3); the
     /// fingerprints are the indexed canonical identity (bam.protocol#24 review B1).
     /// </summary>
+    /// <summary>
+    /// Builds the revoked tombstone that blocklists the keys of <paramref name="current"/> that
+    /// <paramref name="proposed"/> does not keep, or returns null when the rotation retires no
+    /// key.  Compared by canonical identity, so a re-encoded PEM of a kept key is not "retired".
+    /// </summary>
+    private static PublicKeySetData? RetiredMaterialTombstone(PublicKeySetData current, PublicKeySetData proposed, string proofName)
+    {
+        IReadOnlyList<string> kept = KeyMaterialIdentity.CandidateIdentities(proposed);
+        string retiredRsa = Retired(current.PublicRsaKey, kept);
+        string retiredEcc = Retired(current.PublicEccKey, kept);
+        if (retiredRsa.Length == 0 && retiredEcc.Length == 0)
+        {
+            return null;
+        }
+
+        PublicKeySetData tombstone = new PublicKeySetData
+        {
+            KeySetHandle = current.KeySetHandle,
+            PublicRsaKey = retiredRsa,
+            PublicEccKey = retiredEcc
+        };
+        NormalizeServerControlledFields(tombstone);
+        tombstone.RevokedUtc = DateTime.UtcNow;
+        tombstone.RevokedBy = PublicKeySetData.RotationRevokedByPrefix + proofName;
+        return tombstone;
+    }
+
+    private static string Retired(string? pem, IReadOnlyList<string> kept)
+    {
+        if (string.IsNullOrEmpty(pem))
+        {
+            return string.Empty;
+        }
+        string identity = KeyMaterialIdentity.CanonicalKeyFingerprint(pem) ?? pem;
+        return kept.Contains(identity) ? string.Empty : pem;
+    }
+
     private static void NormalizeServerControlledFields(PublicKeySetData publicKeySetData)
     {
         publicKeySetData.Created = DateTime.UtcNow;

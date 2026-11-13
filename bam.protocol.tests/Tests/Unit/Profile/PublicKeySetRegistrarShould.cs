@@ -620,7 +620,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
                 registrar.Rotate(proposed, rotationSignature);
 
                 PublicKeySetData? resolved = registrar.Resolve("rotator");
-                int rowCount = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "rotator").Count();
+                int rowCount = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "rotator" && p.RevokedUtc == null).Count();
                 return new RotationSuccessOutcome(resolved!.PublicRsaKey, rowCount);
             })
         .TheTest
@@ -629,7 +629,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
             because.TheResult
                 .IsNotNull()
                 .As<RotationSuccessOutcome>("the handle resolves to the rotated-to key", o => o.ResolvedRsaKey == nextKeyPair.PublicKeyPem)
-                .As<RotationSuccessOutcome>("rotation updated in place leaving exactly one row", o => o.RowCount == 1);
+                .As<RotationSuccessOutcome>("rotation updated in place leaving exactly one active row", o => o.RowCount == 1);
         })
         .SoBeHappy()
         .UnlessItFailed();

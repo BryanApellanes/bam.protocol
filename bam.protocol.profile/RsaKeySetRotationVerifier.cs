@@ -14,8 +14,22 @@ namespace Bam.Protocol.Profile;
 /// exact key it rotates from.  Mirrors the challenge-verification pattern established by
 /// bam.useraccounts' RsaChallengeSignatureVerifier.
 /// </summary>
-public class RsaKeySetRotationVerifier : IKeySetRotationVerifier
+public class RsaKeySetRotationVerifier : IKeySetRotationVerifier, IKeySetRotationProof
 {
+    /// <summary>
+    /// The name recorded when this proof authorizes a rotation.
+    /// </summary>
+    public const string ProofName = "rsa";
+
+    /// <inheritdoc />
+    public string Name => ProofName;
+
+    /// <inheritdoc />
+    public bool Anchors(PublicKeySetData current)
+    {
+        return current is not null && !string.IsNullOrEmpty(current.PublicRsaKey);
+    }
+
     /// <summary>
     /// The BouncyCastle signature algorithm used by the framework RSA signing convention.
     /// </summary>

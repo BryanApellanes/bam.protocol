@@ -33,7 +33,11 @@ public static class ProfileRepositoryServiceRegistration
             .For<IObjectDataArchiver>().Use<ObjectDataArchiver>()
             .For<ObjectDataRepository>().Use<ObjectDataRepository>()
             .For<ISignatureProvider>().Use<RsaSignatureProvider>()
-            .For<IKeySetRotationVerifier>().Use<RsaKeySetRotationVerifier>()
+            // Rotation proofs (bam.protocol#72): a host adds its own (bam.useraccounts adds a
+            // passkey proof) to the registered KeySetRotationProofs; the chain reads it per rotation.
+            .For<KeySetRotationProofs>().Use(KeySetRotationProofChain.DefaultProofs())
+            .For<IKeySetRotationVerifier>().Use<KeySetRotationProofChain>(
+                serviceRegistry => new KeySetRotationProofChain(serviceRegistry.Get<KeySetRotationProofs>()))
             // Factory names the full ctor so the resolver gets the search indexer it needs to
             // gate index-served material lookups (a lookup on an unindexed column would else
             // degrade to a full scan — bam.protocol#24 round-2 security condition 1). Without

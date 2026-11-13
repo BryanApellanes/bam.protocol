@@ -1,4 +1,5 @@
 using System.Text;
+using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol.Data;
 
@@ -41,6 +42,43 @@ public static class KeySetRotationPayload
         AppendField(payload, proposed.PublicRsaKey);
         AppendField(payload, proposed.PublicEccKey);
         return payload.ToString();
+    }
+
+    /// <summary>
+    /// Composes the canonical rotation payload for any anchor: the SHA-256 of the current key
+    /// set's anchoring key (see <see cref="AnchorSha256"/>) followed by the proposed key set.
+    /// For a key set with an RSA key this is byte-identical to <see cref="Compose"/>, so RSA
+    /// proofs made before ECC-only key sets could rotate keep verifying (bam.protocol#72).
+    /// </summary>
+    /// <param name="current">The currently registered key set (the one being rotated away from).</param>
+    /// <param name="proposed">The proposed key set being rotated to.</param>
+    /// <returns>The canonical payload string to sign or verify.</returns>
+    public static string ComposeFor(PublicKeySetData current, IKeySet proposed)
+    {
+        ArgumentNullException.ThrowIfNull(current);
+        ArgumentNullException.ThrowIfNull(proposed);
+        return Compose(AnchorSha256(current), proposed);
+    }
+
+    /// <summary>
+    /// Returns the SHA-256 of the key a rotation away from <paramref name="current"/> is bound
+    /// to: the public RSA key when the set has one, otherwise the public ECC key.
+    /// </summary>
+    /// <param name="current">The currently registered key set.</param>
+    /// <returns>The hex SHA-256 of the anchoring key's PEM.</returns>
+    /// <exception cref="ArgumentException">The key set holds neither key.</exception>
+    public static string AnchorSha256(PublicKeySetData current)
+    {
+        ArgumentNullException.ThrowIfNull(current);
+        if (!string.IsNullOrEmpty(current.PublicRsaKey))
+        {
+            return current.PublicRsaKey.Sha256();
+        }
+        if (!string.IsNullOrEmpty(current.PublicEccKey))
+        {
+            return current.PublicEccKey.Sha256();
+        }
+        throw new ArgumentException("A key set with no public key has nothing a rotation can be bound to.", nameof(current));
     }
 
     private static void AppendField(StringBuilder payload, string? value)
