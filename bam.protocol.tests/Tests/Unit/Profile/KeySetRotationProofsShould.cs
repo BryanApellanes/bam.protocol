@@ -1,3 +1,4 @@
+using System.Text;
 using Bam;
 using Bam.Data.Dynamic.Objects;
 using Bam.Data.Objects;
@@ -8,6 +9,8 @@ using Bam.Protocol.Data.Profile;
 using Bam.Protocol.Profile;
 using Bam.Storage;
 using Bam.Test;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Security;
 
 namespace Bam.Protocol.Tests.Unit.Profile;
 
@@ -32,7 +35,8 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
                 PublicKeySetData rsaAnchored = new PublicKeySetData { KeySetHandle = "holder", PublicRsaKey = rsa.PublicKeyPem, PublicEccKey = ecc.PublicKeyPem };
                 PublicKeySetData eccOnly = new PublicKeySetData { KeySetHandle = "holder", PublicEccKey = ecc.PublicKeyPem };
                 bool rsaMatchesCompose = KeySetRotationPayload.ComposeFor(rsaAnchored, proposed) == KeySetRotationPayload.Compose(rsa.PublicKeyPem.Sha256(), proposed);
-                bool eccBindsEccKey = KeySetRotationPayload.ComposeFor(eccOnly, proposed) == KeySetRotationPayload.Compose(ecc.PublicKeyPem.Sha256(), proposed);
+                string tag = KeySetRotationPayload.ContextTag;
+                bool eccBindsEccKey = KeySetRotationPayload.ComposeFor(eccOnly, proposed) == $"{Encoding.UTF8.GetByteCount(tag)}:{tag}," + KeySetRotationPayload.Compose(ecc.PublicKeyPem.Sha256(), proposed);
                 bool anchorsDiffer = KeySetRotationPayload.ComposeFor(rsaAnchored, proposed) != KeySetRotationPayload.ComposeFor(eccOnly, proposed);
                 bool emptyThrows = false;
                 try
@@ -49,7 +53,7 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
         .ShouldPass<PayloadOutcome>((because, outcome) =>
         {
             because.ItsTrue("an RSA-anchored payload is byte-identical to Compose", outcome.RsaMatchesCompose);
-            because.ItsTrue("an ECC-only payload binds the ECC key", outcome.EccBindsEccKey);
+            because.ItsTrue("an ECC-only payload opens with the context tag and binds the ECC key", outcome.EccBindsEccKey);
             because.ItsTrue("the two anchors give different payloads", outcome.AnchorsDiffer);
             because.ItsTrue("a key set with no key has no anchor", outcome.EmptyThrows);
         })
@@ -60,7 +64,8 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
     [UnitTest]
     public void RotateAnEccOnlyKeySetWithAnEcdsaProof()
     {
-        EccPublicPrivateKeyPair current = new EccPublicPrivateKeyPair();
+        AsymmetricCipherKeyPair currentPair = EccPublicPrivateKeyPair.Generate();
+        EccPublicPrivateKeyPair current = new EccPublicPrivateKeyPair(currentPair.ToPem(Encoding.UTF8));
         EccPublicPrivateKeyPair next = new EccPublicPrivateKeyPair();
         EccPublicPrivateKeyPair other = new EccPublicPrivateKeyPair();
         RsaPublicPrivateKeyPair rsa = new RsaPublicPrivateKeyPair();
@@ -79,11 +84,20 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
                 bool otherProposalRefused = RotationRefused(registrar, proposed, EcdsaSign(current, currentRow, elsewhere));
                 bool rsaShapedRefused = RotationRefused(registrar, proposed, new RsaSignatureProvider().Sign(rsa, KeySetRotationPayload.ComposeFor(currentRow, proposed), RsaKeySetRotationVerifier.Algorithm).SignatureBytes);
                 bool emptyRefused = RotationRefused(registrar, proposed, Array.Empty<byte>());
+
+                // the ECC-only sets this proof anchors are exactly the ES256 passkey key sets, so what
+                // an authenticator signs must never read as a rotation proof (design risk table)
+                string payload = KeySetRotationPayload.ComposeFor(currentRow, proposed);
+                WebAuthnAssertion assertion = SignLikeAnAuthenticator(currentPair.Private, payload);
+                bool authenticatorSignatureRefused = RotationRefused(registrar, proposed, assertion.Signature);
+                bool assertionJsonRefused = RotationRefused(registrar, proposed, Encoding.UTF8.GetBytes(assertion.ToJson()));
+                bool untaggedRefused = RotationRefused(registrar, proposed,
+                    new EccSignatureProvider().Sign(current, KeySetRotationPayload.Compose(current.PublicKeyPem.Sha256(), proposed), EcdsaKeySetRotationProof.Algorithm).SignatureBytes);
                 bool unchanged = registrar.Resolve("ecc-holder")!.PublicEccKey == current.PublicKeyPem;
 
                 bool validRefused = RotationRefused(registrar, proposed, EcdsaSign(current, currentRow, proposed));
                 string resolved = registrar.Resolve("ecc-holder")!.PublicEccKey;
-                return new EcdsaRotationOutcome(otherKeyRefused, otherProposalRefused, rsaShapedRefused, emptyRefused, unchanged, validRefused, resolved == next.PublicKeyPem);
+                return new EcdsaRotationOutcome(otherKeyRefused, otherProposalRefused, rsaShapedRefused, emptyRefused, authenticatorSignatureRefused, assertionJsonRefused, untaggedRefused, unchanged, validRefused, resolved == next.PublicKeyPem);
             })
         .TheTest
         .ShouldPass<EcdsaRotationOutcome>((because, outcome) =>
@@ -92,6 +106,9 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
             because.ItsTrue("a proof over a different proposal is refused", outcome.OtherProposalRefused);
             because.ItsTrue("an RSA signature is refused", outcome.RsaShapedRefused);
             because.ItsTrue("an empty proof is refused", outcome.EmptyRefused);
+            because.ItsTrue("an authenticator's signature over authenticatorData and the clientDataJSON hash is refused", outcome.AuthenticatorSignatureRefused);
+            because.ItsTrue("a passkey assertion presented as JSON is refused", outcome.AssertionJsonRefused);
+            because.ItsTrue("a signature over the payload without the context tag is refused", outcome.UntaggedRefused);
             because.ItsTrue("the refusals left the key set as it was", outcome.Unchanged);
             because.ItsTrue("a proof by the current ECC key rotates", !outcome.ValidRefused);
             because.ItsTrue("the handle resolves to the rotated-to ECC key", outcome.Resolved);
@@ -164,7 +181,10 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
             (registrar) =>
             {
                 registrar.Register(new PublicKeySetData { KeySetHandle = "retiring", PublicRsaKey = rsaA.PublicKeyPem, PublicEccKey = ecc.PublicKeyPem });
-                PublicKeySetData toB = new PublicKeySetData { KeySetHandle = "retiring", PublicRsaKey = rsaB.PublicKeyPem, PublicEccKey = ecc.PublicKeyPem };
+                // the kept ECC key comes back re-encoded (other line endings): kept keys are compared by
+                // canonical identity, never by PEM string
+                string reencodedEcc = Reencode(ecc.PublicKeyPem);
+                PublicKeySetData toB = new PublicKeySetData { KeySetHandle = "retiring", PublicRsaKey = rsaB.PublicKeyPem, PublicEccKey = reencodedEcc };
                 registrar.Rotate(toB, RsaSign(rsaA, registrar.Resolve("retiring")!, toB));
 
                 List<PublicKeySetData> tombstones = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "retiring" && p.RevokedUtc != null).ToList();
@@ -201,17 +221,18 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
                 PublicKeySetData same = new PublicKeySetData { KeySetHandle = "retiring", PublicRsaKey = rsaC.PublicKeyPem, PublicEccKey = ecc.PublicKeyPem };
                 registrar.Rotate(same, RsaSign(rsaC, registrar.Resolve("retiring")!, same));
                 int tombstonesAfterNoOp = repository.Query<PublicKeySetData>(p => p.KeySetHandle == "retiring" && p.RevokedUtc != null).Count();
-                return new RetirementOutcome(oneTombstone, holdsOnlyRetired, namesProof, retiredRefusedElsewhere, backRefused, keptKeyRotates, activeRows, tombstonesAfterNoOp);
+                return new RetirementOutcome(reencodedEcc != ecc.PublicKeyPem, oneTombstone, holdsOnlyRetired, namesProof, retiredRefusedElsewhere, backRefused, keptKeyRotates, activeRows, tombstonesAfterNoOp);
             })
         .TheTest
         .ShouldPass<RetirementOutcome>((because, outcome) =>
         {
+            because.ItsTrue("the kept key was resubmitted as a different PEM string", outcome.KeptKeyReencoded);
             because.ItsTrue("the rotation wrote one tombstone", outcome.OneTombstone);
             because.ItsTrue("the tombstone holds the retired RSA key and not the kept ECC key", outcome.HoldsOnlyRetired);
             because.ItsTrue("the tombstone names the proof that authorized the rotation", outcome.NamesProof);
             because.ItsTrue("the retired key can't be registered under another handle", outcome.RetiredRefusedElsewhere);
             because.ItsTrue("the handle can't rotate back to its retired key", outcome.BackRefused);
-            because.ItsTrue("a rotation that keeps the ECC key still succeeds", outcome.KeptKeyRotates);
+            because.ItsTrue("a rotation that keeps the ECC key, in its original encoding, still succeeds", outcome.KeptKeyRotates);
             because.ItsTrue("the handle keeps exactly one active row", outcome.ActiveRows == 1);
             because.ItsTrue("a rotation that retires nothing writes no tombstone", outcome.TombstonesAfterNoOp == 2);
         })
@@ -368,6 +389,34 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
         return new RsaSignatureProvider().Sign(signer, KeySetRotationPayload.ComposeFor(current, proposed), RsaKeySetRotationVerifier.Algorithm).SignatureBytes;
     }
 
+    private static string Reencode(string pem)
+    {
+        return pem.Contains("\r\n") ? pem.Replace("\r\n", "\n") : pem.Replace("\n", "\r\n");
+    }
+
+    private static string Base64Url(byte[] bytes)
+    {
+        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+
+    // What a WebAuthn authenticator signs for an assertion whose challenge is SHA-256 of the
+    // payload: authenticatorData (rpIdHash, flags UP|UV, counter) || SHA-256(clientDataJSON).
+    private static WebAuthnAssertion SignLikeAnAuthenticator(AsymmetricKeyParameter privateKey, string payload)
+    {
+        byte[] challenge = DigestUtilities.CalculateDigest("SHA-256", Encoding.UTF8.GetBytes(payload));
+        byte[] clientDataJson = Encoding.UTF8.GetBytes("{\"type\":\"webauthn.get\",\"challenge\":\"" + Base64Url(challenge) + "\",\"origin\":\"https://example.test\"}");
+        byte[] authenticatorData = new byte[37];
+        DigestUtilities.CalculateDigest("SHA-256", Encoding.UTF8.GetBytes("example.test")).CopyTo(authenticatorData, 0);
+        authenticatorData[32] = 0x05;
+        authenticatorData[36] = 0x01;
+        byte[] clientDataHash = DigestUtilities.CalculateDigest("SHA-256", clientDataJson);
+        ISigner signer = SignerUtilities.GetSigner(EcdsaKeySetRotationProof.Algorithm);
+        signer.Init(true, privateKey);
+        signer.BlockUpdate(authenticatorData, 0, authenticatorData.Length);
+        signer.BlockUpdate(clientDataHash, 0, clientDataHash.Length);
+        return new WebAuthnAssertion(authenticatorData, clientDataJson, signer.GenerateSignature());
+    }
+
     private static ObjectDataRepository CreateObjectDataRepository(string testName)
     {
         string rootPath = $"./.bam/tests/{testName}";
@@ -431,11 +480,20 @@ public class KeySetRotationProofsShould : UnitTestMenuContainer
 
     private sealed record PayloadOutcome(bool RsaMatchesCompose, bool EccBindsEccKey, bool AnchorsDiffer, bool EmptyThrows);
 
-    private sealed record EcdsaRotationOutcome(bool OtherKeyRefused, bool OtherProposalRefused, bool RsaShapedRefused, bool EmptyRefused, bool Unchanged, bool ValidRefused, bool Resolved);
+    private sealed record EcdsaRotationOutcome(bool OtherKeyRefused, bool OtherProposalRefused, bool RsaShapedRefused, bool EmptyRefused, bool AuthenticatorSignatureRefused, bool AssertionJsonRefused, bool UntaggedRefused, bool Unchanged, bool ValidRefused, bool Resolved);
+
+    private sealed record WebAuthnAssertion(byte[] AuthenticatorData, byte[] ClientDataJson, byte[] Signature)
+    {
+        public string ToJson()
+        {
+            return "{\"id\":\"cred\",\"type\":\"public-key\",\"response\":{\"authenticatorData\":\"" + Base64Url(AuthenticatorData)
+                + "\",\"clientDataJSON\":\"" + Base64Url(ClientDataJson) + "\",\"signature\":\"" + Base64Url(Signature) + "\"}}";
+        }
+    }
 
     private sealed record AnchoringOutcome(bool LegacyRefused, bool ChainRefused, bool MovedToEcc, bool RsaOnlyChainAnchorsEcc, bool EccProofOfRsaSetRefused);
 
-    private sealed record RetirementOutcome(bool OneTombstone, bool HoldsOnlyRetired, bool NamesProof, bool RetiredRefusedElsewhere, bool BackRefused, bool KeptKeyRotates, int ActiveRows, int TombstonesAfterNoOp);
+    private sealed record RetirementOutcome(bool KeptKeyReencoded, bool OneTombstone, bool HoldsOnlyRetired, bool NamesProof, bool RetiredRefusedElsewhere, bool BackRefused, bool KeptKeyRotates, int ActiveRows, int TombstonesAfterNoOp);
 
     private sealed record GoverningOutcome(bool IsRotationTombstone, bool IntruderRefused, bool SuccessorHolds);
 

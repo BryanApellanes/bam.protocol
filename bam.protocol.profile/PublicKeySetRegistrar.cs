@@ -268,7 +268,9 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             // this or any other identity.  Keys the proposed set keeps are left off the tombstone,
             // or the next rotation that keeps them would be refused.  The tombstone is written
             // before the row moves: a crash between the two leaves the old key both active and
-            // blocklisted, which still resolves, and a retry writes a second, harmless tombstone.
+            // blocklisted, which still resolves, and a retry to the same target writes a second,
+            // harmless tombstone.  A retry that now wants to KEEP that key is refused as revoked
+            // material: fail-closed, and the holder can still rotate to fresh keys.
             string proofName = (verification as KeySetRotationVerification)?.ProofName ?? "unnamed";
             PublicKeySetData? tombstone = RetiredMaterialTombstone(current, newKeySet, proofName);
             if (tombstone != null)
@@ -377,15 +379,6 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     }
 
     /// <summary>
-    /// Stamps the fields the registrar owns rather than the caller: the creation time, the
-    /// composite-key identifiers (<see cref="Bam.Data.Repositories.RepoData.Uuid"/> /
-    /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>), and the canonical key-material
-    /// fingerprints.  <c>Created</c> is the primary resolution key and <c>Uuid</c>/<c>Cuid</c>
-    /// derive the <c>Id</c> tiebreak, so leaving any of them caller-controlled would let a
-    /// caller influence which duplicate wins resolution (bam.protocol#8 review C3); the
-    /// fingerprints are the indexed canonical identity (bam.protocol#24 review B1).
-    /// </summary>
-    /// <summary>
     /// Builds the revoked tombstone that blocklists the keys of <paramref name="current"/> that
     /// <paramref name="proposed"/> does not keep, or returns null when the rotation retires no
     /// key.  Compared by canonical identity, so a re-encoded PEM of a kept key is not "retired".
@@ -422,6 +415,15 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
         return kept.Contains(identity) ? string.Empty : pem;
     }
 
+    /// <summary>
+    /// Stamps the fields the registrar owns rather than the caller: the creation time, the
+    /// composite-key identifiers (<see cref="Bam.Data.Repositories.RepoData.Uuid"/> /
+    /// <see cref="Bam.Data.Repositories.RepoData.Cuid"/>), and the canonical key-material
+    /// fingerprints.  <c>Created</c> is the primary resolution key and <c>Uuid</c>/<c>Cuid</c>
+    /// derive the <c>Id</c> tiebreak, so leaving any of them caller-controlled would let a
+    /// caller influence which duplicate wins resolution (bam.protocol#8 review C3); the
+    /// fingerprints are the indexed canonical identity (bam.protocol#24 review B1).
+    /// </summary>
     private static void NormalizeServerControlledFields(PublicKeySetData publicKeySetData)
     {
         publicKeySetData.Created = DateTime.UtcNow;

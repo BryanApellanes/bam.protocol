@@ -20,6 +20,14 @@ public interface IKeySetRotationProof
     /// <summary>
     /// Returns whether this proof can prove a rotation away from <paramref name="current"/>.
     /// A proof that does not anchor a key set is never asked to verify a rotation from it.
+    /// <para>
+    /// This is also asked about a <i>proposed</i> key set that isn't registered yet, to refuse a
+    /// rotation no trusted proof could ever rotate away from
+    /// (<see cref="IKeySetRotationVerifier.CanRotateFrom"/>).  A proof whose answer depends on
+    /// stored state (which credential holds the key set, whether a recovery is due) must answer
+    /// correctly for such a set, or answer from the key material alone.  It must anchor only key
+    /// sets bound to the credential it verifies, and only for that credential's handle.
+    /// </para>
     /// </summary>
     /// <param name="current">The key set a rotation would move away from.</param>
     /// <returns>True when this proof can prove a rotation from <paramref name="current"/>.</returns>

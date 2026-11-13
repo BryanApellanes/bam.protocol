@@ -123,8 +123,11 @@ PublicKeySetData found = repo.FindPublicKeySetByHandle(actorHandle);
 // KeySetRotationPayload.ComposeFor(current, newKeySet), which binds the SHA-256 of the
 // current anchoring key (RSA when present, else ECC) and is length-prefixed so it cannot be
 // re-split into a different key set; for an RSA key set it is byte-identical to
-// Compose(currentPublicRsaKeySha256, newKeySet). A host adds proofs of its own to the
-// registered KeySetRotationProofs (bam.useraccounts adds a passkey proof). The row is
+// Compose(currentPublicRsaKeySha256, newKeySet); for any other anchor it opens with the
+// context field KeySetRotationPayload.ContextTag, so nothing else the key signs reads as a
+// rotation proof. A host adds proofs of its own to the registered KeySetRotationProofs
+// (bam.useraccounts adds a passkey proof); a proof whose name is already trusted is logged
+// and dropped, and a host that trusts fewer proofs registers its own list. The row is
 // updated in place, and the keys the rotation retires are written to a revoked tombstone so
 // they stay blocklisted under every handle. An invalid proof, an unparseable key, or a target
 // no trusted proof could later rotate away from throws InvalidKeySetRotationException.

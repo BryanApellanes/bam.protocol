@@ -45,10 +45,18 @@ public static class KeySetRotationPayload
     }
 
     /// <summary>
-    /// Composes the canonical rotation payload for any anchor: the SHA-256 of the current key
-    /// set's anchoring key (see <see cref="AnchorSha256"/>) followed by the proposed key set.
-    /// For a key set with an RSA key this is byte-identical to <see cref="Compose"/>, so RSA
-    /// proofs made before ECC-only key sets could rotate keep verifying (bam.protocol#72).
+    /// The context field that opens every rotation payload not anchored on an RSA key.  It keeps
+    /// a signature the anchoring key made for some other purpose (a request proof, a host's own
+    /// message) from ever reading as a rotation proof (bam.protocol#88 review, R1).
+    /// </summary>
+    public const string ContextTag = "bam.keyset-rotation.v1";
+
+    /// <summary>
+    /// Composes the canonical rotation payload for any anchor.  For a key set with an RSA key it
+    /// is byte-identical to <see cref="Compose"/>, so RSA proofs made before ECC-only key sets
+    /// could rotate keep verifying.  For any other anchor the payload opens with
+    /// <see cref="ContextTag"/>, then the SHA-256 of the anchoring key
+    /// (see <see cref="AnchorSha256"/>) and the proposed key set (bam.protocol#72).
     /// </summary>
     /// <param name="current">The currently registered key set (the one being rotated away from).</param>
     /// <param name="proposed">The proposed key set being rotated to.</param>
@@ -57,7 +65,15 @@ public static class KeySetRotationPayload
     {
         ArgumentNullException.ThrowIfNull(current);
         ArgumentNullException.ThrowIfNull(proposed);
-        return Compose(AnchorSha256(current), proposed);
+        string payload = Compose(AnchorSha256(current), proposed);
+        if (!string.IsNullOrEmpty(current.PublicRsaKey))
+        {
+            return payload;
+        }
+        StringBuilder tagged = new StringBuilder();
+        AppendField(tagged, ContextTag);
+        tagged.Append(payload);
+        return tagged.ToString();
     }
 
     /// <summary>

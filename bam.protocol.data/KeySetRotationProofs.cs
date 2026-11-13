@@ -1,3 +1,4 @@
+using Bam.Logging;
 using Bam.Protocol.Data.Profile;
 
 namespace Bam.Protocol.Data;
@@ -28,10 +29,13 @@ public class KeySetRotationProofs
     /// <summary>
     /// Gets a snapshot of the proofs, in the order they are tried.
     /// </summary>
-    public IReadOnlyList<IKeySetRotationProof> All => _proofs;
+    public IReadOnlyList<IKeySetRotationProof> All => _proofs.AsReadOnly();
 
     /// <summary>
-    /// Appends <paramref name="proof"/> unless a proof with the same <see cref="IKeySetRotationProof.Name"/> is already present.
+    /// Appends <paramref name="proof"/> unless a proof with the same <see cref="IKeySetRotationProof.Name"/>
+    /// is already present; a duplicate is logged and dropped, so a host proof can never replace a
+    /// framework one.  There is no remove: a host that trusts fewer proofs than the defaults
+    /// registers its own <see cref="KeySetRotationProofs"/> instead.
     /// </summary>
     /// <param name="proof">The proof to trust.</param>
     /// <returns>This instance, for chaining.</returns>
@@ -42,6 +46,7 @@ public class KeySetRotationProofs
         {
             if (_proofs.Any(existing => string.Equals(existing.Name, proof.Name, StringComparison.Ordinal)))
             {
+                Log.Warn("Ignored a key-set rotation proof named '{0}': a proof with that name is already trusted.", proof.Name);
                 return this;
             }
             // copy-on-write so a rotation reading All never sees a list being changed
