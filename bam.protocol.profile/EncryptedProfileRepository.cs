@@ -11,7 +11,7 @@ public class EncryptedProfileRepository : IProfileRepository
     /// <summary>
     /// Initializes a new instance of the <see cref="EncryptedProfileRepository"/> class with the
     /// default key-set policies — a <see cref="PublicKeySetRegistrar"/> verifying rotation proofs
-    /// via <see cref="RsaKeySetRotationVerifier"/>, a <see cref="KeySetRevocation"/> whose
+    /// via <see cref="KeySetRotationProofChain.Default"/> (RSA, then ECDSA for ECC-only key sets), a <see cref="KeySetRevocation"/> whose
     /// admin key is unconfigured (revocation fails closed until a break-glass key is supplied),
     /// and a <see cref="PublicKeySetResolver"/> over the same repository as the resolution
     /// authority.
@@ -19,7 +19,7 @@ public class EncryptedProfileRepository : IProfileRepository
     /// <param name="repository">The object-data repository profile data is persisted in.</param>
     public EncryptedProfileRepository(ObjectDataRepository repository)
         : this(repository,
-            new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider())),
+            new PublicKeySetRegistrar(repository, KeySetRotationProofChain.Default()),
             new KeySetRevocation(repository, new RsaRevocationAuthority(new RsaSignatureProvider(), new StaticAdminPublicKeySource(null))),
             new PublicKeySetResolver(repository))
     {

@@ -26,6 +26,26 @@ public class PublicKeySetData : RepoData, IKeySet
     public string? RevokedBy { get; set; }
 
     /// <summary>
+    /// The <see cref="RevokedBy"/> prefix of a rotation tombstone: a revoked row the registrar
+    /// writes when a rotation retires keys, holding only the retired keys, followed by the name of
+    /// the proof that authorized the rotation (for example <c>rotation:passkey</c>).  It
+    /// blocklists the retired material but never governs re-registration of the handle
+    /// (bam.protocol#72).  An admin revocation's <see cref="RevokedBy"/> is a hex SHA-256 and can't
+    /// start with it.
+    /// </summary>
+    public const string RotationRevokedByPrefix = "rotation:";
+
+    /// <summary>
+    /// Returns whether <paramref name="keySet"/> is a rotation tombstone (see <see cref="RotationRevokedByPrefix"/>).
+    /// </summary>
+    /// <param name="keySet">The row to check.</param>
+    /// <returns>True for a revoked row written by a rotation.</returns>
+    public static bool IsRotationTombstone(PublicKeySetData keySet)
+    {
+        return keySet.RevokedUtc != null && keySet.RevokedBy != null && keySet.RevokedBy.StartsWith(RotationRevokedByPrefix, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Server-stamped canonical identity of <see cref="PublicRsaKey"/> — the SHA-256 of the
     /// parsed key's canonical DER <c>SubjectPublicKeyInfo</c> — or null when the field is empty,
     /// unparseable, or the row predates fingerprint stamping (legacy; the key-set audit stamps

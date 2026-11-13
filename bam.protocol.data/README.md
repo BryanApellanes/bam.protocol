@@ -117,22 +117,28 @@ repo.SavePublicKeySet(keySet);
 // Find by handle (deterministic — if duplicate rows exist, the earliest-created wins)
 PublicKeySetData found = repo.FindPublicKeySetByHandle(actorHandle);
 
-// Replace a registered key set: rotation requires proof of possession of the currently
-// registered key — a SHA512WITHRSA signature over
-// KeySetRotationPayload.Compose(currentPublicRsaKeySha256, newKeySet), made with the
-// private key matching the currently registered public RSA key. The payload binds the
-// SHA-256 of the current key and is length-prefixed so it cannot be re-split into a
-// different key set. The row is updated in place; an invalid proof or unparseable key
-// throws InvalidKeySetRotationException.
+// Replace a registered key set: rotation requires a proof the host trusts (bam.protocol#72).
+// The default proofs are a SHA512WITHRSA signature by the current RSA key, and, for an
+// ECC-only key set, a SHA256WITHECDSA signature by the current ECC key. Both sign
+// KeySetRotationPayload.ComposeFor(current, newKeySet), which binds the SHA-256 of the
+// current anchoring key (RSA when present, else ECC) and is length-prefixed so it cannot be
+// re-split into a different key set; for an RSA key set it is byte-identical to
+// Compose(currentPublicRsaKeySha256, newKeySet); for any other anchor it opens with the
+// context field KeySetRotationPayload.ContextTag, so nothing else the key signs reads as a
+// rotation proof. A host adds proofs of its own to the registered KeySetRotationProofs
+// (bam.useraccounts adds a passkey proof); a proof whose name is already trusted is logged
+// and dropped, and a host that trusts fewer proofs registers its own list. The row is
+// updated in place, and the keys the rotation retires are written to a revoked tombstone so
+// they stay blocklisted under every handle. An invalid proof, an unparseable key, or a target
+// no trusted proof could later rotate away from throws InvalidKeySetRotationException.
 PublicKeySetData newKeySet = new PublicKeySetData
 {
     KeySetHandle = actorHandle,
     PublicRsaKey = newRsaPublicKeyPem,
     PublicEccKey = newEccPublicKeyPem
 };
-string currentPublicRsaKeySha256 = found.PublicRsaKey.Sha256();
 byte[] rotationSignature = SignWithCurrentPrivateKey(
-    KeySetRotationPayload.Compose(currentPublicRsaKeySha256, newKeySet));
+    KeySetRotationPayload.ComposeFor(found, newKeySet));
 repo.RotatePublicKeySet(newKeySet, rotationSignature);
 
 // Break-glass revocation: an authorized administrator revokes the active key set, freeing the
@@ -192,7 +198,7 @@ repo.RevokePublicKeySet(actorHandle, boundProof, successorFingerprint);
 > - **Only the RSA identity key is bound; the candidate's ECC field is unconstrained.** A claimant
 >   presenting the bound RSA key may attach *their own* `PublicEccKey`, and session/actor resolution
 >   keys off the ECC material — so traffic encrypted to the handle can reach them until the real
->   successor notices. Recovery is **rotation** (which proves possession of the registered RSA key).
+>   successor notices. Recovery is **rotation** (which needs a trusted proof by the registered key, see above).
 > - A durable fix — requiring a signed proof-of-possession claim at re-registration when a binding
 >   exists — is tracked as a follow-on (see bam.protocol#21's spin-offs).
 >
@@ -240,14 +246,14 @@ repo.RevokePublicKeySet(actorHandle, boundProof, successorFingerprint);
 > (BryanApellanes/bamsvc#6, BryanApellanes/socialkeyinfrastructure.io#9) is responsible for
 > closing. Enforcing uniqueness is still strictly safer than not; this is the accepted trade.
 >
-> **ECC-only registrations are role-limited and unrotatable:** registering a key set with only
-> a `PublicEccKey` (no RSA) is allowed for encryption-only actors (ECDH shared-key derivation),
-> but such a handle can never rotate (rotation proves possession of the current *RSA* key) and
-> can never pass device-key confirmation (which requires a non-empty RSA key). There is no
-> in-place upgrade to add an RSA key later — rotation needs a current RSA key and re-registration
-> conflicts on the handle — so an ECC-only handle is permanently encryption-only until its key set
-> is **revoked** (BryanApellanes/bam.protocol#11), after which the freed handle can be
-> re-registered with an RSA-bearing key set, or a different handle with fresh key material is used.
+> **ECC-only registrations are role-limited:** registering a key set with only a `PublicEccKey`
+> (no RSA) is allowed for encryption-only actors (ECDH shared-key derivation) and for passkey key
+> sets registered from an ES256 credential (bam.useraccounts). Such a handle can never pass
+> device-key confirmation, which requires a non-empty RSA key. Since bam.protocol#72 it **can**
+> rotate: the default proofs include SHA256WITHECDSA by the current ECC key, and a host may add
+> others (a WebAuthn assertion, for passkeys). An ECC-only handle can also rotate to an
+> RSA-bearing key set, which is the in-place upgrade. A rotation target no trusted proof could
+> later rotate away from is refused, so a handle is never stranded by rotation.
 
 ### Device initialization
 ```csharp
