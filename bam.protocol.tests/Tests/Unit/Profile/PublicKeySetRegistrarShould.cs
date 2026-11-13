@@ -15,7 +15,7 @@ namespace Bam.Protocol.Tests.Unit.Profile;
 [UnitTestMenu("PublicKeySetRegistrar Should", Selector = "pksr")]
 public class PublicKeySetRegistrarShould : UnitTestMenuContainer
 {
-    private static ObjectDataRepository CreateObjectDataRepository(string testName)
+    internal static ObjectDataRepository CreateObjectDataRepository(string testName)
     {
         string rootPath = $"./.bam/tests/{testName}";
         // each run starts from a clean store so first-registration-wins tests are repeatable
@@ -46,7 +46,7 @@ public class PublicKeySetRegistrarShould : UnitTestMenuContainer
         return new PublicKeySetRegistrar(repository, new RsaKeySetRotationVerifier(new RsaSignatureProvider()));
     }
 
-    private static byte[] SignRotation(RsaPublicPrivateKeyPair signingKeyPair, string currentPublicRsaKeyPem, PublicKeySetData proposed)
+    internal static byte[] SignRotation(RsaPublicPrivateKeyPair signingKeyPair, string currentPublicRsaKeyPem, PublicKeySetData proposed)
     {
         RsaSignatureProvider signatureProvider = new RsaSignatureProvider();
         string payload = KeySetRotationPayload.Compose(currentPublicRsaKeyPem.Sha256(), proposed);

@@ -64,13 +64,21 @@ public static class ProfileRepositoryServiceRegistration
                 serviceRegistry => new PublicKeySetRegistrar(
                     serviceRegistry.Get<ObjectDataRepository>(),
                     serviceRegistry.Get<IKeySetRotationVerifier>(),
-                    serviceRegistry.Get<IPublicKeySetResolver>()))
+                    serviceRegistry.Get<IPublicKeySetResolver>(),
+                    serviceRegistry.Get<KeySetRotationPolicy>()))
             .For<IProfileRepository>().Use<EncryptedProfileRepository>(
                 serviceRegistry => new EncryptedProfileRepository(
                     serviceRegistry.Get<ObjectDataRepository>(),
                     serviceRegistry.Get<IPublicKeySetRegistrar>(),
                     serviceRegistry.Get<IKeySetRevocation>(),
                     serviceRegistry.Get<IPublicKeySetResolver>()));
+
+        // No rotation limit unless the host binds one (bam.protocol#89). Registered only when nothing is bound yet, so a
+        // policy the host bound before this call is kept: replacing it with None would fail open, silently.
+        if (!registry.Contains<KeySetRotationPolicy>())
+        {
+            registry.For<KeySetRotationPolicy>().Use(KeySetRotationPolicy.None);
+        }
 
         return registry;
     }
