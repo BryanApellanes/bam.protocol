@@ -72,6 +72,44 @@ public class KeySetRotationIntervalShould : UnitTestMenuContainer
     }
 
     [UnitTest]
+    public void WaitTheWholeIntervalWhenTheClockGoesBack()
+    {
+        RsaPublicPrivateKeyPair first = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair second = new RsaPublicPrivateKeyPair();
+        RsaPublicPrivateKeyPair third = new RsaPublicPrivateKeyPair();
+        ObjectDataRepository repository = PublicKeySetRegistrarShould.CreateObjectDataRepository(nameof(WaitTheWholeIntervalWhenTheClockGoesBack));
+        ManualClock clock = new ManualClock(Start);
+
+        When.A<PublicKeySetRegistrar>("rotates, then rotates again after the clock is set back five minutes, and again at the interval of the set-back clock",
+            () => Registrar(repository, new KeySetRotationPolicy(Interval, clock)),
+            registrar =>
+            {
+                registrar.Register(new PublicKeySetData { KeySetHandle = "rewound", PublicRsaKey = first.PublicKeyPem });
+                RotationAttempt firstRotation = TryRotate(registrar, "rewound", first, second);
+                clock.Advance(TimeSpan.FromMinutes(-5));
+                RotationAttempt afterRewind = TryRotate(registrar, "rewound", second, third);
+                clock.Advance(Interval);
+                RotationAttempt atRewoundInterval = TryRotate(registrar, "rewound", second, third);
+                string keyAfter = registrar.Resolve("rewound")!.PublicRsaKey;
+                return new RewindOutcome(firstRotation, afterRewind, atRewoundInterval, keyAfter);
+            })
+        .TheTest
+        .ShouldPass<RewindOutcome>((because, outcome) =>
+        {
+            because.ItsTrue("the first rotation succeeds", outcome.First.Succeeded);
+            because.ItsTrue("a rotation with the clock set back before the stamp is refused, not let through", outcome.AfterRewind.TooSoon);
+            because.ItsTrue($"and waits the whole interval ({outcome.AfterRewind.RetryAfter})", outcome.AfterRewind.RetryAfter == Interval);
+            because.ItsTrue($"an interval later on the set-back clock, which is five minutes short of the stamp plus the interval, it is refused again ({outcome.AtRewoundInterval.RetryAfter})",
+                outcome.AtRewoundInterval.TooSoon && outcome.AtRewoundInterval.RetryAfter == TimeSpan.FromMinutes(5));
+            because.ItsTrue("and the key never moved", outcome.KeyAfter == second.PublicKeyPem);
+        })
+        .SoBeHappy()
+        .UnlessItFailed();
+    }
+
+    private sealed record RewindOutcome(RotationAttempt First, RotationAttempt AfterRewind, RotationAttempt AtRewoundInterval, string KeyAfter);
+
+    [UnitTest]
     public void LetARowFromBeforeTheFieldRotateAtOnceAndThenSpaceItsRotations()
     {
         RsaPublicPrivateKeyPair first = new RsaPublicPrivateKeyPair();
@@ -90,6 +128,7 @@ public class KeySetRotationIntervalShould : UnitTestMenuContainer
                 {
                     KeySetHandle = "legacy",
                     PublicRsaKey = first.PublicKeyPem,
+                    // Only so the row is a valid one: nothing reads Created for the interval.
                     Created = DateTime.UtcNow,
                     Uuid = Guid.NewGuid().ToString(),
                     Cuid = Bam.Cuid.Generate(),

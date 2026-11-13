@@ -13,6 +13,11 @@ namespace Bam.Protocol.Profile;
 /// apart, any such stretch of time retires at most one key, so at most two of one handle's keys hold live nonces at
 /// once: the current one and the one before it.
 /// </para>
+/// <para>
+/// A handle registered again after an admin revocation starts with no rotation time, so its first rotation is free
+/// too. For one interval it can then have three keys with live nonces (the revoked one, which can no longer sign, and
+/// two new ones). That takes the break-glass revocation, so a key holder cannot cause it.
+/// </para>
 /// </summary>
 public sealed class KeySetRotationPolicy
 {
@@ -58,7 +63,8 @@ public sealed class KeySetRotationPolicy
     /// How long a handle that last rotated at <paramref name="lastRotated"/> must still wait to rotate, or null when it
     /// may rotate now. For a time in the future (a clock that moved back by <c>d</c>) the answer is capped at the
     /// interval, but the handle stays refused until the clock passes the stamp plus the interval, <c>d</c> plus the
-    /// interval in all, and each refusal in that time reports the full interval again.
+    /// interval in all: each refusal before the clock reaches the stamp reports the full interval, and each one after
+    /// it reports what is left.
     /// </summary>
     /// <param name="lastRotated">When the handle last rotated, or null when it never has.</param>
     /// <returns>The wait, or null.</returns>
