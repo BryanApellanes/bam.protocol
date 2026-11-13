@@ -60,11 +60,14 @@ public static class ProfileRepositoryServiceRegistration
             // defaults — resolving without these factories would silently ignore the
             // registry-supplied IPublicKeySetResolver / IPublicKeySetRegistrar /
             // IKeySetRevocation (bam.protocol#8 review SF1; extended by #13 and #11).
+            // No rotation limit by default (bam.protocol#89); a host binds its own KeySetRotationPolicy after this.
+            .For<KeySetRotationPolicy>().Use(KeySetRotationPolicy.None)
             .For<IPublicKeySetRegistrar>().Use<PublicKeySetRegistrar>(
                 serviceRegistry => new PublicKeySetRegistrar(
                     serviceRegistry.Get<ObjectDataRepository>(),
                     serviceRegistry.Get<IKeySetRotationVerifier>(),
-                    serviceRegistry.Get<IPublicKeySetResolver>()))
+                    serviceRegistry.Get<IPublicKeySetResolver>(),
+                    serviceRegistry.Get<KeySetRotationPolicy>()))
             .For<IProfileRepository>().Use<EncryptedProfileRepository>(
                 serviceRegistry => new EncryptedProfileRepository(
                     serviceRegistry.Get<ObjectDataRepository>(),

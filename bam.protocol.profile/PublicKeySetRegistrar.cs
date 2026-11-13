@@ -59,10 +59,25 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// <param name="rotationVerifier">The verifier that decides whether a rotation signature proves possession of the current key.</param>
     /// <param name="resolver">The resolution authority used for handle-exists and key-material-uniqueness checks; see <see cref="IPublicKeySetResolver"/>.</param>
     public PublicKeySetRegistrar(ObjectDataRepository repository, IKeySetRotationVerifier rotationVerifier, IPublicKeySetResolver resolver)
+        : this(repository, rotationVerifier, resolver, KeySetRotationPolicy.None)
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PublicKeySetRegistrar"/> class with a limit on how often one
+    /// handle may rotate (bam.protocol#89).
+    /// </summary>
+    /// <param name="repository">The object-data repository the key sets are persisted in.</param>
+    /// <param name="rotationVerifier">The verifier that decides whether a rotation signature proves possession of the current key.</param>
+    /// <param name="resolver">The resolution authority used for handle-exists and key-material-uniqueness checks; see <see cref="IPublicKeySetResolver"/>.</param>
+    /// <param name="rotationPolicy">The minimum interval between rotations of one handle, and the clock it is measured with.</param>
+    public PublicKeySetRegistrar(ObjectDataRepository repository, IKeySetRotationVerifier rotationVerifier, IPublicKeySetResolver resolver, KeySetRotationPolicy rotationPolicy)
+    {
+        ArgumentNullException.ThrowIfNull(rotationPolicy);
         this.Repository = repository;
         this.RotationVerifier = rotationVerifier;
         this.Resolver = resolver;
+        this.RotationPolicy = rotationPolicy;
     }
 
     /// <summary>
@@ -81,6 +96,11 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// registration-time checks and read-path resolution can never disagree.
     /// </summary>
     protected IPublicKeySetResolver Resolver { get; }
+
+    /// <summary>
+    /// Gets the limit on how often one handle may rotate; <see cref="KeySetRotationPolicy.None"/> unless the host set one.
+    /// </summary>
+    protected KeySetRotationPolicy RotationPolicy { get; }
 
     /// <inheritdoc />
     public PublicKeySetData Register(PublicKeySetData publicKeySetData)
@@ -164,6 +184,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             }
 
             NormalizeServerControlledFields(publicKeySetData);
+            publicKeySetData.KeyMaterialSinceUtc = RotationPolicy.UtcNow();
             return Repository.Create(publicKeySetData);
         }
     }
@@ -243,6 +264,15 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
                     $"Rotation signature does not prove possession of the currently registered key for handle '{handle}'.");
             }
 
+            // Checked only once the proof verifies, so only the key holder learns when the handle last rotated
+            // (bam.protocol#89).  A row from before KeyMaterialSinceUtc is judged from its creation time.
+            TimeSpan? wait = RotationPolicy.WaitBeforeRotating(current.KeyMaterialSinceUtc ?? current.Created);
+            if (wait is TimeSpan retryAfter)
+            {
+                Log.Warn("Rejected key-set rotation for handle '{0}': it rotated less than {1} ago.", handle, RotationPolicy.MinimumInterval);
+                throw new KeySetRotationTooSoonException(handle, retryAfter);
+            }
+
             // Enforce one-handle-to-one-key-material on the rotation path too, not just Register:
             // otherwise an attacker rotates a handle they control to a victim's public key, and
             // FindProfileByPublicKey misattributes the victim's session (bam.protocol#8 review C4 /
@@ -281,6 +311,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             current.PublicRsaKey = newKeySet.PublicRsaKey;
             current.PublicEccKey = newKeySet.PublicEccKey;
             KeyMaterialIdentity.StampFingerprints(current);
+            current.KeyMaterialSinceUtc = RotationPolicy.UtcNow();
             Log.Info("Rotated key set for handle '{0}' with proof '{1}'.", handle, proofName);
             return Repository.Update(current);
         }

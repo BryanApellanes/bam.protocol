@@ -20,6 +20,13 @@ public class PublicKeySetData : RepoData, IKeySet
     public DateTime? RevokedUtc { get; set; }
 
     /// <summary>
+    /// The UTC time this row's current key material was set: at registration, and again at each rotation.  Owned by
+    /// the registrar (caller-supplied values are overwritten); it is what a minimum rotation interval is measured from
+    /// (bam.protocol#89).  Null on a row that predates the field, for which the registrar uses <c>Created</c>.
+    /// </summary>
+    public DateTime? KeyMaterialSinceUtc { get; set; }
+
+    /// <summary>
     /// Identifies the break-glass admin key that authorized the revocation (the SHA-256 of the
     /// admin public key), for the audit trail, or null when the key set is active.
     /// </summary>
