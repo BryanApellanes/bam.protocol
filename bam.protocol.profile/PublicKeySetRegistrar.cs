@@ -184,7 +184,9 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             }
 
             NormalizeServerControlledFields(publicKeySetData);
-            publicKeySetData.KeyMaterialSinceUtc = RotationPolicy.UtcNow();
+            // Registration is not a rotation: a caller cannot plant a time that would delay, or appear to excuse, the
+            // handle's rotations (bam.protocol#89).
+            publicKeySetData.LastRotatedUtc = null;
             return Repository.Create(publicKeySetData);
         }
     }
@@ -265,8 +267,9 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             }
 
             // Checked only once the proof verifies, so only the key holder learns when the handle last rotated
-            // (bam.protocol#89).  A row from before KeyMaterialSinceUtc is judged from its creation time.
-            TimeSpan? wait = RotationPolicy.WaitBeforeRotating(current.KeyMaterialSinceUtc ?? current.Created);
+            // (bam.protocol#89).  A row that has never rotated, a legacy one included, may rotate at once: the bound
+            // the interval keeps depends only on the spacing between rotations.
+            TimeSpan? wait = RotationPolicy.WaitBeforeRotating(current.LastRotatedUtc);
             if (wait is TimeSpan retryAfter)
             {
                 Log.Warn("Rejected key-set rotation for handle '{0}': it rotated less than {1} ago.", handle, RotationPolicy.MinimumInterval);
@@ -311,7 +314,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
             current.PublicRsaKey = newKeySet.PublicRsaKey;
             current.PublicEccKey = newKeySet.PublicEccKey;
             KeyMaterialIdentity.StampFingerprints(current);
-            current.KeyMaterialSinceUtc = RotationPolicy.UtcNow();
+            current.LastRotatedUtc = RotationPolicy.UtcNow();
             Log.Info("Rotated key set for handle '{0}' with proof '{1}'.", handle, proofName);
             return Repository.Update(current);
         }

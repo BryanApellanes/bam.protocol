@@ -2,27 +2,33 @@ namespace Bam.Protocol.Profile;
 
 /// <summary>
 /// How often one handle may rotate its key set (bam.protocol#89). <see cref="PublicKeySetRegistrar"/> refuses a
-/// rotation that comes sooner than <see cref="MinimumInterval"/> after the handle's current keys were set, judged
-/// from the time the registrar stamps on the row (<see cref="Bam.Protocol.Data.Profile.PublicKeySetData.KeyMaterialSinceUtc"/>).
+/// rotation that comes sooner than <see cref="MinimumInterval"/> after the handle's previous rotation, judged from the
+/// time the registrar stamps on the row (<see cref="Bam.Protocol.Data.Profile.PublicKeySetData.LastRotatedUtc"/>). A
+/// handle's first rotation is never delayed.
 /// Because that time lives in the key-set store, the limit holds for every process that shares the store.
 /// <para>
 /// Why a host sets it: request-proof nonces are counted per signing key, so each rotation starts a handle on a fresh
 /// per-key quota while the old key's nonces stay until they expire. A nonce can outlive its key's last use by up to
-/// twice the proof's maximum age (the proof may be signed that far ahead), so an interval of at least that long keeps
-/// at most two of one handle's keys holding live nonces at once.
+/// twice the proof's maximum age (the proof may be signed that far ahead). With rotations spaced at least that far
+/// apart, any such stretch of time retires at most one key, so at most two of one handle's keys hold live nonces at
+/// once: the current one and the one before it.
 /// </para>
 /// </summary>
 public sealed class KeySetRotationPolicy
 {
-    /// <summary>The longest interval accepted: a day.</summary>
-    public static readonly TimeSpan MaxInterval = TimeSpan.FromDays(1);
+    /// <summary>
+    /// The longest interval accepted: two days, twice the longest proof age bam.protocol.aspnetcore accepts
+    /// (<c>RequestProofEvaluator.MaximumMaxAge</c>, one day), so the recommended interval is always within range.
+    /// This project cannot reference that one, so the two constants are kept in step by hand.
+    /// </summary>
+    public static readonly TimeSpan MaxInterval = TimeSpan.FromDays(2);
 
     /// <summary>No limit: a handle may rotate as often as its proofs allow. The default, so existing hosts keep their behaviour.</summary>
     public static KeySetRotationPolicy None { get; } = new KeySetRotationPolicy(TimeSpan.Zero, TimeProvider.System);
 
     /// <summary>Initializes a new instance of the <see cref="KeySetRotationPolicy"/> class.</summary>
     /// <param name="minimumInterval">The least time between two rotations of one handle; zero for no limit, at most <see cref="MaxInterval"/>.</param>
-    /// <param name="clock">The clock the interval is measured with, and the one the registrar stamps key-material times from.</param>
+    /// <param name="clock">The clock the interval is measured with, and the one the registrar stamps rotation times from.</param>
     /// <exception cref="ArgumentOutOfRangeException">The interval is negative or longer than <see cref="MaxInterval"/>.</exception>
     public KeySetRotationPolicy(TimeSpan minimumInterval, TimeProvider clock)
     {
@@ -49,21 +55,23 @@ public sealed class KeySetRotationPolicy
     }
 
     /// <summary>
-    /// How long a handle whose keys were set at <paramref name="keyMaterialSince"/> must still wait to rotate, or null
-    /// when it may rotate now. A time in the future (a clock that moved back) waits the whole interval, never longer.
+    /// How long a handle that last rotated at <paramref name="lastRotated"/> must still wait to rotate, or null when it
+    /// may rotate now. For a time in the future (a clock that moved back by <c>d</c>) the answer is capped at the
+    /// interval, but the handle stays refused until the clock passes the stamp plus the interval, <c>d</c> plus the
+    /// interval in all, and each refusal in that time reports the full interval again.
     /// </summary>
-    /// <param name="keyMaterialSince">When the handle's current keys were set, or null when that is unknown.</param>
+    /// <param name="lastRotated">When the handle last rotated, or null when it never has.</param>
     /// <returns>The wait, or null.</returns>
-    public TimeSpan? WaitBeforeRotating(DateTime? keyMaterialSince)
+    public TimeSpan? WaitBeforeRotating(DateTime? lastRotated)
     {
-        if (MinimumInterval == TimeSpan.Zero || keyMaterialSince is null)
+        if (MinimumInterval == TimeSpan.Zero || lastRotated is null)
         {
             return null;
         }
         // The store may hand a stamped time back as local; an unmarked one was written as UTC.
-        DateTime since = keyMaterialSince.Value.Kind == DateTimeKind.Local
-            ? keyMaterialSince.Value.ToUniversalTime()
-            : DateTime.SpecifyKind(keyMaterialSince.Value, DateTimeKind.Utc);
+        DateTime since = lastRotated.Value.Kind == DateTimeKind.Local
+            ? lastRotated.Value.ToUniversalTime()
+            : DateTime.SpecifyKind(lastRotated.Value, DateTimeKind.Utc);
         TimeSpan elapsed = UtcNow() - since;
         if (elapsed >= MinimumInterval)
         {

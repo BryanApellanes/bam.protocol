@@ -2,7 +2,7 @@ namespace Bam.Protocol.Data;
 
 /// <summary>
 /// Thrown when a key-set rotation is proven but comes sooner than the host's minimum interval after the handle's
-/// current keys were set (bam.protocol#89). The registered key set is left unchanged. It derives from
+/// previous rotation (bam.protocol#89). The registered key set is left unchanged. It derives from
 /// <see cref="InvalidKeySetRotationException"/>, so a handler that refuses every rejected rotation still refuses this
 /// one; a handler that can say when to retry catches it first and reads <see cref="RetryAfter"/>.
 /// </summary>

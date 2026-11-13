@@ -132,7 +132,7 @@ PublicKeySetData found = repo.FindPublicKeySetByHandle(actorHandle);
 // they stay blocklisted under every handle. An invalid proof, an unparseable key, or a target
 // no trusted proof could later rotate away from throws InvalidKeySetRotationException. When
 // the host binds a KeySetRotationPolicy with a minimum interval, a proven rotation that comes
-// sooner than that after KeyMaterialSinceUtc throws KeySetRotationTooSoonException, a subtype
+// sooner than that after the handle's LastRotatedUtc throws KeySetRotationTooSoonException, a subtype
 // carrying RetryAfter (bam.protocol#89).
 PublicKeySetData newKeySet = new PublicKeySetData
 {
@@ -221,7 +221,7 @@ repo.RevokePublicKeySet(actorHandle, boundProof, successorFingerprint);
 >
 > **Relational/DAO path carries no revocation state** (bam.protocol#25 auditor Condition 5): the
 > key-set policy (registration, rotation, revocation, successor binding) runs entirely over the
-> object-data (JSON) store — `RevokedUtc`/`RevokedBy`/`AuthorizedSuccessorFingerprint`, `KeyMaterialSinceUtc` and the stamped
+> object-data (JSON) store — `RevokedUtc`/`RevokedBy`/`AuthorizedSuccessorFingerprint`, `LastRotatedUtc` and the stamped
 > fingerprints live there. The generated SQL/DAO projection of `PublicKeySetData` does **not** carry
 > these columns, so a consumer reading key sets through the relational path would see revoked rows as
 > active and no bindings. Treat the object-data repository as authoritative for key-set trust decisions;
