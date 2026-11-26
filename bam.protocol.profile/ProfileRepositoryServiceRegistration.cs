@@ -9,9 +9,42 @@ namespace Bam.Protocol.Profile;
 
 public static class ProfileRepositoryServiceRegistration
 {
+    /// <summary>
+    /// Binds the encrypted profile store on <paramref name="rootPath"/> with a key made for this
+    /// process only: nothing it writes can be read after a restart.  For tests and throwaway
+    /// stores; a host that keeps profiles, key sets or challenges across restarts uses
+    /// <see cref="AddEncryptedProfileRepository(ServiceRegistry, string, IAesKeySource)"/>
+    /// (bam.protocol#45).
+    /// </summary>
+    /// <param name="registry">The registry to bind into.</param>
+    /// <param name="rootPath">Where the store keeps its files.</param>
+    /// <returns><paramref name="registry"/>.</returns>
     public static ServiceRegistry AddEncryptedProfileRepository(this ServiceRegistry registry, string rootPath)
     {
-        AesKey aesKey = new AesKey();
+        return registry.AddEncryptedProfileRepository(rootPath, new AesKey());
+    }
+
+    /// <summary>
+    /// Binds the encrypted profile store on <paramref name="rootPath"/>, encrypting with the key
+    /// <paramref name="storeKey"/> supplies (bam.protocol#45).  Pass the same persisted key on
+    /// every start, for example one loaded from a secret file, and the store reads back what an
+    /// earlier process wrote.  The key is read once, here: the store's encryptor, decryptor and
+    /// <see cref="IAesKeySource"/> all use that key.
+    /// </summary>
+    /// <param name="registry">The registry to bind into.</param>
+    /// <param name="rootPath">Where the store keeps its files.</param>
+    /// <param name="storeKey">Supplies the store's AES key and IV.</param>
+    /// <returns><paramref name="registry"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="storeKey"/> is null.</exception>
+    /// <exception cref="ArgumentException">The key source has no key or IV.</exception>
+    public static ServiceRegistry AddEncryptedProfileRepository(this ServiceRegistry registry, string rootPath, IAesKeySource storeKey)
+    {
+        ArgumentNullException.ThrowIfNull(storeKey);
+        AesKey aesKey = storeKey.GetAesKey();
+        if (aesKey is null || aesKey.Key is null || aesKey.Key.Length == 0 || aesKey.IV is null || aesKey.IV.Length == 0)
+        {
+            throw new ArgumentException("The store key source returned no key or IV.", nameof(storeKey));
+        }
 
         registry
             .For<IRootStorageHolder>().Use(new RootStorageHolder(rootPath))
