@@ -1,0 +1,207 @@
+{
+  "description": "Sealed frames (spec/sealed-frames.md, sections 5 and 7) for the session named in session, from sealed-session.json. For each frame: build the nonce and the associated data from the fields, seal the plaintext with the key for its direction, and get ciphertext; and open ciphertext to get the plaintext. json is the frame as it goes on the wire. A refused frame arrives when the receiver for that direction expects expectedSequence; it must be refused, and nothing decrypted.",
+  "session": "a session",
+  "sessionId": "00112233445566778899aabbccddeeff",
+  "keyClientToServerHex": "302d7e0b718ce1c0733a0e65628c7a921ccb823440eb1ef0746f3e26bcb0cb9c",
+  "keyServerToClientHex": "ff4eb3ee00c513c47f7abd47e7f876747ab812d1377dbb2eccc166e421ece47a",
+  "maximumFramesPerDirection": 1048576,
+  "frames": [
+    {
+      "name": "a request",
+      "direction": "c2s",
+      "sequence": 0,
+      "contentType": "application/json",
+      "last": true,
+      "plaintextHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "nonceHex": "000000010000000000000000",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\nc2s\n0\napplication/json;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a6332730a300a6170706c69636174696f6e2f6a736f6e3b6c617374",
+      "ciphertext": "0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "its answer",
+      "direction": "s2c",
+      "sequence": 0,
+      "contentType": "application/json",
+      "last": true,
+      "plaintextHex": "7b224772656574696e67223a2248656c6c6f2c20416461227d",
+      "nonceHex": "000000020000000000000000",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\ns2c\n0\napplication/json;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a7332630a300a6170706c69636174696f6e2f6a736f6e3b6c617374",
+      "ciphertext": "Jh3VAuAiJWXPAXQ_HHdWHwE-eJsbvuUePJC7WcWTN17mcfeUlkp6TaU",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"Jh3VAuAiJWXPAXQ_HHdWHwE-eJsbvuUePJC7WcWTN17mcfeUlkp6TaU\"}"
+    },
+    {
+      "name": "a second request",
+      "direction": "c2s",
+      "sequence": 1,
+      "contentType": "application/json",
+      "last": true,
+      "plaintextHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "nonceHex": "000000010000000000000001",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\nc2s\n1\napplication/json;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a6332730a310a6170706c69636174696f6e2f6a736f6e3b6c617374",
+      "ciphertext": "LEzQbtlV0APcSRJeC83y6dr8wa0_RLh_8f7KHPD_1dy3VyfAQ8MKq3_14nrz6IPcHbXM96LgNHfZTuN75z9nb1v9s224kOJe9wSXgsO2SleFj4-lQhwM8ZgV4Qv-idxJ9Q",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"LEzQbtlV0APcSRJeC83y6dr8wa0_RLh_8f7KHPD_1dy3VyfAQ8MKq3_14nrz6IPcHbXM96LgNHfZTuN75z9nb1v9s224kOJe9wSXgsO2SleFj4-lQhwM8ZgV4Qv-idxJ9Q\"}"
+    },
+    {
+      "name": "the first frame of a stream",
+      "direction": "s2c",
+      "sequence": 1,
+      "contentType": "text/plain",
+      "last": false,
+      "plaintextHex": "48656c6c6f2c20",
+      "nonceHex": "000000020000000000000001",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\ns2c\n1\ntext/plain",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a7332630a310a746578742f706c61696e",
+      "ciphertext": "3w0L1108czrZTamnVoJF0t2K1eaNeQY",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1,\"contentType\":\"text/plain\",\"last\":false,\"ciphertext\":\"3w0L1108czrZTamnVoJF0t2K1eaNeQY\"}"
+    },
+    {
+      "name": "the last frame of a stream",
+      "direction": "s2c",
+      "sequence": 2,
+      "contentType": "text/plain",
+      "last": true,
+      "plaintextHex": "41646120e29c93",
+      "nonceHex": "000000020000000000000002",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\ns2c\n2\ntext/plain;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a7332630a320a746578742f706c61696e3b6c617374",
+      "ciphertext": "zetW0WGha3YmvNkabP0r_tMBsZe2-1E",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":2,\"contentType\":\"text/plain\",\"last\":true,\"ciphertext\":\"zetW0WGha3YmvNkabP0r_tMBsZe2-1E\"}"
+    },
+    {
+      "name": "an empty body with no content type",
+      "direction": "c2s",
+      "sequence": 2,
+      "contentType": "",
+      "last": true,
+      "plaintextHex": "",
+      "nonceHex": "000000010000000000000002",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\nc2s\n2\n;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a6332730a320a3b6c617374",
+      "ciphertext": "3ytAGTkTujPEpKZDNhZeQg",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":2,\"contentType\":\"\",\"last\":true,\"ciphertext\":\"3ytAGTkTujPEpKZDNhZeQg\"}"
+    },
+    {
+      "name": "a binary body longer than one block",
+      "direction": "c2s",
+      "sequence": 3,
+      "contentType": "application/octet-stream",
+      "last": true,
+      "plaintextHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "nonceHex": "000000010000000000000003",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\nc2s\n3\napplication/octet-stream;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a6332730a330a6170706c69636174696f6e2f6f637465742d73747265616d3b6c617374",
+      "ciphertext": "-XedQpy07R3w5PoeFngKzD1jSmr9e6ESSozK6-Vm9OOm-MTNnEes4ChtINWsKmXpnDr-Ia-kLgEsIiPyyukjlGSHXjLXxtfWMNtauD9oLgL_ABGPn3krj3lawJXwP5Wp8S7L1hsshi5bisfp8MruXG4NlpjlR0iZqaz6ECkCmO6WeikU57CI0tPAfryQCYn2zAYVSKBuZcT7P16zsPSIdv2tNriUBhUT0e3kqFcvKgK87i-qGkE1En50xRwpva-J53uslb2IOFByUDafdppKn6Av3vc9w9BJM-IzuYCpqCEzfAYetl3W1wIfR6HMrTjhpM68ZG1FrllXwqsOI5UmHLvnOxHLqHyMPk_cZ_w1cW53R7LTvdutrMKwysDqNWj7NE1VkBqq1YOHj3pLWd0VL5tfe0F7KYvj5h77uYFMdAZAM6lClc56KrFZzo6YULkSI7tl4zqYj4fooViK0L5tpru_HPHrAZ7ho6Sws3FxGr9VVSBbS_dVgrYoPIfpdODOjEq3G0yzJbLqeNuW6FCG4A1hHAu_siqXHmctdFvHS_bm7c12Y_EczvLtDEMIodUuh8XuRb1LNJ9lhYBvyD7m5v9tAvY60peAImHTTH2iAaENTj5vCnaHeDO289m29X_eu-FoJ6mInCjX8pqUv9p1RTZOv4CcMuewgj-zs6tV9scg3YrAtAwULH3SgxlDRORC",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":3,\"contentType\":\"application/octet-stream\",\"last\":true,\"ciphertext\":\"-XedQpy07R3w5PoeFngKzD1jSmr9e6ESSozK6-Vm9OOm-MTNnEes4ChtINWsKmXpnDr-Ia-kLgEsIiPyyukjlGSHXjLXxtfWMNtauD9oLgL_ABGPn3krj3lawJXwP5Wp8S7L1hsshi5bisfp8MruXG4NlpjlR0iZqaz6ECkCmO6WeikU57CI0tPAfryQCYn2zAYVSKBuZcT7P16zsPSIdv2tNriUBhUT0e3kqFcvKgK87i-qGkE1En50xRwpva-J53uslb2IOFByUDafdppKn6Av3vc9w9BJM-IzuYCpqCEzfAYetl3W1wIfR6HMrTjhpM68ZG1FrllXwqsOI5UmHLvnOxHLqHyMPk_cZ_w1cW53R7LTvdutrMKwysDqNWj7NE1VkBqq1YOHj3pLWd0VL5tfe0F7KYvj5h77uYFMdAZAM6lClc56KrFZzo6YULkSI7tl4zqYj4fooViK0L5tpru_HPHrAZ7ho6Sws3FxGr9VVSBbS_dVgrYoPIfpdODOjEq3G0yzJbLqeNuW6FCG4A1hHAu_siqXHmctdFvHS_bm7c12Y_EczvLtDEMIodUuh8XuRb1LNJ9lhYBvyD7m5v9tAvY60peAImHTTH2iAaENTj5vCnaHeDO289m29X_eu-FoJ6mInCjX8pqUv9p1RTZOv4CcMuewgj-zs6tV9scg3YrAtAwULH3SgxlDRORC\"}"
+    },
+    {
+      "name": "the highest sequence number a session may use",
+      "direction": "c2s",
+      "sequence": 1048575,
+      "contentType": "application/json",
+      "last": true,
+      "plaintextHex": "7b7d",
+      "nonceHex": "0000000100000000000fffff",
+      "associatedData": "BAM-SEALED-FRAME-1\n00112233445566778899aabbccddeeff\nc2s\n1048575\napplication/json;last",
+      "associatedDataUtf8Hex": "42414d2d5345414c45442d4652414d452d310a30303131323233333434353536363737383839396161626263636464656566660a6332730a313034383537350a6170706c69636174696f6e2f6a736f6e3b6c617374",
+      "ciphertext": "ocOkmiEl4dVhencTW-awgnp-",
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1048575,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"ocOkmiEl4dVhencTW-awgnp-\"}"
+    }
+  ],
+  "refused": [
+    {
+      "name": "one ciphertext bit changed",
+      "why": "The tag does not verify.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY2cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "one tag bit changed",
+      "why": "The tag does not verify.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7w\"}"
+    },
+    {
+      "name": "the content type changed",
+      "why": "The associated data differs.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"text/plain\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "a stream frame passed off as the last",
+      "why": "The associated data differs.",
+      "direction": "s2c",
+      "expectedSequence": 1,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1,\"contentType\":\"text/plain\",\"last\":true,\"ciphertext\":\"3w0L1108czrZTamnVoJF0t2K1eaNeQY\"}"
+    },
+    {
+      "name": "a last frame passed off as not last",
+      "why": "The associated data differs.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":false,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "a frame replayed in the other direction",
+      "why": "A request frame presented as an answer: the key, the nonce and the associated data all differ.",
+      "direction": "s2c",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "an answer replayed as a request",
+      "why": "The same, the other way.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"Jh3VAuAiJWXPAXQ_HHdWHwE-eJsbvuUePJC7WcWTN17mcfeUlkp6TaU\"}"
+    },
+    {
+      "name": "a repeated frame",
+      "why": "The sequence number is lower than the next expected. Refused before the tag is looked at.",
+      "direction": "c2s",
+      "expectedSequence": 1,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "a skipped sequence number",
+      "why": "The sequence number is higher than the next expected.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"LEzQbtlV0APcSRJeC83y6dr8wa0_RLh_8f7KHPD_1dy3VyfAQ8MKq3_14nrz6IPcHbXM96LgNHfZTuN75z9nb1v9s224kOJe9wSXgsO2SleFj4-lQhwM8ZgV4Qv-idxJ9Q\"}"
+    },
+    {
+      "name": "a renumbered frame",
+      "why": "Frame 0 sent as frame 1, when 1 is expected: the tag does not verify.",
+      "direction": "c2s",
+      "expectedSequence": 1,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "a ciphertext too short to hold a tag",
+      "why": "Fewer than 16 bytes.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"DTqhnl0u1v_7ux_eyNHu\"}"
+    },
+    {
+      "name": "a frame for another session",
+      "why": "The session id is not this session.",
+      "direction": "c2s",
+      "expectedSequence": 0,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeef0\",\"sequence\":0,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"0J4ZyzY3cnrf33AqiidKs0ZTUVnegvU13iH5e1KCyDUj16q-XPV_h68Y7GVpAFn3WsTFSgJJqCgewKNWRE_AKnZhPDusgalFxhvkyfT1DBOrPg06oZ5dLtb_-7sf3sjR7g\"}"
+    },
+    {
+      "name": "a sequence number past the limit",
+      "why": "A session carries at most 2^20 frames in a direction.",
+      "direction": "c2s",
+      "expectedSequence": 1048576,
+      "json": "{\"sessionId\":\"00112233445566778899aabbccddeeff\",\"sequence\":1048576,\"contentType\":\"application/json\",\"last\":true,\"ciphertext\":\"d2yTw209B-GUgfS355ytlfX9\"}"
+    }
+  ]
+}

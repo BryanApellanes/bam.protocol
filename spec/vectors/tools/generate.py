@@ -478,3 +478,5 @@ if __name__ == '__main__':
     tokens()
     request_proofs()
     messages()
+    import sealed
+    sealed.write_all()

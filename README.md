@@ -12,7 +12,7 @@ The project also defines cryptographic primitives such as `IKeySet` (RSA + ECC p
 
 ## Wire specification
 
-[`spec/actor-auth.md`](spec/actor-auth.md) describes the actor-auth wire exactly enough to write a client in another language, and [`spec/vectors/`](spec/vectors/README.md) holds the known-answer vectors every implementation is tested against.
+[`spec/actor-auth.md`](spec/actor-auth.md) describes the actor-auth wire exactly enough to write a client in another language, and [`spec/vectors/`](spec/vectors/README.md) holds the known-answer vectors every implementation is tested against. [`spec/sealed-frames.md`](spec/sealed-frames.md) is the draft of the encrypted channel that goes on top of it; no host implements it yet.
 
 ## Key Classes
 
