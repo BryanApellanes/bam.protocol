@@ -19,7 +19,8 @@ namespace Bam.Protocol.AspNetCore.Tests;
 /// Pins what a running host answers on the actor-auth endpoints: the status, the content type and the body, for
 /// the answers the handlers write and for the ones ASP.NET's request binding writes before a handler runs. These
 /// are the answers <c>spec/actor-auth.md</c> lists (bam.protocol#110), so a change here is a change to the wire.
-/// The host listens on a loopback port the system picks.
+/// The host listens on a loopback port the system picks, and runs as Production whatever the machine's
+/// environment variables say, because a Development host writes exception text into some of these answers.
 /// </summary>
 [UnitTestMenu("Actor Endpoint Answers Should", Selector = "aea")]
 public class ActorEndpointAnswersShould : UnitTestMenuContainer
@@ -44,7 +45,7 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
                 Answer plainText = await host.PostAsync("/actor/register", good, "text/plain");
                 Answer noType = await host.PostAsync("/actor/register", good, null);
                 return new RegistrationAnswers(accepted, refused, missing, notJson, plainText, noType);
-            }))
+            }, "Production"))
             .TheTest
             .ShouldPass<RegistrationAnswers>((because, answers) =>
             {
@@ -73,8 +74,12 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
                 Answer garbage = await host.PostAsync("/actor/token", "{\"ClientToken\":\"garbage\"}", JsonType);
                 Answer missing = await host.PostAsync("/actor/token", "{}", JsonType);
                 Answer plainText = await host.PostAsync("/actor/token", good, "text/plain");
-                return new TokenAnswers(issued, wrongKey, wrongAudience, garbage, missing, plainText);
-            }))
+                Answer notJson = await host.PostAsync("/actor/token", "not json", JsonType);
+                Answer noType = await host.PostAsync("/actor/token", good, null);
+                string token = Regex.Match(issued.Body, "\"token\":\"([^\"]+)\"").Groups[1].Value;
+                Answer plainTextWithToken = await host.PostAsync("/actor/token", good, "text/plain", token);
+                return new TokenAnswers(issued, wrongKey, wrongAudience, garbage, missing, plainText, notJson, noType, plainTextWithToken);
+            }, "Production"))
             .TheTest
             .ShouldPass<TokenAnswers>((because, answers) =>
             {
@@ -88,6 +93,31 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
                 because.ItsTrue("a missing property: " + answers.Missing, answers.Missing == new Answer(400, "", ""));
                 // bam.protocol#113: this should be 415. Routing matches a wrong content type to its own endpoint, which is not anonymous.
                 because.ItsTrue("a text/plain body is answered as an unauthenticated request (bam.protocol#113): " + answers.PlainText, answers.PlainText == new Answer(401, "text/plain", "Authentication failed."));
+                because.ItsTrue("a body that is not JSON: " + answers.NotJson, answers.NotJson == new Answer(400, "", ""));
+                because.ItsTrue("no content type: " + answers.NoType, answers.NoType == new Answer(415, "", ""));
+                because.ItsTrue("a text/plain body from a caller with a valid token gets the 415: " + answers.PlainTextWithToken, answers.PlainTextWithToken == new Answer(415, "", ""));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void WriteExceptionTextIntoBindingAnswersOnlyInDevelopment()
+    {
+        When.A<ActorEndpointAnswersShould>("posts a registration without a required property to a Development host",
+            (test) => RunAsync(async (host) =>
+            {
+                Answer missing = await host.PostAsync("/actor/register", "{\"KeySetHandle\":\"ada\",\"PublicEccKeyPem\":\"x\"}", JsonType);
+                Answer noType = await host.PostAsync("/actor/register", "{}", null);
+                return new DevelopmentAnswers(missing, noType);
+            }, "Development"))
+            .TheTest
+            .ShouldPass<DevelopmentAnswers>((because, answers) =>
+            {
+                because.ItsTrue("a missing property is still 400, with exception text: " + answers.Missing.Status + " " + answers.Missing.ContentType,
+                    answers.Missing.Status == 400 && answers.Missing.ContentType == "text/plain; charset=utf-8" && answers.Missing.Body.Contains("BadHttpRequestException", StringComparison.Ordinal));
+                because.ItsTrue("no content type is still 415, with exception text: " + answers.NoType.Status + " " + answers.NoType.ContentType,
+                    answers.NoType.Status == 415 && answers.NoType.ContentType == "text/plain; charset=utf-8" && answers.NoType.Body.Contains("BadHttpRequestException", StringComparison.Ordinal));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -107,7 +137,7 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
                 Answer proved = await host.SendAsync("/things", "{}", token, host.Actor);
                 Answer wrongProof = await host.SendAsync("/things", "{}", token, TestKeys.NewEcc());
                 return new ProtectedAnswers(noToken, badToken, noProof, proved, wrongProof);
-            }))
+            }, "Production"))
             .TheTest
             .ShouldPass<ProtectedAnswers>((because, answers) =>
             {
@@ -129,12 +159,12 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
         return System.Text.Json.JsonSerializer.Serialize(value);
     }
 
-    private static T RunAsync<T>(Func<AnswerHost, Task<T>> calls)
+    private static T RunAsync<T>(Func<AnswerHost, Task<T>> calls, string environment)
     {
-        return RunCoreAsync(calls).GetAwaiter().GetResult();
+        return RunCoreAsync(calls, environment).GetAwaiter().GetResult();
     }
 
-    private static async Task<T> RunCoreAsync<T>(Func<AnswerHost, Task<T>> calls)
+    private static async Task<T> RunCoreAsync<T>(Func<AnswerHost, Task<T>> calls, string environment)
     {
         EccKeyPair actor = TestKeys.NewEcc();
         ActorAuthenticationOptions options = new ActorAuthenticationOptions { Enabled = true, OpenEnrollment = true, ClientTokenAudience = Audience };
@@ -142,7 +172,7 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
         storage.SaveNamedKey(options.ServerKeyName, TestKeys.PairPem(TestKeys.NewEcc()));
         FakeKeySetRegistrar registrar = new FakeKeySetRegistrar();
 
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
         builder.Services.AddSingleton<IPublicKeySetResolver>(new FakeKeySetResolver().Add(TestKeys.KeySet("ada", actor)));
@@ -175,7 +205,9 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
 
     private sealed record RegistrationAnswers(Answer Accepted, Answer Refused, Answer Missing, Answer NotJson, Answer PlainText, Answer NoType);
 
-    private sealed record TokenAnswers(Answer Issued, Answer WrongKey, Answer WrongAudience, Answer Garbage, Answer Missing, Answer PlainText);
+    private sealed record TokenAnswers(Answer Issued, Answer WrongKey, Answer WrongAudience, Answer Garbage, Answer Missing, Answer PlainText, Answer NotJson, Answer NoType, Answer PlainTextWithToken);
+
+    private sealed record DevelopmentAnswers(Answer Missing, Answer NoType);
 
     private sealed record ProtectedAnswers(Answer NoToken, Answer BadToken, Answer NoProof, Answer Proved, Answer WrongProof);
 
@@ -200,9 +232,14 @@ public class ActorEndpointAnswersShould : UnitTestMenuContainer
             return token.Encode(pair.PrivateKey.Value);
         }
 
-        internal Task<Answer> PostAsync(string path, string body, string? contentType)
+        internal Task<Answer> PostAsync(string path, string body, string? contentType, string? bearer = null)
         {
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes(body)) };
+            if (bearer is not null)
+            {
+                request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + bearer);
+            }
+
             if (contentType is not null)
             {
                 request.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);

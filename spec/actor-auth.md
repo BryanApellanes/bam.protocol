@@ -146,7 +146,11 @@ that step has answers of its own:
 |---|---|---|
 | `400` | none | The body is not JSON, or a required property is missing. |
 | `415` | none | The request has no `Content-Type`. |
-| `401` | the text `Authentication failed.` | The `Content-Type` is not JSON. A browser's `fetch` labels a string body `text/plain` unless told otherwise, so this is the answer a browser client gets when it forgets the header. It should be `415`; bam.protocol#113 tracks that. |
+| `401` | the text `Authentication failed.` | The `Content-Type` is not JSON and the request carries no valid token. A browser's `fetch` labels a string body `text/plain` unless told otherwise, so this is the answer a browser client gets when it forgets the header. It should be `415`, which is what a caller with a valid token gets; bam.protocol#113 tracks that. |
+
+"None" is what a host outside the Development environment writes. A host run in Development, which
+is what `dotnet run` usually gives, writes the exception as plain text in the body of the `400` and
+the `415`. The statuses are the same.
 
 So a client must not assume that the body of a `400`, `401` or `415` parses as JSON, and a `401`
 from these two endpoints can mean a wrong `Content-Type`.

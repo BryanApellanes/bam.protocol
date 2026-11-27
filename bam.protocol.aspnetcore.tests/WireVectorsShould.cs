@@ -392,6 +392,11 @@ public class WireVectorsShould : UnitTestMenuContainer
                     {
                         failures.Add($"{response.Name}: wrote {json}");
                     }
+
+                    if (response.ExpiresUtc is not null && !response.Json.Contains("\"expiresUtc\":\"" + response.ExpiresUtc + "\"", StringComparison.Ordinal))
+                    {
+                        failures.Add($"{response.Name}: expiresUtc is not the text in json");
+                    }
                 }
 
                 return new VectorOutcome(count, string.Join("; ", failures));
