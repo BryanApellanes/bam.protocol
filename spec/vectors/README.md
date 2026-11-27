@@ -14,6 +14,8 @@ library in its own tests.
 | `request-proof.json` | Whole requests, with the verdict a host with default settings gives. Replays. |
 | `messages.json` | JSON request and response bodies, including the time format a real host writes. |
 | `csharp-produced.json` | Signatures, tokens and proofs written by the C# implementation. |
+| `sealed-session.json` | Sealed frames (draft, [`../sealed-frames.md`](../sealed-frames.md)): session transcripts, their signatures, the shared secret and the two frame keys. Sessions a client must refuse. |
+| `sealed-frames.json` | Sealed frames (draft): frames in both directions with their nonce, associated data and ciphertext. Frames a receiver must refuse. |
 
 ## Rules for the files
 
