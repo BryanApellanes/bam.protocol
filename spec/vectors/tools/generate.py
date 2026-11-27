@@ -4,6 +4,9 @@ Standard library only, and deterministic: signatures use RFC 6979 nonces, so a s
 the same bytes. The keys are derived from labels and are test keys, never to be used for anything
 else. `csharp-produced.json` is not written here; see ../README.md.
 
+The elliptic-curve arithmetic here is for writing test vectors only. It is not constant-time and
+takes no care with its secrets. Do not copy it into a client or use it to sign anything real.
+
     python spec/vectors/tools/generate.py
 """
 import base64
@@ -308,6 +311,14 @@ def token_parts(claims):
     return header, payload, b64url(header.encode()) + '.' + b64url(payload.encode())
 
 
+def unreadable(claims):
+    """A token whose signature is good and whose claims the host cannot read."""
+    payload = json.dumps(claims, separators=(',', ':'))
+    signing_input = b64url(b'{"alg":"ES256","typ":"JWT"}') + '.' + b64url(payload.encode())
+    r, s = sign(ACTOR.d, signing_input.encode())
+    return signing_input + '.' + b64url(der(r, s))
+
+
 def tokens():
     fingerprint = ACTOR.fingerprint()
     sets = [
@@ -337,7 +348,9 @@ def tokens():
         'description': 'Tokens are three base64url segments without padding: header, payload, signature. The signature is '
                        'ECDSA P-256 with SHA-256 over the ASCII bytes of "header.payload", as ASN.1 DER. The header says '
                        'ES256, but a JOSE ES256 signature is raw r||s and is refused. headerJson and payloadJson are the '
-                       'bytes the C# implementation writes for these claims; a verifier accepts any JSON layout.',
+                       'bytes the C# implementation writes for these claims; a verifier accepts any JSON layout. '
+                       'The unreadable tokens are signed by the actor key and still refused: a required claim is '
+                       'missing, or iat or exp is not a JSON integer.',
         'cases': cases,
         'refused': [
             {'name': 'signed by another key', 'key': 'actor', 'token': signing_input + '.' + b64url(der(other_r, other_s))},
@@ -345,6 +358,13 @@ def tokens():
             {'name': 'the payload changed after signing', 'key': 'actor', 'token': tampered + '.' + b64url(der(r, s))},
             {'name': 'two segments', 'key': 'actor', 'token': signing_input},
             {'name': 'an empty signature', 'key': 'actor', 'token': signing_input + '.'},
+        ],
+        'unreadable': [
+            {'name': 'iat with a fraction', 'token': unreadable(dict(sets[0][2], iat=1790000000.5))},
+            {'name': 'exp as a string', 'token': unreadable(dict(sets[0][2], exp='1790000120'))},
+            {'name': 'no sid', 'token': unreadable({k: v for k, v in sets[0][2].items() if k != 'sid'})},
+            {'name': 'no sub', 'token': unreadable({k: v for k, v in sets[0][2].items() if k != 'sub'})},
+            {'name': 'no iss', 'token': unreadable({k: v for k, v in sets[0][2].items() if k != 'iss'})},
         ],
     })
 
@@ -416,11 +436,14 @@ def messages():
     import datetime
     expires = 1790002700
     instant = datetime.datetime.fromtimestamp(expires, datetime.timezone.utc).isoformat()
+    fraction = instant.replace('+00:00', '.1234567+00:00')
     pem = 'PEM text of the public key'
     write('messages.json', {
         'description': 'JSON bodies as a host with default settings reads and writes them. Request property names are '
-                       'matched without regard to case; every listed property must be present. Responses are written '
-                       'in camelCase by default, and a host can change that, so a client reads names without regard to case.',
+                       'matched without regard to case; every listed property must be present. A request marked '
+                       'not accepted is answered 400 with no body, before any handler runs. Responses are written '
+                       'in camelCase by default, and a host can change that, so a client reads names without regard '
+                       'to case. expiresUtc carries from zero to seven fractional digits; a real host writes seven.',
         'requests': [
             {'name': 'register', 'kind': 'register', 'accepted': True,
              'json': json.dumps({'KeySetHandle': 'ada', 'PublicRsaKeyPem': '', 'PublicEccKeyPem': pem})},
@@ -433,9 +456,12 @@ def messages():
         ],
         'responses': [
             {'name': 'registered', 'kind': 'register', 'keySetHandle': 'ada', 'json': '{"keySetHandle":"ada"}'},
-            {'name': 'token issued', 'kind': 'token', 'token': 'a.b.c', 'expiresUnixSeconds': expires,
+            {'name': 'token issued on a whole second', 'kind': 'token', 'token': 'a.b.c', 'expiresUtc': instant,
              'keyFingerprint': ACTOR.fingerprint(),
              'json': '{"token":"a.b.c","expiresUtc":"%s","keyFingerprint":"%s"}' % (instant, ACTOR.fingerprint())},
+            {'name': 'token issued, as a real host writes the time', 'kind': 'token', 'token': 'a.b.c', 'expiresUtc': fraction,
+             'keyFingerprint': ACTOR.fingerprint(),
+             'json': '{"token":"a.b.c","expiresUtc":"%s","keyFingerprint":"%s"}' % (fraction, ACTOR.fingerprint())},
             {'name': 'refused', 'kind': 'failure', 'message': 'Authentication failed.',
              'json': '{"messages":["Authentication failed."]}'},
         ],

@@ -224,6 +224,18 @@ public class WireVectorsShould : UnitTestMenuContainer
                         failures.Add($"{vector.Name}: does not verify");
                     }
 
+                    string[] segments = vector.Token.Split('.');
+                    if (vector.HeaderJson is not null || vector.PayloadJson is not null || vector.SignatureDerHex is not null)
+                    {
+                        bool layout = vector.HeaderJson == Encoding.UTF8.GetString(Vectors.FromBase64Url(segments[0]))
+                            && vector.PayloadJson == Encoding.UTF8.GetString(Vectors.FromBase64Url(segments[1]))
+                            && vector.SignatureDerHex == Convert.ToHexStringLower(Vectors.FromBase64Url(segments[2]));
+                        if (!layout)
+                        {
+                            failures.Add($"{vector.Name}: headerJson, payloadJson or signatureDerHex is not what the token holds");
+                        }
+                    }
+
                     BamJwtToken decoded = BamJwtToken.Decode(vector.Token);
                     bool same = decoded.ActorHandle == claims.Sub && decoded.SessionId == claims.Sid && decoded.Issuer == claims.Iss
                         && decoded.IssuedAt.ToUnixTimeSeconds() == claims.Iat && decoded.Expiry.ToUnixTimeSeconds() == claims.Exp
@@ -232,6 +244,11 @@ public class WireVectorsShould : UnitTestMenuContainer
                     {
                         failures.Add($"{vector.Name}: decoded to other claims");
                     }
+                }
+
+                if (file.Cases.Any(vector => vector.HeaderJson is null || vector.PayloadJson is null || vector.SignatureDerHex is null))
+                {
+                    failures.Add("a case in tokens.json lacks headerJson, payloadJson or signatureDerHex");
                 }
 
                 foreach (RefusedToken refused in file.Refused)
@@ -243,10 +260,30 @@ public class WireVectorsShould : UnitTestMenuContainer
                     }
                 }
 
+                foreach (UnreadableToken unreadable in file.Unreadable)
+                {
+                    count++;
+                    bool read;
+                    try
+                    {
+                        BamJwtToken.Decode(unreadable.Token);
+                        read = true;
+                    }
+                    catch (Exception)
+                    {
+                        read = false;
+                    }
+
+                    if (read || !BamJwtToken.Verify(unreadable.Token, Vectors.PublicKey(keys.Find("actor").PublicPointHex)))
+                    {
+                        failures.Add($"'{unreadable.Name}': read = {read}; it must be signed by the actor and unreadable");
+                    }
+                }
+
                 return new VectorOutcome(count, string.Join("; ", failures));
             })
             .TheTest
-            .ShouldPass<VectorOutcome>((because, outcome) => Agree(because, outcome, 11))
+            .ShouldPass<VectorOutcome>((because, outcome) => Agree(because, outcome, 16))
             .SoBeHappy()
             .UnlessItFailed();
     }
@@ -260,9 +297,20 @@ public class WireVectorsShould : UnitTestMenuContainer
                 KeysFile keys = Vectors.Read<KeysFile>("keys.json");
                 List<string> failures = new List<string>();
                 int count = 0;
-                foreach (ProofFile file in new[] { Vectors.Read<ProofFile>("request-proof.json"), Vectors.Read<ProducedFile>("csharp-produced.json").RequestProofs })
+                ProofFile recorded = Vectors.Read<ProofFile>("request-proof.json");
+                if (recorded.MaxAgeSeconds is null)
+                {
+                    failures.Add("request-proof.json lacks maxAgeSeconds");
+                }
+
+                foreach (ProofFile file in new[] { recorded, Vectors.Read<ProducedFile>("csharp-produced.json").RequestProofs })
                 {
                     string callerPem = keys.PublicPemOf(file.SigningKey);
+                    if (file.MaxAgeSeconds is not null && file.MaxAgeSeconds != (long)new ActorAuthenticationOptions().RequestProofMaxAge.TotalSeconds)
+                    {
+                        failures.Add($"maxAgeSeconds is {file.MaxAgeSeconds}, and the host's default is {new ActorAuthenticationOptions().RequestProofMaxAge.TotalSeconds}");
+                    }
+
                     DateTimeOffset now = DateTimeOffset.FromUnixTimeSeconds(file.NowUnixSeconds);
                     foreach (ProofVector vector in file.Cases)
                     {
@@ -295,6 +343,11 @@ public class WireVectorsShould : UnitTestMenuContainer
             .UnlessItFailed();
     }
 
+    /// <summary>
+    /// Pins the property names of the request and response types under ASP.NET's default web JSON settings. It
+    /// does not show that a given host uses those settings; ActorEndpointAnswersShould shows what a running host
+    /// with defaults answers.
+    /// </summary>
     [UnitTest]
     public void ReadAndWriteTheJsonBodiesAsRecorded()
     {
@@ -332,7 +385,7 @@ public class WireVectorsShould : UnitTestMenuContainer
                     string json = response.Kind switch
                     {
                         "register" => JsonSerializer.Serialize(new ActorRegistrationResponse { KeySetHandle = response.KeySetHandle! }, web),
-                        "token" => JsonSerializer.Serialize(new ActorTokenResponse { Token = response.Token!, ExpiresUtc = DateTimeOffset.FromUnixTimeSeconds(response.ExpiresUnixSeconds), KeyFingerprint = response.KeyFingerprint! }, web),
+                        "token" => JsonSerializer.Serialize(new ActorTokenResponse { Token = response.Token!, ExpiresUtc = DateTimeOffset.Parse(response.ExpiresUtc!, System.Globalization.CultureInfo.InvariantCulture), KeyFingerprint = response.KeyFingerprint! }, web),
                         _ => JsonSerializer.Serialize(new ActorAuthFailure { Messages = new[] { response.Message! } }, web),
                     };
                     if (json != response.Json)
@@ -344,7 +397,7 @@ public class WireVectorsShould : UnitTestMenuContainer
                 return new VectorOutcome(count, string.Join("; ", failures));
             })
             .TheTest
-            .ShouldPass<VectorOutcome>((because, outcome) => Agree(because, outcome, 8))
+            .ShouldPass<VectorOutcome>((because, outcome) => Agree(because, outcome, 9))
             .SoBeHappy()
             .UnlessItFailed();
     }
@@ -406,6 +459,12 @@ internal static class Vectors
         return new ECPublicKeyParameters("ECDSA", curve.Curve.DecodePoint(Convert.FromHexString(pointHex)), curve);
     }
 
+    internal static byte[] FromBase64Url(string text)
+    {
+        string padded = text.Replace('-', '+').Replace('_', '/');
+        return Convert.FromBase64String(padded + new string('=', (4 - padded.Length % 4) % 4));
+    }
+
     internal static byte[] Fixed32(BigInteger value)
     {
         byte[] unsigned = value.ToByteArrayUnsigned();
@@ -463,15 +522,17 @@ internal sealed record DerRawFile(IReadOnlyList<DerRawVector> Cases);
 
 internal sealed record DerRawVector(string Name, string RHex, string SHex, string DerHex, string RawHex);
 
-internal sealed record TokensFile(IReadOnlyList<TokenVector> Cases, IReadOnlyList<RefusedToken> Refused);
+internal sealed record TokensFile(IReadOnlyList<TokenVector> Cases, IReadOnlyList<RefusedToken> Refused, IReadOnlyList<UnreadableToken> Unreadable);
 
-internal sealed record TokenVector(string Name, string Key, TokenClaims Claims, string SigningInput, string Token);
+internal sealed record TokenVector(string Name, string Key, TokenClaims Claims, string SigningInput, string Token, string? HeaderJson, string? PayloadJson, string? SignatureDerHex);
+
+internal sealed record UnreadableToken(string Name, string Token);
 
 internal sealed record TokenClaims(string Sub, string Sid, string Iss, long Iat, long Exp, string? Kfp, string? Aud);
 
 internal sealed record RefusedToken(string Name, string Key, string Token);
 
-internal sealed record ProofFile(long NowUnixSeconds, string SigningKey, IReadOnlyList<ProofVector> Cases, IReadOnlyList<ProofVector> Replays);
+internal sealed record ProofFile(long NowUnixSeconds, long? MaxAgeSeconds, string SigningKey, IReadOnlyList<ProofVector> Cases, IReadOnlyList<ProofVector> Replays);
 
 internal sealed record ProofVector(string Name, string Method, string Target, string BodyHex, IReadOnlyDictionary<string, string> Headers, bool Verified);
 
@@ -481,4 +542,4 @@ internal sealed record MessagesFile(IReadOnlyList<RequestMessage> Requests, IRea
 
 internal sealed record RequestMessage(string Name, string Kind, bool Accepted, string Json);
 
-internal sealed record ResponseMessage(string Name, string Kind, string Json, string? KeySetHandle, string? Token, long ExpiresUnixSeconds, string? KeyFingerprint, string? Message);
+internal sealed record ResponseMessage(string Name, string Kind, string Json, string? KeySetHandle, string? Token, string? ExpiresUtc, string? KeyFingerprint, string? Message);

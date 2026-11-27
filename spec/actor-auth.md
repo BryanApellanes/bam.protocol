@@ -6,7 +6,7 @@ implementation it describes. It does not describe the older native session
 (`/bam/session/create`), and it does not cover encrypted bodies: under actor auth, bodies are
 plaintext and TLS is the only confidentiality.
 
-The known-answer vectors in [`vectors/`](vectors/README.md) go with this text. A client is correct
+The known-answer vectors in [`vectors/`](https://github.com/BryanApellanes/bam.protocol/tree/bam_protocol/spec/vectors) go with this text. A client is correct
 when it gives the recorded answer for every vector. Where the text and a vector disagree, the vector
 is right and the text has a defect.
 
@@ -60,10 +60,11 @@ Vectors: `keys.json`.
 
 - No authentication. All three properties must be present. `PublicRsaKeyPem` may be the empty
   string; an actor that only signs tokens and proofs needs no RSA key.
+- `Content-Type: application/json` is required. See [Answers before the handler](#answers-before-the-handler).
 - `200` with `{ "keySetHandle": "ada" }` when accepted.
-- `400` with `{ "messages": ["Registration was not accepted."] }` otherwise. The reason is not
-  given: a taken handle, a key already registered under another handle, a revoked key and a
-  malformed key all look the same.
+- `400` with `{ "messages": ["Registration was not accepted."] }` when the registration is refused.
+  The reason is not given: a taken handle, a key already registered under another handle, a revoked
+  key and a malformed key all look the same.
 
 Registering does not grant access. The host's operator admits a handle, optionally pinned to a key
 fingerprint. Until then every later step answers `401`.
@@ -81,13 +82,15 @@ A token is three base64url segments joined by `.`: header, payload, signature.
   | Claim | Type | Meaning |
   |---|---|---|
   | `sub` | string | The handle. |
-  | `sid` | string | Any unique string. The C# client uses 32 hex characters. Required, not otherwise checked. |
+  | `sid` | string | Any unique string. The C# client uses 32 hex characters. Not otherwise checked. |
   | `iss` | string | In a client token, any string. In a server token, the host's issuer (`bam` by default). |
   | `iat` | integer | Issued at, Unix seconds. |
   | `exp` | integer | Expires at, Unix seconds. |
   | `aud` | string | Client tokens: the audience the host requires. A single string, not an array. |
   | `kfp` | string | Server tokens: the fingerprint of the actor key the token is bound to. |
 
+  `sub`, `sid`, `iss`, `iat` and `exp` are all required. `iat` and `exp` are JSON integers: a
+  fraction or a string is refused.
 - The signature is over the ASCII bytes of `header.payload` as sent, in DER, base64url without
   padding.
 
@@ -118,15 +121,35 @@ The host accepts a client token when all of these hold:
 
 Answers:
 
-- `200` with `{ "token": "<server token>", "expiresUtc": "2026-09-21T14:58:20+00:00", "keyFingerprint": "<64 hex>" }`.
-- `401` with `{ "messages": ["Authentication failed."] }` for every refusal. The reasons are not
-  told apart.
+- `200` with `{ "token": "<server token>", "expiresUtc": "2026-09-21T14:58:20.1234567+00:00", "keyFingerprint": "<64 hex>" }`.
+- `401` with `{ "messages": ["Authentication failed."] }` when the client token is refused, for
+  any of the six reasons. The reasons are not told apart.
+- `Content-Type: application/json` is required. See [Answers before the handler](#answers-before-the-handler).
+
+`expiresUtc` is an ISO 8601 time with a `+00:00` offset and from zero to seven fractional digits.
+Seven digits is more than some date parsers take (Python's `datetime.fromisoformat` before 3.11
+refuses them). The server token's own `exp` claim is the same instant in whole seconds and is
+easier to read.
 
 Renew before `expiresUtc`. A client token is single-purpose and short; make a new one for each
 request to `/actor/token`.
 
 A host in client-signed-only mode has no `/actor/token`. There the client token itself is the
 bearer token on every request.
+
+### Answers before the handler
+
+`/actor/register` and `/actor/token` read their JSON body before any of the rules above run, and
+that step has answers of its own:
+
+| Status | Body | When |
+|---|---|---|
+| `400` | none | The body is not JSON, or a required property is missing. |
+| `415` | none | The request has no `Content-Type`. |
+| `401` | the text `Authentication failed.` | The `Content-Type` is not JSON. A browser's `fetch` labels a string body `text/plain` unless told otherwise, so this is the answer a browser client gets when it forgets the header. It should be `415`; bam.protocol#113 tracks that. |
+
+So a client must not assume that the body of a `400`, `401` or `415` parses as JSON, and a `401`
+from these two endpoints can mean a wrong `Content-Type`.
 
 ## Calling a protected endpoint
 
@@ -148,7 +171,7 @@ every operation needing `Execute` access or more *(setting)*. A proof is four he
 |---|---|
 | `X-Bam-Body-Signature` | Standard base64 of the DER signature over the canonical text. |
 | `X-Bam-Body-Signature-Algorithm` | `SHA256WITHECDSA`. May be omitted. Compared without regard to case. |
-| `X-Bam-Timestamp` | Unix seconds, digits only. |
+| `X-Bam-Timestamp` | Unix seconds, digits only, written without leading zeros. |
 | `X-Bam-Proof-Nonce` | 16 to 128 characters of `A-Z a-z 0-9 - _`, never used before with this key. |
 
 The canonical text is seven fields joined by a single line feed (`\n`), with no line feed at the
@@ -166,6 +189,9 @@ end:
   at the first `?`. The query keeps its `?`; with no `?` the query is empty. Nothing is decoded,
   re-encoded or normalised: `/a%20b`, `/a/../b` and `/a?` are signed as written.
 - The target must start with `/` and hold no `#`.
+- **The timestamp field** is the number in plain decimal. The host reads the header as a number
+  and signs it written back that way, so a header with leading zeros does not match what was
+  signed.
 - **The body digest** is over the exact bytes sent. With no body it is the SHA-256 of nothing,
   `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
 - **The timestamp** must be within 5 minutes of the host's clock, either way *(setting)*.
@@ -176,7 +202,16 @@ end:
 segments, re-encoding characters, dropping an empty query) breaks the proof. Build the target
 string yourself, sign it, and send that string.
 
+"As sent" means as the host receives it. A reverse proxy or gateway that rewrites the path between
+the client and the host breaks the proof the same way.
+
 A new proof is needed for every request, including a retry.
+
+**A proof does not name the host it is for.** The signed text holds no origin, and each host keeps
+its own record of used nonces, so a proof captured at one host verifies at another host that knows
+the same key, within the time window. Until that changes, do not use one key at hosts that do not
+trust each other. bam.protocol#112 adds a second version of the signed text that names the
+receiving host; this document and the vectors change with it.
 
 Answers when a proof is refused:
 
@@ -201,7 +236,8 @@ Vectors: `canonical-request.json`, `signatures.json`, `request-proof.json`, `csh
 
 - `OperationIdentifier` is `<type full name>+<method name>, <assembly name>`. Text after a second
   comma (a version, a culture) is ignored. The host serves only the types its operator registered.
-- `Arguments` maps parameter names to JSON values. Names are matched without regard to case.
+- `Arguments` maps parameter names to JSON values. Names are matched without regard to case. It may
+  be left out for an operation that takes none.
 - The path `/invoke` is the default *(setting)*. The body may be up to 1 MiB *(setting)*.
 
 Answers:
@@ -220,6 +256,9 @@ Answers:
 Errors other than the `401` for a refused token are problem documents.
 
 ## JSON bodies
+
+This section is about `/actor/register` and `/actor/token`. `/invoke` reads and writes its JSON
+with a different serializer and is described above.
 
 - The host matches request property names without regard to case, and every listed property must be
   present.

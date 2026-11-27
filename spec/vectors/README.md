@@ -10,9 +10,9 @@ library in its own tests.
 | `canonical-request.json` | The text a request proof signs, for a set of methods, targets and bodies. Targets and nonces that are refused. |
 | `signatures.json` | Signatures that verify and signatures that must not. |
 | `der-raw.json` | The same signatures as DER and as raw `r‖s`. |
-| `tokens.json` | Tokens for fixed claims, and tokens that must be refused. |
+| `tokens.json` | Tokens for fixed claims, tokens whose signature must be refused, and signed tokens the host cannot read. |
 | `request-proof.json` | Whole requests, with the verdict a host with default settings gives. Replays. |
-| `messages.json` | JSON request and response bodies. |
+| `messages.json` | JSON request and response bodies, including the time format a real host writes. |
 | `csharp-produced.json` | Signatures, tokens and proofs written by the C# implementation. |
 
 ## Rules for the files
@@ -42,6 +42,10 @@ with openssl.
 throwaway test that is not kept,
 so a client that verifies it has read real C# output. C# signatures are not deterministic, so the
 file is kept as it is and not regenerated.
+
+What a running host answers (status, content type and body, including the answers ASP.NET writes
+before a handler runs) is pinned by `bam.protocol.aspnetcore.tests/ActorEndpointAnswersShould.cs`,
+not by a vector file.
 
 ## Changing the wire
 
