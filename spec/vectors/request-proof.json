@@ -1,0 +1,280 @@
+{
+  "description": "Whole requests as a host with default settings judges them. The caller is the actor key, the clock reads nowUnixSeconds, and a proof may be maxAgeSeconds old or ahead. Each case is judged by a host that has seen no nonce before, except replays, which are judged twice.",
+  "nowUnixSeconds": 1790000000,
+  "maxAgeSeconds": 300,
+  "signingKey": "actor",
+  "cases": [
+    {
+      "name": "a signed POST",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": true
+    },
+    {
+      "name": "a GET with no body",
+      "method": "GET",
+      "target": "/things",
+      "bodyHex": "",
+      "headers": {
+        "X-Bam-Body-Signature": "MEYCIQDBvLxTfIzeLuHGnXkt1AanXoWg4UxBZ0HnEt84RHQPNAIhAIaSdzdMHsmXfdJPc38gDmbo2Pjw4etD6H/mSJx5H1Q5",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": true
+    },
+    {
+      "name": "no algorithm header",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": true
+    },
+    {
+      "name": "exactly as old as allowed",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEYCIQDVEWE6LTAxkFntBprT8bEoPFtA3buZI0uWoZUOwAddRwIhAMYrUKB5JXs2gM/uPv+xe9amRYguS3sXt+l+pKiDipcF",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1789999700",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": true
+    },
+    {
+      "name": "exactly as far ahead as allowed",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIQDn/Jq+6NNbsjUQBDHT4+w8mUUwZkEXqFDrZeQG3svu5QIgMm/4aps3fwqpEe//c6T20BE7BXVYELWkVl47H0he37w=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000300",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": true
+    },
+    {
+      "name": "one second too old",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEQCIDXszgtkKTc3ppP2fybj8keMSPP7Qn+aVg6pP/ANYme7AiAPaXIl3t3oiYsTEkri8vEks8L8O3w5Z8Vb0PnidfjkaA==",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1789999699",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "timestamp outside the window"
+    },
+    {
+      "name": "one second too far ahead",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEYCIQCgYo8i5R5W4sZQKuMNRYuzWUNypsUqwySbchye+/UDFwIhANSTHsk3n2RnzyBdmTNY22h9ZtIaryAvVIpoNAFHjnNc",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000301",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "timestamp outside the window"
+    },
+    {
+      "name": "the body changed after signing",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d20",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "the body digest differs"
+    },
+    {
+      "name": "the query changed after signing",
+      "method": "POST",
+      "target": "/invoke?trace=2",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "the query is signed"
+    },
+    {
+      "name": "the method changed after signing",
+      "method": "PUT",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "the method is signed"
+    },
+    {
+      "name": "signed by a key that is not the caller's",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEQCIEfyQUiAOHIm7eHzDRXgoGCIzVo3Vs6L9iQwCMm2u7mxAiBuHLksZEGMk5RPxcrp9REKldCy24GB87ixHOkSZqw2Ow==",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "wrong key"
+    },
+    {
+      "name": "no signature header",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "missing header"
+    },
+    {
+      "name": "no timestamp header",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "missing header"
+    },
+    {
+      "name": "no nonce header",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000"
+      },
+      "verified": false,
+      "why": "missing header"
+    },
+    {
+      "name": "a timestamp with a sign",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "+1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "digits only"
+    },
+    {
+      "name": "a timestamp in milliseconds",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIDDy/jRKiHYru6VCjUoVmn93cTZWhA41b1VnSxnPuR35AiEAxir2tv/drarLoLxcRfyhqP0zYri0IcarVy1WjNO+css=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "timestamp outside the window"
+    },
+    {
+      "name": "a short nonce",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "short"
+      },
+      "verified": false,
+      "why": "malformed nonce"
+    },
+    {
+      "name": "an algorithm outside the allow-list",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB9iIpn5wyIbLnO8EP3fdzFxBswn7b2x9ydk+V+H/VCHAiEA7MDGGWh9mdaFJXckJxiqCxO+TtuVsy2FTpAnSdfe/PU=",
+        "X-Bam-Body-Signature-Algorithm": "SHA1WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "algorithm not allowed"
+    },
+    {
+      "name": "a fragment in the target",
+      "method": "POST",
+      "target": "/invoke#top",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIQDmwT7Ygc/SmPVKX9k91gtNberCyzr4Z71mnMaZHVuGngIgGWiWwUiGIjc4flKc5BbWNHfoMc41ULH3PVl7KTEhuCk=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-0001"
+      },
+      "verified": false,
+      "why": "not an origin-form target"
+    }
+  ],
+  "replays": [
+    {
+      "name": "the same proof sent twice",
+      "method": "POST",
+      "target": "/invoke?trace=1",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "headers": {
+        "X-Bam-Body-Signature": "MEUCIB+84DVfQyijV+SoblLEHNgg1veczf1gf8IOq/R8HO+XAiEArd9NQr/8D0la3sUTxOMrWAh3I4/3byEIuj5K7XeKEC0=",
+        "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+        "X-Bam-Timestamp": "1790000000",
+        "X-Bam-Proof-Nonce": "proof-nonce-replay"
+      },
+      "verified": true
+    }
+  ]
+}

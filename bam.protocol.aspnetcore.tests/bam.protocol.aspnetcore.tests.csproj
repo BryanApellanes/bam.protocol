@@ -13,6 +13,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The actor-auth known-answer vectors, read by WireVectorsShould. -->
+        <None Include="..\spec\vectors\*.json" Link="vectors\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
         <ProjectReference Include="..\..\bam.console\bam.console\bam.console.csproj" />
         <ProjectReference Include="..\..\bam.encryption\bam.encryption\bam.encryption.csproj" />

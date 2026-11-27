@@ -1,0 +1,84 @@
+{
+  "description": "Signatures, tokens and request proofs written by the C# implementation (EccSignatureProvider.Sign, BamJwtToken.Encode, RequestProofSigner.Sign) with the keys in keys.json. Another implementation that verifies these has read real C# output. The C# signer picks a random nonce for each signature, so this file was produced once and is not regenerated; tools/generate.py leaves it alone.",
+  "signatures": [
+    {
+      "name": "signed by EccSignatureProvider",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\ncsharp-nonce-0001\n44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQCb2HMFGck6ZUJIvn3thk/xyPu/zqqOoaxeqYsh65FBLwIhANMqgWg3oJJQ+ia2w9f7TCMOcOAWJkXFfqB2TDJAHj3H",
+      "verifies": true
+    },
+    {
+      "name": "signed by EccSignatureProvider with another key",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\ncsharp-nonce-0001\n44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEUCIQDehnPWnnl7pnF45NQLllA2iGENn79bfCBUtB9hzxOWWQIgXu7bg2w6ZpATJ+09XnUqQ4A0iXNUVGHrFPNCtpKhJBo=",
+      "verifies": false
+    }
+  ],
+  "tokens": [
+    {
+      "name": "a client token from BamJwtToken.Encode",
+      "key": "actor",
+      "claims": {
+        "sub": "ada",
+        "sid": "0123456789abcdef0123456789abcdef",
+        "iss": "client",
+        "iat": 1790000000,
+        "exp": 1790000120,
+        "aud": "https://api.example.test"
+      },
+      "signingInput": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJzaWQiOiIwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZiIsImlzcyI6ImNsaWVudCIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMTIwLCJhdWQiOiJodHRwczovL2FwaS5leGFtcGxlLnRlc3QifQ",
+      "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJzaWQiOiIwMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZiIsImlzcyI6ImNsaWVudCIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAwMTIwLCJhdWQiOiJodHRwczovL2FwaS5leGFtcGxlLnRlc3QifQ.MEUCIQCP59ZBPljhe6Pw6AWbg7Kdu3VX0LlnqQl04-fXdzG4uQIgF6PZmmxgUemha8CvuiP9iyA-K2E8LYLy5q-Z3e-ORyc"
+    },
+    {
+      "name": "a server token from BamJwtToken.Encode",
+      "key": "server",
+      "claims": {
+        "sub": "ada",
+        "sid": "00112233445566778899aabbccddeeff",
+        "iss": "bam",
+        "iat": 1790000000,
+        "exp": 1790002700,
+        "kfp": "c8449ca1a637dfe26203b4057660ae8c5f2faaa31300501319db1195b581914c"
+      },
+      "signingInput": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJzaWQiOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiIsImlzcyI6ImJhbSIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAyNzAwLCJrZnAiOiJjODQ0OWNhMWE2MzdkZmUyNjIwM2I0MDU3NjYwYWU4YzVmMmZhYWEzMTMwMDUwMTMxOWRiMTE5NWI1ODE5MTRjIn0",
+      "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJzaWQiOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiIsImlzcyI6ImJhbSIsImlhdCI6MTc5MDAwMDAwMCwiZXhwIjoxNzkwMDAyNzAwLCJrZnAiOiJjODQ0OWNhMWE2MzdkZmUyNjIwM2I0MDU3NjYwYWU4YzVmMmZhYWEzMTMwMDUwMTMxOWRiMTE5NWI1ODE5MTRjIn0.MEUCIQDA4b5o2MSoB34jxjYclMajPUU-Iop5tkxwTexRCuRGMAIgVSPuRCS_ZJdI3Or75Bw1y2X8j2b6h_pOk382PzmK8XI"
+    }
+  ],
+  "requestProofs": {
+    "nowUnixSeconds": 1790000000,
+    "signingKey": "actor",
+    "cases": [
+      {
+        "name": "a POST signed by RequestProofSigner",
+        "method": "POST",
+        "target": "/invoke?trace=1",
+        "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+        "headers": {
+          "X-Bam-Body-Signature": "MEYCIQDlXCvM9V9tJPLRAkNe2Hno1m7iEzEuMOikYYTv5v78twIhAPGvvjzNKtqszL5EVMkQmYrjy1fx2H2gdh8OrKtNUHcm",
+          "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+          "X-Bam-Timestamp": "1790000000",
+          "X-Bam-Proof-Nonce": "6807df421ea244a9f2068872de9fa48e"
+        },
+        "verified": true
+      },
+      {
+        "name": "a GET signed by RequestProofSigner",
+        "method": "GET",
+        "target": "/things",
+        "bodyHex": "",
+        "headers": {
+          "X-Bam-Body-Signature": "MEYCIQDQc4DmDdM65ZgWqWJWpr2FrLZ9ooD6GM3nsN9sTfC0iAIhAKVWuXsUzSu5fQGOfE75w5VdyrgsLlPoHAFKu84IbmMD",
+          "X-Bam-Body-Signature-Algorithm": "SHA256WITHECDSA",
+          "X-Bam-Timestamp": "1790000000",
+          "X-Bam-Proof-Nonce": "a1a15e070f30baa2c4d35e0a393a6841"
+        },
+        "verified": true
+      }
+    ],
+    "replays": []
+  }
+}

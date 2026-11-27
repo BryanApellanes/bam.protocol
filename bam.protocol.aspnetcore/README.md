@@ -251,6 +251,8 @@ registered or (hybrid) the server key is absent. Provisioning the server key is 
 
 ## Client recipe
 
+For a client in another language, [`spec/actor-auth.md`](../spec/actor-auth.md) is the exact wire description, with test vectors in [`spec/vectors/`](../spec/vectors/README.md).
+
 1. Generate an RSA pair and an ECC pair; `POST /actor/register` with both public PEMs and your handle.
 2. Optionally `POST /actor/challenge`, sign the base64 text of the challenge with the RSA key
    (SHA512WITHRSA), and `POST /actor/confirm` to prove possession of the RSA key. Confirmation does not

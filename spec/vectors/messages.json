@@ -1,0 +1,57 @@
+{
+  "description": "JSON bodies as a host with default settings reads and writes them. Request property names are matched without regard to case; every listed property must be present. Responses are written in camelCase by default, and a host can change that, so a client reads names without regard to case.",
+  "requests": [
+    {
+      "name": "register",
+      "kind": "register",
+      "accepted": true,
+      "json": "{\"KeySetHandle\": \"ada\", \"PublicRsaKeyPem\": \"\", \"PublicEccKeyPem\": \"PEM text of the public key\"}"
+    },
+    {
+      "name": "register in camelCase",
+      "kind": "register",
+      "accepted": true,
+      "json": "{\"keySetHandle\": \"ada\", \"publicRsaKeyPem\": \"\", \"publicEccKeyPem\": \"PEM text of the public key\"}"
+    },
+    {
+      "name": "register without the RSA property",
+      "kind": "register",
+      "accepted": false,
+      "json": "{\"KeySetHandle\": \"ada\", \"PublicEccKeyPem\": \"PEM text of the public key\"}"
+    },
+    {
+      "name": "token",
+      "kind": "token",
+      "accepted": true,
+      "json": "{\"ClientToken\": \"a.b.c\"}"
+    },
+    {
+      "name": "token without its property",
+      "kind": "token",
+      "accepted": false,
+      "json": "{}"
+    }
+  ],
+  "responses": [
+    {
+      "name": "registered",
+      "kind": "register",
+      "keySetHandle": "ada",
+      "json": "{\"keySetHandle\":\"ada\"}"
+    },
+    {
+      "name": "token issued",
+      "kind": "token",
+      "token": "a.b.c",
+      "expiresUnixSeconds": 1790002700,
+      "keyFingerprint": "c8449ca1a637dfe26203b4057660ae8c5f2faaa31300501319db1195b581914c",
+      "json": "{\"token\":\"a.b.c\",\"expiresUtc\":\"2026-09-21T14:58:20+00:00\",\"keyFingerprint\":\"c8449ca1a637dfe26203b4057660ae8c5f2faaa31300501319db1195b581914c\"}"
+    },
+    {
+      "name": "refused",
+      "kind": "failure",
+      "message": "Authentication failed.",
+      "json": "{\"messages\":[\"Authentication failed.\"]}"
+    }
+  ]
+}

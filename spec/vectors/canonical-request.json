@@ -1,0 +1,188 @@
+{
+  "description": "The text a request proof signs: seven fields joined by a line feed, with no trailing line feed. The target is the request target exactly as sent on the request line.",
+  "cases": [
+    {
+      "name": "the documented example",
+      "method": "post",
+      "target": "/a?b=1",
+      "timestamp": 1760529600,
+      "nonce": "0123456789abcdef",
+      "bodyHex": "",
+      "path": "/a",
+      "query": "?b=1",
+      "bodySha256Hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "BAM-REQUEST-PROOF-1\nPOST\n/a\n?b=1\n1760529600\n0123456789abcdef\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a504f53540a2f610a3f623d310a313736303532393630300a303132333435363738396162636465660a65336230633434323938666331633134396166626634633839393666623932343237616534316534363439623933346361343935393931623738353262383535"
+    },
+    {
+      "name": "no query",
+      "method": "GET",
+      "target": "/",
+      "timestamp": 1790000000,
+      "nonce": "AAAAAAAAAAAAAAAA",
+      "bodyHex": "",
+      "path": "/",
+      "query": "",
+      "bodySha256Hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "BAM-REQUEST-PROOF-1\nGET\n/\n\n1790000000\nAAAAAAAAAAAAAAAA\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a4745540a2f0a0a313739303030303030300a414141414141414141414141414141410a65336230633434323938666331633134396166626634633839393666623932343237616534316534363439623933346361343935393931623738353262383535"
+    },
+    {
+      "name": "a JSON body",
+      "method": "POST",
+      "target": "/invoke",
+      "timestamp": 1790000000,
+      "nonce": "nonce-with_dash-0001",
+      "bodyHex": "7b224f7065726174696f6e4964656e746966696572223a2253616d706c652e477265657465722b47726565742c2053616d706c65222c22417267756d656e7473223a7b226e616d65223a22416461227d7d",
+      "path": "/invoke",
+      "query": "",
+      "bodySha256Hex": "03e2d631d9868fba5f6cbf48bfd5d08e7573de01d4a79cd863cfcabc23de6c3b",
+      "canonical": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n03e2d631d9868fba5f6cbf48bfd5d08e7573de01d4a79cd863cfcabc23de6c3b",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a504f53540a2f696e766f6b650a0a313739303030303030300a6e6f6e63652d776974685f646173682d303030310a30336532643633316439383638666261356636636266343862666435643038653735373364653031643461373963643836336366636162633233646536633362"
+    },
+    {
+      "name": "percent-encoding is signed as sent",
+      "method": "PUT",
+      "target": "/a%20b/caf%C3%A9?x=%2F&y=a+b",
+      "timestamp": 1790000000,
+      "nonce": "00000000000000000000000000000000",
+      "bodyHex": "78",
+      "path": "/a%20b/caf%C3%A9",
+      "query": "?x=%2F&y=a+b",
+      "bodySha256Hex": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+      "canonical": "BAM-REQUEST-PROOF-1\nPUT\n/a%20b/caf%C3%A9\n?x=%2F&y=a+b\n1790000000\n00000000000000000000000000000000\n2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a5055540a2f61253230622f6361662543332541390a3f783d25324626793d612b620a313739303030303030300a30303030303030303030303030303030303030303030303030303030303030300a32643731313634326237323662303434303136323763613966626163333266356338353330666231393033636334646230323235383731373932316134383831"
+    },
+    {
+      "name": "an empty query keeps its question mark",
+      "method": "DELETE",
+      "target": "/a?",
+      "timestamp": 1790000000,
+      "nonce": "abcdefghijklmnop",
+      "bodyHex": "",
+      "path": "/a",
+      "query": "?",
+      "bodySha256Hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "BAM-REQUEST-PROOF-1\nDELETE\n/a\n?\n1790000000\nabcdefghijklmnop\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a44454c4554450a2f610a3f0a313739303030303030300a6162636465666768696a6b6c6d6e6f700a65336230633434323938666331633134396166626634633839393666623932343237616534316534363439623933346361343935393931623738353262383535"
+    },
+    {
+      "name": "only the first question mark splits",
+      "method": "GET",
+      "target": "/a?b=1?c=2",
+      "timestamp": 1790000000,
+      "nonce": "abcdefghijklmnop",
+      "bodyHex": "",
+      "path": "/a",
+      "query": "?b=1?c=2",
+      "bodySha256Hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "BAM-REQUEST-PROOF-1\nGET\n/a\n?b=1?c=2\n1790000000\nabcdefghijklmnop\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a4745540a2f610a3f623d313f633d320a313739303030303030300a6162636465666768696a6b6c6d6e6f700a65336230633434323938666331633134396166626634633839393666623932343237616534316534363439623933346361343935393931623738353262383535"
+    },
+    {
+      "name": "dot segments are not resolved",
+      "method": "GET",
+      "target": "/a/../b//c",
+      "timestamp": 1790000000,
+      "nonce": "abcdefghijklmnop",
+      "bodyHex": "",
+      "path": "/a/../b//c",
+      "query": "",
+      "bodySha256Hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonical": "BAM-REQUEST-PROOF-1\nGET\n/a/../b//c\n\n1790000000\nabcdefghijklmnop\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a4745540a2f612f2e2e2f622f2f630a0a313739303030303030300a6162636465666768696a6b6c6d6e6f700a65336230633434323938666331633134396166626634633839393666623932343237616534316534363439623933346361343935393931623738353262383535"
+    },
+    {
+      "name": "binary body",
+      "method": "POST",
+      "target": "/upload",
+      "timestamp": 1790000000,
+      "nonce": "abcdefghijklmnop",
+      "bodyHex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+      "path": "/upload",
+      "query": "",
+      "bodySha256Hex": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "canonical": "BAM-REQUEST-PROOF-1\nPOST\n/upload\n\n1790000000\nabcdefghijklmnop\n40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a504f53540a2f75706c6f61640a0a313739303030303030300a6162636465666768696a6b6c6d6e6f700a34306166663265396432643839323265343761666434363438653639363734393731353837383566626431646138373065373131303236366266393434383830"
+    },
+    {
+      "name": "the longest nonce",
+      "method": "POST",
+      "target": "/a",
+      "timestamp": 1,
+      "nonce": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+      "bodyHex": "626f6479",
+      "path": "/a",
+      "query": "",
+      "bodySha256Hex": "230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "canonical": "BAM-REQUEST-PROOF-1\nPOST\n/a\n\n1\nzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\n230d8358dc8e8890b4c58deeb62912ee2f20357ae92a5cc861b98e68fe31acb5",
+      "canonicalUtf8Hex": "42414d2d524551554553542d50524f4f462d310a504f53540a2f610a0a310a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a0a32333064383335386463386538383930623463353864656562363239313265653266323033353761653932613563633836316239386536386665333161636235"
+    }
+  ],
+  "refusedTargets": [
+    {
+      "name": "empty",
+      "target": ""
+    },
+    {
+      "name": "absolute form",
+      "target": "http://host/a"
+    },
+    {
+      "name": "no leading slash",
+      "target": "a/b"
+    },
+    {
+      "name": "asterisk form",
+      "target": "*"
+    },
+    {
+      "name": "a fragment",
+      "target": "/a#top"
+    },
+    {
+      "name": "a fragment after the query",
+      "target": "/a?b=1#top"
+    }
+  ],
+  "wellFormedNonces": [
+    "0123456789abcdef",
+    "ABCDEFGHIJKLMNOP",
+    "a-b_c-d_e-f_g-h_",
+    "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+  ],
+  "malformedNonces": [
+    {
+      "name": "empty",
+      "nonce": ""
+    },
+    {
+      "name": "fifteen characters",
+      "nonce": "0123456789abcde"
+    },
+    {
+      "name": "one hundred and twenty-nine characters",
+      "nonce": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+    },
+    {
+      "name": "a plus sign",
+      "nonce": "0123456789abcde+"
+    },
+    {
+      "name": "a slash",
+      "nonce": "0123456789abcde/"
+    },
+    {
+      "name": "padding",
+      "nonce": "0123456789abcde="
+    },
+    {
+      "name": "a space",
+      "nonce": "0123456789 abcdef"
+    },
+    {
+      "name": "a non-ASCII letter",
+      "nonce": "0123456789abcd\u00e9f"
+    }
+  ]
+}

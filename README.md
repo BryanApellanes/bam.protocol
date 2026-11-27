@@ -10,6 +10,10 @@ The library includes a complete HTTP request/response abstraction (`IHttpRequest
 
 The project also defines cryptographic primitives such as `IKeySet` (RSA + ECC public keys), `IClientKeySet` (client-side asymmetric/symmetric encryption operations), `ISecretExchange` (legacy AES-based secret sharing, now deprecated in favor of ECC), and session management interfaces (`IClientSessionManager`, `IClientSessionState`) that enable secure session establishment with ECDH-derived AES keys.
 
+## Wire specification
+
+[`spec/actor-auth.md`](spec/actor-auth.md) describes the actor-auth wire exactly enough to write a client in another language, and [`spec/vectors/`](spec/vectors/README.md) holds the known-answer vectors every implementation is tested against.
+
 ## Key Classes
 
 | Class / Interface | Description |
