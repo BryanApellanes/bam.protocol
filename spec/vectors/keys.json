@@ -1,0 +1,46 @@
+{
+  "description": "P-256 test keys. Each private scalar is SHA-256(\"bam-wire test key: <name>\") reduced into [1, n-1]. The fingerprint is the lowercase hex SHA-256 of the named-curve SubjectPublicKeyInfo with an uncompressed point; every encoding of one key has that one fingerprint.",
+  "keys": [
+    {
+      "name": "actor",
+      "note": "The enrolled actor. Signs client tokens and request proofs.",
+      "privateScalarHex": "ad866d3b71a0300b8ba9d8b4ab4a6259fa382a3ad9f4ddaef2bdaa56c8617c98",
+      "publicPointHex": "045dc57d84bb984a86fec4c5b56e80e5317bf506cce917e10baaad4a4526c307a3050df253eb07e7623354632dc179104e7f7583e36db2af8f864c154084b6fe5b",
+      "spkiNamedCurveBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXcV9hLuYSob+xMW1boDlMXv1BszpF+ELqq1KRSbDB6MFDfJT6wfnYjNUYy3BeRBOf3WD422yr4+GTBVAhLb+Ww==",
+      "spkiExplicitParametersBase64": "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABF3FfYS7mEqG/sTFtW6A5TF79QbM6RfhC6qtSkUmwwejBQ3yU+sH52IzVGMtwXkQTn91g+Ntsq+PhkwVQIS2/ls=",
+      "spkiCompressedPointBase64": "MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADXcV9hLuYSob+xMW1boDlMXv1BszpF+ELqq1KRSbDB6M=",
+      "fingerprint": "c8449ca1a637dfe26203b4057660ae8c5f2faaa31300501319db1195b581914c"
+    },
+    {
+      "name": "server",
+      "note": "The host. Signs server tokens.",
+      "privateScalarHex": "64c4b2f2b5045f599fb5f3c3e70d0fc1003b0a1034e9f9e4479233a12bcf7fb5",
+      "publicPointHex": "0472f5a2d9035a94d1afe407c0f9a39318385a374b589ff96a1b8c99e8f02a8aa1679976717ae395d686d7e7afabfa140b4c46d1df705e42ca8c53f4017a5284f5",
+      "spkiNamedCurveBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEcvWi2QNalNGv5AfA+aOTGDhaN0tYn/lqG4yZ6PAqiqFnmXZxeuOV1obX56+r+hQLTEbR33BeQsqMU/QBelKE9Q==",
+      "spkiExplicitParametersBase64": "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABHL1otkDWpTRr+QHwPmjkxg4WjdLWJ/5ahuMmejwKoqhZ5l2cXrjldaG1+evq/oUC0xG0d9wXkLKjFP0AXpShPU=",
+      "spkiCompressedPointBase64": "MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADcvWi2QNalNGv5AfA+aOTGDhaN0tYn/lqG4yZ6PAqiqE=",
+      "fingerprint": "d12211659c4caa440b9dd37cabf595252b539aecb349618d355e140eb4cba273"
+    },
+    {
+      "name": "other",
+      "note": "A key that is not registered. Its signatures must be refused.",
+      "privateScalarHex": "b0bc86a69250345921c7bef159dd3a30a4440a5faab8dbec9d7dc9e13a71492e",
+      "publicPointHex": "048294289fe2c6fb0c2075779336aaa9058ed1406b15d2f20c1a31971bb32fd5ba82105f0a6c9f6f219a1bf4de0ba94c4c73c6ff22e2f721fd089a08545aa86c45",
+      "spkiNamedCurveBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEgpQon+LG+wwgdXeTNqqpBY7RQGsV0vIMGjGXG7Mv1bqCEF8KbJ9vIZob9N4LqUxMc8b/IuL3If0ImghUWqhsRQ==",
+      "spkiExplicitParametersBase64": "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABIKUKJ/ixvsMIHV3kzaqqQWO0UBrFdLyDBoxlxuzL9W6ghBfCmyfbyGaG/TeC6lMTHPG/yLi9yH9CJoIVFqobEU=",
+      "spkiCompressedPointBase64": "MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADgpQon+LG+wwgdXeTNqqpBY7RQGsV0vIMGjGXG7Mv1bo=",
+      "fingerprint": "afeaff7c21eea66922678e2b1f0f9bb162621a27a94491416e967ab16ce1b8ac"
+    }
+  ],
+  "publicOnly": [
+    {
+      "name": "openssl-fixture",
+      "note": "A key made by openssl, with no private half here. Its fingerprint is what `openssl ec -pubin -param_enc named_curve -conv_form uncompressed -outform DER | sha256sum` prints.",
+      "publicPointHex": "04df3e75675b81d3b7cae97d74b6a7fa2f50e2c328cfaf04ca10af6a1707379cfd7d8e15720c2ce2779f2dadb620888db984abf5ccc930d524e6cd42f2d2ceed1a",
+      "spkiNamedCurveBase64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE3z51Z1uB07fK6X10tqf6L1DiwyjPrwTKEK9qFwc3nP19jhVyDCzid58trbYgiI25hKv1zMkw1STmzULy0s7tGg==",
+      "spkiExplicitParametersBase64": "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABN8+dWdbgdO3yul9dLan+i9Q4sMoz68EyhCvahcHN5z9fY4Vcgws4nefLa22IIiNuYSr9czJMNUk5s1C8tLO7Ro=",
+      "spkiCompressedPointBase64": "MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgAC3z51Z1uB07fK6X10tqf6L1DiwyjPrwTKEK9qFwc3nP0=",
+      "fingerprint": "33b6e4f612db64916f00c81ed986526cfb497c9979dd820686d2979ff26ab294"
+    }
+  ]
+}

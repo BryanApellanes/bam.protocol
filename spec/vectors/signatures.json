@@ -1,0 +1,93 @@
+{
+  "description": "ECDSA P-256 signatures over the UTF-8 bytes of the text, hashed with SHA-256. A signature is the ASN.1 DER SEQUENCE of r and s, in standard base64. The raw 64-byte r||s form is refused. A null algorithm means the header was not sent.",
+  "cases": [
+    {
+      "name": "a request proof",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": true
+    },
+    {
+      "name": "no algorithm named",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": null,
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": true
+    },
+    {
+      "name": "the algorithm name in lower case",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "sha256withecdsa",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": true
+    },
+    {
+      "name": "plain text",
+      "key": "actor",
+      "text": "hello",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQCjEzBVwob+YGj/+ChE/9VudNyVFr+2herRFTIvqW8iFAIhAMiWGqeiRqRo2jorwfZU5FYJ5ixXIVCBeIukXo7S7lTP",
+      "verifies": true
+    },
+    {
+      "name": "one character of the text changed",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862 ",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": false
+    },
+    {
+      "name": "signed by another key",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQDdj6cZUe8zAswXRMOI1Bg4LHhVS79LCBtEcas/S3VaGwIhAPe8q8F92zal2+3OKJwH4/qhUObLFd6Q5mKSBJSyxhZ5",
+      "verifies": false
+    },
+    {
+      "name": "the raw r||s form",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "l0tSMT9ouT3PnVfVZr4q6Cn/uUGkQq8NqMLD4q4iy26AyKOepEeyfB6xvgdxOtAp8G4mnWothMSrJA/seaNMWw==",
+      "verifies": false
+    },
+    {
+      "name": "one bit of s changed",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xa",
+      "verifies": false
+    },
+    {
+      "name": "an algorithm outside the allow-list",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA1WITHECDSA",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": false
+    },
+    {
+      "name": "no hash",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "NONEwithECDSA",
+      "signatureBase64": "MEYCIQCXS1IxP2i5Pc+dV9VmviroKf+5QaRCrw2owsPiriLLbgIhAIDIo56kR7J8HrG+B3E60Cnwbiadai2ExKskD+x5o0xb",
+      "verifies": false
+    },
+    {
+      "name": "an empty signature",
+      "key": "actor",
+      "text": "BAM-REQUEST-PROOF-1\nPOST\n/invoke\n\n1790000000\nnonce-with_dash-0001\n015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+      "algorithm": "SHA256WITHECDSA",
+      "signatureBase64": "",
+      "verifies": false
+    }
+  ]
+}
