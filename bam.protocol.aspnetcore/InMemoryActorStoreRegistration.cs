@@ -2,7 +2,9 @@ using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Profile;
+using Bam.UserAccounts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Bam.Protocol.AspNetCore;
 
@@ -14,8 +16,9 @@ namespace Bam.Protocol.AspNetCore;
 /// <para>
 /// For single-process hosts whose actors live for one visit, such as a public demo. Nothing persists: a
 /// restart forgets every key set and generates a new server key, so tokens issued before it stop verifying.
-/// The host still registers an <see cref="Bam.UserAccounts.IAccountConfirmation"/> (for example
-/// <c>AddDeviceKeyAccountConfirmation</c>), which <c>UseActorAuthentication</c> requires.
+/// It also registers a <see cref="RefusingAccountConfirmation"/> as <see cref="IAccountConfirmation"/> unless the
+/// host registered one first, because <c>UseActorAuthentication</c> requires one: such hosts don't use RSA
+/// confirmation, so <c>/actor/confirm</c> refuses everyone.
 /// </para>
 /// </summary>
 public static class InMemoryActorStoreRegistration
@@ -38,6 +41,7 @@ public static class InMemoryActorStoreRegistration
         services.AddSingleton<IPublicKeySetResolver>(store);
         services.AddSingleton<IPublicKeySetRegistrar>(store);
         services.AddSingleton<INamedKeyStorage>(keys);
+        services.TryAddSingleton<IAccountConfirmation>(new RefusingAccountConfirmation(timeProvider));
         return services;
     }
 
@@ -59,6 +63,10 @@ public static class InMemoryActorStoreRegistration
         registry.For<IPublicKeySetResolver>().UseSingleton<IPublicKeySetResolver>(store);
         registry.For<IPublicKeySetRegistrar>().UseSingleton<IPublicKeySetRegistrar>(store);
         registry.For<INamedKeyStorage>().UseSingleton<INamedKeyStorage>(keys);
+        if (!registry.Contains<IAccountConfirmation>())
+        {
+            registry.For<IAccountConfirmation>().UseSingleton<IAccountConfirmation>(new RefusingAccountConfirmation(timeProvider));
+        }
         return registry;
     }
 

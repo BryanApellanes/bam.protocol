@@ -103,13 +103,13 @@ and the registered `RequestProofEvaluator`, and the access level with `IActorAcc
 
 A host whose actors live for one visit, such as a public demo, can run actor authentication without a
 database. `AddInMemoryActorStores` registers a `BoundedMemoryKeySetStore` as both `IPublicKeySetResolver` and
-`IPublicKeySetRegistrar`, plus a `MemoryNamedKeyStorage` holding a server key generated at start-up
-(bam.protocol#119):
+`IPublicKeySetRegistrar`, a `MemoryNamedKeyStorage` holding a server key generated at start-up, and, unless the
+host registered its own, a `RefusingAccountConfirmation` (bam.protocol#119). That confirmation never confirms:
+`/actor/challenge` answers with an already-expired random challenge and `/actor/confirm` with its generic 401.
 
 ```csharp
 ActorAuthenticationOptions actorAuth = new ActorAuthenticationOptions { Enabled = true, OpenEnrollment = true, ClientTokenAudience = "https://dev.bamapps.net" };
 builder.Services.AddInMemoryActorStores(actorAuth, new BoundedMemoryKeySetStoreOptions { Capacity = 200, KeySetLifetime = TimeSpan.FromMinutes(15) });
-builder.Services.AddSingleton<IAccountConfirmation>(...);   // still required by UseActorAuthentication
 builder.Services.AddActorAuthentication(actorAuth);
 ```
 

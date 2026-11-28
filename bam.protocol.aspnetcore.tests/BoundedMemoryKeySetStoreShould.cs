@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
+using Bam.DependencyInjection;
 using Bam.Encryption;
 using Bam.Protocol.Data;
 using Bam.Protocol.Data.Profile;
@@ -303,7 +304,9 @@ public class BoundedMemoryKeySetStoreShould : UnitTestMenuContainer
                 Answer taken = await host.PostAsync("/actor/register", "{\"KeySetHandle\":\"ada\",\"PublicRsaKeyPem\":\"\",\"PublicEccKeyPem\":" + Quote(TestKeys.NewEcc().PublicPem) + "}", null);
                 Answer second = await host.PostAsync("/actor/register", "{\"KeySetHandle\":\"bob\",\"PublicRsaKeyPem\":\"\",\"PublicEccKeyPem\":" + Quote(TestKeys.NewEcc().PublicPem) + "}", null);
                 Answer full = await host.PostAsync("/actor/register", "{\"KeySetHandle\":\"cy\",\"PublicRsaKeyPem\":\"\",\"PublicEccKeyPem\":" + Quote(TestKeys.NewEcc().PublicPem) + "}", null);
-                return new PipelineOutcome(registered, issued, fingerprint, PublicKeyFingerprint.Of(pair.PublicPem) ?? string.Empty, proved, taken, second, full);
+                Answer challenge = await host.PostAsync("/actor/challenge", "{\"PersonHandle\":\"ada\"}", null);
+                Answer confirm = await host.PostAsync("/actor/confirm", "{\"PersonHandle\":\"ada\",\"SignatureBase64\":\"AAAA\"}", null);
+                return new PipelineOutcome(registered, issued, fingerprint, PublicKeyFingerprint.Of(pair.PublicPem) ?? string.Empty, proved, taken, second, full, challenge, confirm);
             }))
             .TheTest
             .ShouldPass<PipelineOutcome>((because, outcome) =>
@@ -316,6 +319,66 @@ public class BoundedMemoryKeySetStoreShould : UnitTestMenuContainer
                 because.ItsTrue("the second handle fills the store of two: " + outcome.Second, outcome.Second.Status == 200);
                 because.ItsTrue("a full store is 429 with the capacity message: " + outcome.Full,
                     outcome.Full.Status == 429 && outcome.Full.ContentType.StartsWith(JsonType, StringComparison.Ordinal) && outcome.Full.Body.Contains(ActorEnrollmentEndpoints.CapacityMessage, StringComparison.Ordinal));
+                because.ItsTrue("with no confirmation registered by the host, /actor/challenge still answers: " + outcome.Challenge, outcome.Challenge.Status == 200);
+                because.ItsTrue("and /actor/confirm is the generic 401: " + outcome.Confirm, outcome.Confirm.Status == 401 && outcome.Confirm.Body.Contains("Confirmation was not accepted.", StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void WireTheSameStoresIntoAServiceRegistry()
+    {
+        When.A<BoundedMemoryKeySetStoreShould>("adds the in-memory stores to a ServiceRegistry, with and without a confirmation flow already registered",
+            (test) =>
+            {
+                ActorAuthenticationOptions options = new ActorAuthenticationOptions();
+                ServiceRegistry registry = new ServiceRegistry();
+                registry.AddInMemoryActorStores(options, new BoundedMemoryKeySetStoreOptions { Capacity = 3 });
+                BoundedMemoryKeySetStore store = registry.Get<BoundedMemoryKeySetStore>();
+                bool oneInstance = ReferenceEquals(store, registry.Get<IPublicKeySetResolver>()) && ReferenceEquals(store, registry.Get<IPublicKeySetRegistrar>());
+                byte[]? serverKey = registry.Get<INamedKeyStorage>().GetNamedKey(options.ServerKeyName);
+                IAccountConfirmation confirmation = registry.Get<IAccountConfirmation>();
+                bool refuses = !confirmation.VerifySignedChallenge("ada", new byte[] { 1 }).Confirmed;
+
+                FakeAccountConfirmation hosts = new FakeAccountConfirmation(Array.Empty<byte>());
+                ServiceRegistry withOwn = new ServiceRegistry();
+                withOwn.For<IAccountConfirmation>().UseSingleton<IAccountConfirmation>(hosts);
+                withOwn.AddInMemoryActorStores(options);
+                bool keptOwn = ReferenceEquals(hosts, withOwn.Get<IAccountConfirmation>());
+                return new RegistryOutcome(oneInstance, store.Options.Capacity, serverKey != null && serverKey.Length > 0, confirmation is RefusingAccountConfirmation && refuses, keptOwn);
+            })
+            .TheTest
+            .ShouldPass<RegistryOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("one store serves as resolver and registrar", outcome.OneInstance);
+                because.ItsTrue("the store options are the ones passed", outcome.Capacity == 3);
+                because.ItsTrue("a server key is generated under the server key name", outcome.HasServerKey);
+                because.ItsTrue("the refusing confirmation is registered when the host has none", outcome.Refusing);
+                because.ItsTrue("a host's own confirmation is kept", outcome.KeptOwn);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void NeverConfirmWithTheRefusingConfirmation()
+    {
+        When.A<BoundedMemoryKeySetStoreShould>("creates a refusing challenge and verifies a signature",
+            (test) =>
+            {
+                RefusingAccountConfirmation confirmation = new RefusingAccountConfirmation(new FixedClock(Start));
+                ConfirmationChallenge first = confirmation.CreateChallenge("ada");
+                ConfirmationChallenge second = confirmation.CreateChallenge("ada");
+                ConfirmationResult result = confirmation.VerifySignedChallenge("ada", first.ChallengeBytes);
+                return new ConfirmationOutcome(first.ChallengeBytes.Length, !first.ChallengeBytes.SequenceEqual(second.ChallengeBytes), first.ExpiresUtc == Start.UtcDateTime, result.Confirmed);
+            })
+            .TheTest
+            .ShouldPass<ConfirmationOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("each challenge is 32 random bytes", outcome.Length == 32 && outcome.Differ);
+                because.ItsTrue("and has already expired", outcome.AlreadyExpired);
+                because.ItsTrue("nothing is ever confirmed", !outcome.Confirmed);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -362,7 +425,6 @@ public class BoundedMemoryKeySetStoreShould : UnitTestMenuContainer
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
         builder.Services.AddInMemoryActorStores(options, new BoundedMemoryKeySetStoreOptions { Capacity = 2, KeySetLifetime = TimeSpan.FromMinutes(15) });
-        builder.Services.AddSingleton<IAccountConfirmation>(new FakeAccountConfirmation(Array.Empty<byte>()));
         builder.Services.AddActorAuthentication(options);
         WebApplication app = builder.Build();
         app.UseRouting();
@@ -399,9 +461,13 @@ public class BoundedMemoryKeySetStoreShould : UnitTestMenuContainer
 
     private sealed record ConcurrencyOutcome(int Registered, int Full, int Other, int ResolvedWrong, int Count);
 
+    private sealed record RegistryOutcome(bool OneInstance, int Capacity, bool HasServerKey, bool Refusing, bool KeptOwn);
+
+    private sealed record ConfirmationOutcome(int Length, bool Differ, bool AlreadyExpired, bool Confirmed);
+
     private sealed record NamedKeyOutcome(bool Accepted, byte[]? Stored, bool MissingIsNull, string BlankName);
 
-    private sealed record PipelineOutcome(Answer Registered, Answer Issued, string TokenFingerprint, string KeyFingerprint, Answer Proved, Answer Taken, Answer Second, Answer Full);
+    private sealed record PipelineOutcome(Answer Registered, Answer Issued, string TokenFingerprint, string KeyFingerprint, Answer Proved, Answer Taken, Answer Second, Answer Full, Answer Challenge, Answer Confirm);
 
     private sealed class PipelineHost
     {
