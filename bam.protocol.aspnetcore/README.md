@@ -99,6 +99,35 @@ and the request proof run only where `RequireActorAccess` attached the filters. 
 A host that proxies or uses its own pipeline applies the same rule with `RequestProofRule.RequiresProof`
 and the registered `RequestProofEvaluator`, and the access level with `IActorAccessPolicy`.
 
+### In-memory stores for one-visit actors
+
+A host whose actors live for one visit, such as a public demo, can run actor authentication without a
+database. `AddInMemoryActorStores` registers a `BoundedMemoryKeySetStore` as both `IPublicKeySetResolver` and
+`IPublicKeySetRegistrar`, a `MemoryNamedKeyStorage` holding a server key generated at start-up, and, unless the
+host registered its own, a `RefusingAccountConfirmation` (bam.protocol#119). That confirmation never confirms:
+`/actor/challenge` answers with an already-expired random challenge and `/actor/confirm` with its generic 401.
+
+```csharp
+ActorAuthenticationOptions actorAuth = new ActorAuthenticationOptions { Enabled = true, OpenEnrollment = true, ClientTokenAudience = "https://dev.bamapps.net" };
+builder.Services.AddInMemoryActorStores(actorAuth, new BoundedMemoryKeySetStoreOptions { Capacity = 200, KeySetLifetime = TimeSpan.FromMinutes(15) });
+builder.Services.AddActorAuthentication(actorAuth);
+```
+
+The same method is on `ServiceRegistry`.
+
+- **Bounded:** at most `Capacity` live key sets (default 1000). Past it, registration throws
+  `KeySetCapacityExceededException`, and `/actor/register` answers `429`.
+- **Expiry:** each key set expires `KeySetLifetime` after registering (default 30 minutes, measured with the
+  `TimeProvider` you pass). `Remove(handle)` drops one sooner. A key set that has expired or been removed never
+  resolves again, and its handle and key are free to register again.
+- **Same rules as the persistent registrar:** admission validates keys the same way (ECC-only is accepted),
+  first registration wins, and a key belongs to one live handle. There's no revocation and no rotation:
+  `Rotate` refuses, and a visitor registers a new handle instead.
+- **Single-process and non-persistent**, like `MemoryRequestProofNonceStore`. A restart forgets every key set
+  and generates a new server key, so tokens issued before it stop verifying. Don't use it for accounts that
+  must survive a restart, or behind several instances.
+- Rate limiting by caller is the host's job; the store bounds memory, not callers.
+
 ## Invocation (`/invoke`)
 
 `BamClient<T>.InvokeAsync` posts a `MethodInvocationRequest` (`OperationIdentifier` + named `Arguments`) to

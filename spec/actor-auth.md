@@ -65,6 +65,9 @@ Vectors: `keys.json`.
 - `400` with `{ "messages": ["Registration was not accepted."] }` when the registration is refused.
   The reason is not given: a taken handle, a key already registered under another handle, a revoked
   key and a malformed key all look the same.
+- `429` with `{ "messages": ["Registration is not available right now; try again later."] }` when
+  the host keeps key sets in a bounded store that is full. It says nothing about the handle or the
+  key. Retry later, after some key sets have expired.
 
 Registering does not grant access. The host's operator admits a handle, optionally pinned to a key
 fingerprint. Until then every later step answers `401`.
