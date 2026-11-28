@@ -458,7 +458,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// caller influence which duplicate wins resolution (bam.protocol#8 review C3); the
     /// fingerprints are the indexed canonical identity (bam.protocol#24 review B1).
     /// </summary>
-    private static void NormalizeServerControlledFields(PublicKeySetData publicKeySetData)
+    internal static void NormalizeServerControlledFields(PublicKeySetData publicKeySetData)
     {
         publicKeySetData.Created = DateTime.UtcNow;
         publicKeySetData.Uuid = Guid.NewGuid().ToString();
@@ -479,7 +479,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// Returns the first non-empty key field (RSA or ECC) that does not parse as a public key,
     /// paired with the parsing exception, or null when all present key material parses.
     /// </summary>
-    private static ValueTuple<string, Exception>? FindUnparseableKey(PublicKeySetData keySet)
+    internal static ValueTuple<string, Exception>? FindUnparseableKey(PublicKeySetData keySet)
     {
         ValueTuple<string, Exception>? rsaFailure = ParseFailure("RSA", keySet.PublicRsaKey);
         if (rsaFailure != null)
@@ -502,7 +502,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// left to the callers' own presence rules, so an ECC-only key set is still admitted.
     /// Call only after <see cref="FindUnparseableKey"/> has passed.
     /// </summary>
-    private static string? FindMistypedSlot(PublicKeySetData keySet)
+    internal static string? FindMistypedSlot(PublicKeySetData keySet)
     {
         if (!HoldsPublicKeyOrIsEmpty<RsaKeyParameters>(keySet.PublicRsaKey))
         {
@@ -531,7 +531,7 @@ public class PublicKeySetRegistrar : IPublicKeySetRegistrar
     /// <summary>
     /// Names the key a slot must hold, for rejection messages.
     /// </summary>
-    private static string DescribeExpectedKey(string slot)
+    internal static string DescribeExpectedKey(string slot)
     {
         return slot == RsaSlot ? "an RSA public key" : "an EC public key";
     }

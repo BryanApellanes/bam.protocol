@@ -20,6 +20,9 @@ public static class ActorEnrollmentEndpoints
     /// <summary>The default route prefix.</summary>
     public const string DefaultPrefix = "/actor";
 
+    /// <summary>The message a registration gets when a bounded key-set store is full (429).</summary>
+    public const string CapacityMessage = "Registration is not available right now; try again later.";
+
     /// <summary>
     /// Maps <c>{prefix}/register</c>, <c>{prefix}/challenge</c>, and <c>{prefix}/confirm</c>.
     /// </summary>
@@ -39,7 +42,7 @@ public static class ActorEnrollmentEndpoints
     /// <summary>Registers a key set for a handle.</summary>
     /// <param name="request">The handle and PEM material.</param>
     /// <param name="registrar">Admits key sets under the store's uniqueness and blocklist policy.</param>
-    /// <returns>200 with the registered handle, or the same generic 400 for every refusal (a taken handle, invalid key material, a revoked key).</returns>
+    /// <returns>200 with the registered handle; 429 when a bounded store is full; otherwise the same generic 400 for every refusal (a taken handle, invalid key material, a revoked key).</returns>
     public static IResult Register(ActorRegistrationRequest request, IPublicKeySetRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -53,6 +56,11 @@ public static class ActorEnrollmentEndpoints
                 PublicEccKey = request.PublicEccKeyPem,
             });
             return Results.Ok(new ActorRegistrationResponse { KeySetHandle = registered.KeySetHandle });
+        }
+        catch (KeySetCapacityExceededException)
+        {
+            // A full store says nothing about the handle or its key, so it gets its own answer: the caller should retry later.
+            return Results.Json(new ActorAuthFailure { Messages = [CapacityMessage] }, statusCode: StatusCodes.Status429TooManyRequests);
         }
         catch (Exception exception) when (exception is KeySetRegistrationException || exception is InvalidOperationException || exception is ArgumentException)
         {
